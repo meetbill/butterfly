@@ -8,6 +8,7 @@
 # Description:
 
 """
+import re
 import socket
 import logging
 
@@ -40,6 +41,18 @@ def find_ip_of_host(host):
     except Exception as e:
         logging.error('Get ip of host[{}] failed, error: {}'.format(host, e))
         return None
+
+
+def is_ip(host):
+    """检查是否为 IP
+    :param host: 机器名/ip, str
+    :return: True/False
+    """
+    p = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
+    if p.match(host):
+        return True
+    else:
+        return False
 
 
 if __name__ == '__main__':
