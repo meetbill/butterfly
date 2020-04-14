@@ -4,6 +4,10 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.12] - 2020-04-14
+### Changed
+- 新增 MySQL 连接池自动重连，保持连接配置
+
 ## [1.0.11] - 2020-03-23
 ### Changed
 - content 在 josn 序列化时,添加对 Datetime 类型的支持

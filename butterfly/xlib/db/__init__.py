@@ -3,19 +3,28 @@ try:
 except ImportError:
     from urllib.parse import parse_qsl, unquote, urlparse
 
-#from peewee import *
-import peewee
-from pool import PooledMySQLDatabase
+from xlib.db import peewee
+from xlib.db.pool import PooledMySQLDatabase
+from xlib.db.shortcuts import ReconnectMixin
 from conf import config
+
+
+class RetryPooledMySQLDatabase(ReconnectMixin, PooledMySQLDatabase):
+    """
+    retry connect
+    """
+    pass
 
 
 schemes = {
     'mysql': peewee.MySQLDatabase,
     'mysql+pool': PooledMySQLDatabase,
+    'mysql+retrypool': RetryPooledMySQLDatabase,
     'postgres': peewee.PostgresqlDatabase,
     'postgresql': peewee.PostgresqlDatabase,
     'sqlite': peewee.SqliteDatabase,
 }
+
 
 def _parseresult_to_dict(parsed, unquote_password=False):
 
@@ -66,6 +75,7 @@ def _parseresult_to_dict(parsed, unquote_password=False):
 
     return connect_kwargs
 
+
 def connect(url, unquote_password=False, **connect_params):
     parsed = urlparse(url)
     connect_kwargs = _parseresult_to_dict(parsed, unquote_password)
@@ -85,13 +95,15 @@ def connect(url, unquote_password=False, **connect_params):
 
 my_database = connect(url=config.mysql_config_url)
 
+
 class BaseModel(peewee.Model):
     """Common base model"""
     class Meta:
         database = my_database
 
+
 if __name__ == "__main__":
-    mysql_config_url="mysql+pool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
+    mysql_config_url = "mysql+pool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
     parsed = urlparse(mysql_config_url)
     """_parseresult_to_dict(parsed)
     {
@@ -105,4 +117,3 @@ if __name__ == "__main__":
     }
     """
     print _parseresult_to_dict(parsed)
-
