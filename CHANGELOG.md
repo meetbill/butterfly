@@ -4,6 +4,10 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.13] - 2020-04-15
+### Added
+- 增加状态机 statemachine
+
 ## [1.0.12] - 2020-04-14
 ### Changed
 - 新增 MySQL 连接池自动重连，保持连接配置
