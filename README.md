@@ -16,7 +16,8 @@
 
 * [1 简介](#1-简介)
     * [1.1 环境](#11-环境)
-* [1.2 特性](#12-特性)
+    * [1.2 特性](#12-特性)
+    * [1.3 快速上手](#13-快速上手)
 * [2 设计概述](#2-设计概述)
     * [2.1 架构](#21-架构)
     * [2.2 WSGI server 服务器模型](#22-wsgi-server-服务器模型)
@@ -39,14 +40,14 @@
 ```
 env:Python 2.7
 ```
-## 1.2 特性
+### 1.2 特性
 
 ```
 # GET 不带参数
-GET http://IP:PORT/{handler}/{func_name}
+GET http://IP:PORT/{app}/{handler}
 
 # GET 带参数
-GET http://IP:PORT/{handler}/{func_name}?args1=value1
+GET http://IP:PORT/{app}/{handler}?args1=value1
 
 # POST 参数时, 数据类型需要是 application/json
 
@@ -57,11 +58,39 @@ curl -v  -d '{"str_info":"meetbill"}' http://127.0.0.1:8585/x/hello     ===> han
 ```
 
 > * 根据 handlers package 下 package 目录结构自动加载路由(目前不支持动态路由)
->   * 只加载 handlers package 及其子 package 作为 handler
+>   * 只加载 handlers package 及其子 package 下符合条件的函数作为 handler
 > * 自定义 HTTP header
 > * Handler 的参数列表与 HTTP 请求参数保持一致，便于接口开发
 > * 自动对 HTTP 请求参数进行参数检查
 > * 请求的响应 Header 中包含请求的 reqid(会记录在日志中),便于进行 trace
+
+### 1.3 快速上手
+> 部署
+```
+$git clone https://github.com/meetbill/butterfly.git
+$cd butterfly/butterfly
+```
+> 配置端口---默认 8585
+```
+conf/config.py
+```
+> 启动
+```
+$bash run.sh start
+```
+> 访问
+```
+$curl "http://127.0.0.1:8585/x/ping"
+{"stat": "OK", "randstr": "..."}
+
+$curl "http://127.0.0.1:8585/x/hello?str_info=meetbill"
+{"stat": "OK", "str_info": "meetbill"}
+```
+> 调试 handler
+```
+$python test_handler.py /x/ping
+('OK', {'randstr': '...'}, [('demo', '1.0.1')])
+```
 
 ## 2 设计概述
 
@@ -105,10 +134,10 @@ Butterfly            |                   |       |          |
     |                V                           |          |
     |       +-----------------+                  |          |
     |       | protocol        |  Exception    +-----+       |
-    |       | +------------+  |---------------| 500 |       |
-    |       | |handler1    |  |               +-----+       |
-    |       | |handler2    |  |               +----------------------------+
-    |       | +------------+  |---------------|httpstatus, headers, content|
+    |       | +-------------+ |---------------| 500 |       |
+    |       | |/app1/handler| |               +-----+       |
+    |       | |/app2/handler| |               +----------------------------+
+    |       | +-------------+ |---------------|httpstatus, headers, content|
     \       +-----------------+               +----------------------------+
      ---
 ```
