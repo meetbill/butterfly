@@ -159,7 +159,8 @@ class WSGIGateway(object):
             req.ip = ip
 
             # 当使用 nginx auth_request module 进行接口认证时，可以在 nginx 中配置将认证后的用户名透传
-            req.username = wsgienv.get("HTTP_X_USERNAME") or ""
+            # 获取不到时，值为 "-", 用于日志统计
+            req.username = wsgienv.get("HTTP_X_USERNAME") or "-"
 
             # 如果匹配到静态文件前缀，就会返回静态文件
             file_path = self._try_to_handler_static(wsgienv)
@@ -171,6 +172,7 @@ class WSGIGateway(object):
             protocol = self._protocols.get(funcname)
             if not protocol:
                 return self._mk_err_ret(req, 400, "API Not Found", "")
+
         except BaseException:
             return self._mk_err_ret(
                 req, 400, "Get API Exception", "Get API Exception %s" % traceback.format_exc())
