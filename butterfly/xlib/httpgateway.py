@@ -17,7 +17,7 @@ import inspect
 
 import xlib.uuid64
 
-__version__ = "1.0.13"
+__version__ = "1.0.14"
 
 
 def parse_cookie(cookie):
@@ -252,23 +252,24 @@ class WSGIGateway(object):
         Returns:
             self._mk_ret or self._mk_err_ret
         """
-        if os.path.exists(file_path):
-            httpstatus = "200 OK"
-            headers = []
-            req.log_ret_code = 200
-            req.funcname = file_path
-            try:
-                with open(file_path, "r") as f:
-                    data = f.read()
-                    headers.append(("Content-Length", str(len(data))))
-                    data = [data]
-                    return self._mk_ret(req, httpstatus, headers, data)
-            except BaseException:
-                return self._mk_err_ret(
-                    req, 500, "Read File Error", "Read File Error %s" % traceback.format_exc())
-        else:
+        req.funcname = file_path
+
+        if not os.path.exists(file_path):
             return self._mk_err_ret(
                 req, 404, "File Not Found", "File Not Found,path:{file_path}".format(file_path=file_path))
+
+        httpstatus = "200 OK"
+        headers = []
+        req.log_ret_code = 200
+        try:
+            with open(file_path, "r") as f:
+                data = f.read()
+                headers.append(("Content-Length", str(len(data))))
+                data = [data]
+                return self._mk_ret(req, httpstatus, headers, data)
+        except BaseException:
+            return self._mk_err_ret(
+                req, 500, "Read File Error", "Read File Error %s" % traceback.format_exc())
 
     def _try_to_handler_static(self, wsgienv):
         """
@@ -278,6 +279,14 @@ class WSGIGateway(object):
             wsgienv:(Dict)
         Returns:
             static file path
+        Examples:
+            wsgienv["PATH_INFO"] : /static/vendor/angular/angular/angular.min.js
+            self._static_prefix  : (default: static)
+            self._static_path    : (default: static)
+                |
+                V
+            file_path            : static/vendor/angular/angular/angular.min.js
+
         """
         if not self._static_prefix:
             return None
@@ -287,8 +296,7 @@ class WSGIGateway(object):
             if self._static_path[-1] == "/":
                 file_path = self._static_path + "/".join(path.split("/")[2:])
             else:
-                file_path = self._static_path + "/" + \
-                    "/".join(path.split("/")[2:])
+                file_path = self._static_path + "/" + "/".join(path.split("/")[2:])
 
             return file_path
 

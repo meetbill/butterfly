@@ -4,6 +4,10 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.14] - 2020-04-29
+### Fixed
+- 修复获取不存在的前端静态文件时，日志中文件名缺失问题
+
 ## [1.0.13] - 2020-04-15
 ### Added
 - 增加状态机 statemachine
