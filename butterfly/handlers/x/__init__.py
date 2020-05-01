@@ -7,7 +7,7 @@ from xlib.httpgateway import Request
 from xlib import retstat
 from xlib.middleware import funcattr
 
-__info = "demo"
+__info = "api_demo"
 __version = "1.0.1"
 
 

@@ -4,6 +4,13 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.15] - 2020-05-01
+### Changed
+- 更新 pysnooper 为社区版 0.4.0
+- 在社区版 pysnooper 基础上，添加彩色输出功能
+- test_handler.py 默认使用 pysnooper 彩色输出
+- 增加 handler 单测例子
+
 ## [1.0.14] - 2020-04-29
 ### Fixed
 - 修复获取不存在的前端静态文件时，日志中文件名缺失问题

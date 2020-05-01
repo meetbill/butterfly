@@ -9,6 +9,7 @@
 
 """
 from conf import config
+
 def test_demo_test1(init_data):
     """
     test func demo_test1
@@ -18,6 +19,7 @@ def test_demo_test1(init_data):
             "PATH_INFO":"/demo_test1",
             "REMOTE_ADDR": "192.10.10.10"
             }
+
     status, headders, content = init_data.process(environ)
     assert status == "200 OK"
     assert content == ('{"stat": "ERR_BAD_PARAMS"}',)
@@ -33,6 +35,7 @@ def test_demo_test1(init_data):
     for headder in headders:
         if headder[0] == 'x-reason':
             assert headder[1] == "Param check failed"
+
     assert content == ('{"stat": "ERR_BAD_PARAMS"}',)
 
     # OK
@@ -61,6 +64,7 @@ def test_400(init_data):
     for headder in headders:
         if headder[0] == 'x-reason':
             assert headder[1] == "API Not Found"
+
     assert content == ""
 
 
@@ -80,6 +84,7 @@ def test_static(init_data):
     for headder in headders:
         if headder[0] == 'x-reason':
             assert headder[1] == "File Not Found"
+
     assert content == ""
 
     # File exist

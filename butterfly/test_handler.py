@@ -35,9 +35,11 @@ route.autoload_handler("handlers")
 apicube = route.get_route()
 
 if __name__ == "__main__":
+    from xlib.debug import pysnooper
+
+    # 封装 req
     ip = "0.0.0.0"
     reqid = uuid64.UUID64().gen()
-
     wsgienv={"PATH_INFO":"/echo"}
     req = httpgateway.Request(reqid, wsgienv, ip)
 
@@ -52,6 +54,7 @@ if __name__ == "__main__":
                 print sys.argv[0], url, str(args[1:-len(defaults)])[1:-1].replace(",", ""), str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
             else:
                 print sys.argv[0], url, str(func.func_code.co_varnames[1:func.func_code.co_argcount])[1:-1].replace(",", "")
+
         sys.exit(-1)
     else:
         url = sys.argv[1]
@@ -59,16 +62,21 @@ if __name__ == "__main__":
         args = sys.argv[2:]
         args.insert(0,req)
         try:
-            r = func(*args)
-            print r
+            @pysnooper.snoop(thread_info=True,depth=5)
+            def main():
+                return func(*args)
+
+            result = main()
+            print "============================================================="
+            print result
+            print "============================================================="
         except Exception, e:
+            print "-------------------------------------------------------------"
             print "Usage:"
             print "\t", "python %s" % sys.argv[1], str(func.func_code.co_varnames[:func.func_code.co_argcount])[1:-1].replace(",", "")
+            print "-------------------------------------------------------------"
             if func.func_doc:
                 print "\n".join(["\t\t" + line.strip() for line in func.func_doc.strip().split("\n")])
-            print e
-            r = -1
+
             import traceback
             traceback.print_exc()
-        if isinstance(r, int):
-            sys.exit(r)

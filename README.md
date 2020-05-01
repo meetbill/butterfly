@@ -63,6 +63,7 @@ curl -v  -d '{"str_info":"meetbill"}' http://127.0.0.1:8585/x/hello     ===> han
 > * Handler 的参数列表与 HTTP 请求参数保持一致，便于接口开发
 > * 自动对 HTTP 请求参数进行参数检查
 > * 请求的响应 Header 中包含请求的 reqid(会记录在日志中),便于进行 trace
+> * 简易方便的 DEBUG
 
 ### 1.3 快速上手
 > 部署
@@ -89,6 +90,7 @@ $curl "http://127.0.0.1:8585/x/hello?str_info=meetbill"
 > 调试 handler
 ```
 $python test_handler.py /x/ping
+...此处会输出彩色的  DEBUG 信息
 ('OK', {'randstr': '...'}, [('demo', '1.0.1')])
 ```
 
