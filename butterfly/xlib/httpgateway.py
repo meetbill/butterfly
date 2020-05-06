@@ -17,7 +17,7 @@ import inspect
 
 import xlib.uuid64
 
-__version__ = "1.0.15"
+__version__ = "1.0.16"
 
 
 def parse_cookie(cookie):
@@ -224,9 +224,10 @@ class WSGIGateway(object):
                 headers.append(("x-reason", req.error_str))
             stat_str = ",".join("%s:%.3f" % (k, v) for k, v in req.log_stat.iteritems())
             log_params_str = ",".join("%s:%s" % (k, v) for k, v in req.log_params.iteritems())
-            self._acclog.log("{ip}\t{reqid}\t{funcname}\t{cost}\t{ret_code}\t{username}\tstat:{stat}\tparams:{log_params}\terror_msg:{error}\tres:{res}".format
+            self._acclog.log("{ip}\t{reqid}\t{method}\t{funcname}\t{cost}\t{ret_code}\t{username}\tstat:{stat}\tparams:{log_params}\terror_msg:{error}\tres:{res}".format
                              (ip=req.ip,
                               reqid=req.reqid,
+                              method=req.wsgienv.get("REQUEST_METHOD"),
                               funcname=req.funcname,
                               cost=cost_str,
                               ret_code=req.log_ret_code,

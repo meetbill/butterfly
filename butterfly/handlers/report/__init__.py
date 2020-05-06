@@ -7,9 +7,12 @@
 # File Name: report.py
 # Description:
 
+    v1.0.1 : 2020-01-10
+    v1.0.2 : 2020-05-07
+    --------------- modify acc.log field
 """
 __info = "report"
-__version = "1.0.1"
+__version = "1.0.2"
 
 import os
 import json
@@ -26,33 +29,35 @@ def log_pattern():
 
     log:
         {
-            'STATUS': '200',
-            'USERNAME': '-',
-            'EXTRA': 'error_msg:\tres:',
+            'DATE': '2020-01-09',
             'TIME': '16:32:59',
             'PID': '17607',
+            'CODE_INFO': 'httpgateway.py:232',
             'HOST': '127.0.0.1',
             'REQID': '684485748A2B8AAE',
-            'COST': '0.000533',
-            'CODE_INFO': 'httpgateway.py:232',
-            'DATE': '2020-01-09',
+            'METHOD': 'GET'
             'PATH': 'static/vendor/jquery/flot/jquery.flot.pie.js',
+            'COST': '0.000533',
+            'STATUS': '200',
+            'USERNAME': '-',
             'STAT': 'stat:',
             'PARAMS': 'params:'
+            'EXTRA': 'error_msg:\tres:',
         }
     '''
     # Snippet, thanks to http://www.seehuhn.de/blog/52
     parts = [
-        r'(?P<DATE>\S+)',               # date eg.:2019-08-12
-        r'(?P<TIME>\S+)',               # time eg.:09:22:47
-        r'(?P<PID>\S+)',                # pid  eg.:41442
+        r'(?P<DATE>\S+)',               # date      eg.:2019-08-12
+        r'(?P<TIME>\S+)',               # time      eg.:09:22:47
+        r'(?P<PID>\S+)',                # pid       eg.:41442
         r'(?P<CODE_INFO>\S+)',          # code_info eg.:httpgateway.py:185
-        r'(?P<HOST>\S+)',               # host eg.:127.0.0.1
-        r'(?P<REQID>\S+)',              # reqid eg.:CACE332C8F5E39F8
-        r'(?P<PATH>\S+)',               # path eg.:/x/ping
+        r'(?P<HOST>\S+)',               # host      eg.:127.0.0.1
+        r'(?P<REQID>\S+)',              # reqid     eg.:CACE332C8F5E39F8
+        r'(?P<METHOD>\S+)',             # reqid     eg.:GET
+        r'(?P<PATH>\S+)',               # path      eg.:/x/ping
         r'(?P<COST>\S+)',               # cost time eg.:0.002147
-        r'(?P<STATUS>\S+)',             # status eg.:200(careful, can be 'OK'/'ERR')
-        r'(?P<USERNAME>\S+)',           # username eg.:meetbill (or -)
+        r'(?P<STATUS>\S+)',             # status    eg.:200(careful, can be 'OK'/'ERR')
+        r'(?P<USERNAME>\S+)',           # username  eg.:meetbill (or -)
         r'(?P<STAT>\S+)',               # stat
         r'(?P<PARAMS>\S+)',             # params
         r'(?P<EXTRA>.*)',               # extra(log_params_str, req.error_str, ",".join(req.log_res))

@@ -4,6 +4,10 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.16] - 2020-05-07
+### Changed
+- acc.log 中新增 method 字段
+
 ## [1.0.15] - 2020-05-01
 ### Changed
 - 更新 pysnooper 为社区版 0.4.0
