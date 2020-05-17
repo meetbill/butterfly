@@ -75,18 +75,18 @@ class Result(object):
             output_log = self.output.replace("\n", ">>>") + ":)"
 
         log_msg = ("[reqid]:{reqid} [command]:{command} [success]:{success} "
-                "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
-                "[req_info]:{file_name}:{func_name}:{lineno}".format(
-            reqid=self.reqid,
-            command=self.command,
-            success=self.success,
-            retcode=self.retcode,
-            output_len=self.output_len,
-            output=output_log,
-            file_name=file_name,
-            func_name=func_name,
-            lineno=lineno
-        ))
+                   "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
+                   "[req_info]:{file_name}:{func_name}:{lineno}".format(
+                       reqid=self.reqid,
+                       command=self.command,
+                       success=self.success,
+                       retcode=self.retcode,
+                       output_len=self.output_len,
+                       output=output_log,
+                       file_name=file_name,
+                       func_name=func_name,
+                       lineno=lineno
+                   ))
 
         if self.success:
             logging.info(log_msg)

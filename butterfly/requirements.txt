@@ -1,3 +1,0 @@
-PyJWT==1.7.1
-cherrypy-wsgiserver==0.1dev
-wrapt==1.11.2

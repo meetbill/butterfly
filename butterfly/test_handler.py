@@ -62,7 +62,7 @@ if __name__ == "__main__":
         args = sys.argv[2:]
         args.insert(0,req)
         try:
-            @pysnooper.snoop(thread_info=True,depth=5)
+            @pysnooper.snoop(thread_info=True,depth=2)
             def main():
                 return func(*args)
 
