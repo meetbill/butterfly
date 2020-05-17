@@ -4,6 +4,18 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.17] - 2020-05-17
+### Added
+- shell util 模块用于执行系统命令
+```
+基于 subprocess.Popen 封装, 增加如下功能
+    (1) 超时，默认 10s
+    (2) 日志，每次调用系统命令都进行记录, 日志中包含 reqid (如果传入的话)及调用处代码信息
+    (3) 结果封装
+
+日志记录在 logs/common.log 及 logs/common.log.wf (异常日志)
+```
+
 ## [1.0.16] - 2020-05-07
 ### Changed
 - acc.log 中新增 method 字段
