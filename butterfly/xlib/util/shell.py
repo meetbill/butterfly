@@ -42,6 +42,7 @@ class Result(object):
         self.command = command or ''
         self.retcode = retcode
         self.output = output
+        self.output_len = len(output)
         self.success = False
         self.reqid = reqid
         if retcode == 0:
@@ -64,23 +65,24 @@ class Result(object):
         """
         f = inspect.currentframe().f_back.f_back
         file_name, lineno, func_name = self._get_backframe_info(f)
-        source_req_msg = "[req_info]:{file_name}:{func_name}:{lineno}".format(
-            file_name=file_name,
-            func_name=func_name,
-            lineno=lineno
-        )
 
-        log_msg = "[reqid]:{reqid} [command]:{command} [success]:{success} [code]:{retcode} [output]:{output} ".format(
+        log_msg = ("[reqid]:{reqid} [command]:{command} [success]:{success} "
+                "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
+                "[req_info]:{file_name}:{func_name}:{lineno}".format(
             reqid=self.reqid,
             command=self.command,
             success=self.success,
             retcode=self.retcode,
-            output=self.output
-        )
+            output_len=self.output_len,
+            output=self.output,
+            file_name=file_name,
+            func_name=func_name,
+            lineno=lineno
+        ))
         if self.success:
-            logging.info(log_msg + source_req_msg)
+            logging.info(log_msg)
         else:
-            logging.error(log_msg + source_req_msg)
+            logging.error(log_msg)
 
     def _get_backframe_info(self, f):
         """
