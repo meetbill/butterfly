@@ -9,6 +9,8 @@
     基于 subprocess.Popen 封装, 增加如下功能
         (1) 超时，默认 10s
         (2) 日志，每次调用系统命令都进行记录, 日志中包含 reqid (如果传入的话)及调用处代码信息
+            调用系统命令返回的结果大于 50 个字符时，将会被截断，否则使用此模块获取日志时, 记录日志会比较多
+            调用系统命令返回的结果中的回车符将会被替换为 '>>>'
         (3) 结果封装
 
     Example1 程序调用:
@@ -35,9 +37,10 @@ class Result(object):
 
     def __init__(self, command="", retcode="", output="", reqid=""):
         """
-        command: (str) 执行命令
-        retcode: (int) 执行结果返回码
-        output : (str) 输出结果
+        command : (str) 执行命令
+        retcode : (int) 执行结果返回码
+        output  : (str) 输出结果
+        reqid   : (str) 请求 id
         """
         self.command = command or ''
         self.retcode = retcode
@@ -66,6 +69,11 @@ class Result(object):
         f = inspect.currentframe().f_back.f_back
         file_name, lineno, func_name = self._get_backframe_info(f)
 
+        if self.output_len > 50:
+            output_log = self.output[:50].replace("\n", ">>>") + "... :("
+        else:
+            output_log = self.output.replace("\n", ">>>") + ":)"
+
         log_msg = ("[reqid]:{reqid} [command]:{command} [success]:{success} "
                 "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
                 "[req_info]:{file_name}:{func_name}:{lineno}".format(
@@ -74,11 +82,12 @@ class Result(object):
             success=self.success,
             retcode=self.retcode,
             output_len=self.output_len,
-            output=self.output,
+            output=output_log,
             file_name=file_name,
             func_name=func_name,
             lineno=lineno
         ))
+
         if self.success:
             logging.info(log_msg)
         else:
@@ -94,8 +103,9 @@ class Result(object):
 def run(command, timeout=10, reqid=""):
     """
     Args:
-        command: 执行的命令
-        timeout: 默认 10s
+        command : (str) 执行的命令
+        timeout : (int) 默认 10s
+        reqid   : (str) reqid
     Returns:
         Result
     """
