@@ -4,6 +4,14 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.18] - 2020-05-19
+### Fixed
+- 修复 1.0.17 因 version 字段导致 acclog 不打印情况
+```
+将 butterfly_version 在启动时初始化, 同时可以通过《变量本地化》提高性能
+```
+- 修复单元测试中因添加 header 异常导致的单元测试遗漏问题
+
 ## [1.0.17] - 2020-05-17
 ### Added
 - shell util 模块用于执行系统命令

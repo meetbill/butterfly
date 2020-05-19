@@ -15,9 +15,8 @@ import time
 import httplib
 import inspect
 
+import xlib
 import xlib.uuid64
-
-__version = "1.0.17"
 
 
 def parse_cookie(cookie):
@@ -141,6 +140,7 @@ class WSGIGateway(object):
         self._uuid64 = xlib.uuid64.UUID64()
         self._static_path = static_path
         self._static_prefix = static_prefix
+        self._version = xlib.butterfly_version
 
     def process(self, wsgienv):
         """Process wsgienv
@@ -216,7 +216,7 @@ class WSGIGateway(object):
         cost = time.time() - req.init_tm
         cost_str = "%.6f" % cost
         try:
-            headers.append(("butterfly", __version))
+            headers.append(("butterfly", self._version))
             headers.append(("x-reqid", req.reqid))
             # cost time
             headers.append(("x-cost", cost_str))

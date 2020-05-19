@@ -20,7 +20,7 @@ def test_demo_test1(init_data):
             "REMOTE_ADDR": "192.10.10.10"
             }
 
-    status, headders, content = init_data.process(environ)
+    status, headers, content = init_data.process(environ)
     assert status == "200 OK"
     assert content == ('{"stat": "ERR_BAD_PARAMS"}',)
 
@@ -29,12 +29,21 @@ def test_demo_test1(init_data):
             "REMOTE_ADDR": "192.10.10.10",
             "QUERY_STRING": "str_info1=meetbill"
             }
-    status, headders, content = init_data.process(environ)
+    status, headers, content = init_data.process(environ)
     assert status == "200 OK"
-    ## headders : [('Content-Length', '26'), ('x-reqid', 'B820746074ACC4AF'), ('x-cost', '0.000111'), ('x-reason', 'Param check failed')]
-    for headder in headders:
-        if headder[0] == 'x-reason':
-            assert headder[1] == "Param check failed"
+    ## headers : [('Content-Length', '26'), ('x-reqid', 'B820746074ACC4AF'), ('x-cost', '0.000111'), ('x-reason', 'Param check failed')]
+
+    #-------------------------------------------------------------------
+    # 通过循环 headers 方式获取方式会漏掉 header 不存在的情况
+    #
+    # 举个例子
+    # 在 xlib/httpgateway.py:_mk_ret 中添加 header 失败或者写 acclog 日志失败, 当 headers 不存在对应的属性值时，则误判
+    # 可以将 headers 通过 dict(headers) 转为字典, 然后
+    #-------------------------------------------------------------------
+
+    headers_dict = dict(headers)
+    x_reason = headers_dict.get("x-reason") or ""
+    assert x_reason == "Param check failed"
 
     assert content == ('{"stat": "ERR_BAD_PARAMS"}',)
 
@@ -44,9 +53,10 @@ def test_demo_test1(init_data):
             "REMOTE_ADDR": "192.10.10.10",
             "QUERY_STRING": "str_info=meetbill"
             }
-    status, headders, content = init_data.process(environ)
+    status, headers, content = init_data.process(environ)
     assert status == "200 OK"
-    ## headders:[('Content-Length', '38'), ('x-reqid', '32E6F4F44155B85F'), ('x-cost', '0.000206')]
+    ## headers:[('Content-Length', '38'), ('x-reqid', '32E6F4F44155B85F'), ('x-cost', '0.000206')]
+
     assert content == ('{"stat": "OK", "str_info": "meetbill"}',)
 
 def test_400(init_data):
@@ -58,12 +68,12 @@ def test_400(init_data):
             "PATH_INFO":"/demo_401",
             "REMOTE_ADDR": "192.10.10.10"
             }
-    status, headders, content = init_data.process(environ)
+    status, headers, content = init_data.process(environ)
     assert status == "400 Bad Request"
-    ## headders:[('x-reqid', '83CAEEF6E4C397B7'), ('x-cost', '0.000029'), ('x-reason', 'API Not Found')]
-    for headder in headders:
-        if headder[0] == 'x-reason':
-            assert headder[1] == "API Not Found"
+    ## headers:[('x-reqid', '83CAEEF6E4C397B7'), ('x-cost', '0.000029'), ('x-reason', 'API Not Found')]
+    headers_dict = dict(headers)
+    x_reason = headers_dict.get("x-reason") or ""
+    assert x_reason == "API Not Found"
 
     assert content == ""
 
@@ -78,12 +88,12 @@ def test_static(init_data):
             "PATH_INFO":"/{prefix}/static_file".format(prefix = static_prefix),
             "REMOTE_ADDR": "192.10.10.10"
             }
-    status, headders, content = init_data.process(environ1)
+    status, headers, content = init_data.process(environ1)
     assert status == "404 Not Found"
-    ## headders:[('x-reqid', '83CAEEF6E4C397B7'), ('x-cost', '0.000029'), ('x-reason', 'File Not Found')]
-    for headder in headders:
-        if headder[0] == 'x-reason':
-            assert headder[1] == "File Not Found"
+    ## headers:[('x-reqid', '83CAEEF6E4C397B7'), ('x-cost', '0.000029'), ('x-reason', 'File Not Found')]
+    headers_dict = dict(headers)
+    x_reason = headers_dict.get("x-reason") or ""
+    assert x_reason == "File Not Found"
 
     assert content == ""
 
