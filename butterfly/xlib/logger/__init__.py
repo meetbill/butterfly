@@ -4,11 +4,11 @@ Log manage module
 """
 
 import time
-import traceback
 import inspect
 import os
 import logging
 import logging.handlers
+import threading
 
 DEBUG_VERBOSE = False
 
@@ -138,8 +138,25 @@ class LoggerBase(object):
                 self._batches = []
 
 
+butterfly_local = threading.local()
+
+
+class RequestLogFilter(logging.Filter):
+    """
+    日志过滤器，将当前请求线程的 reqid 信息保存到日志的 record 上下文
+
+    Filter 提供的是比 log level 更精确的过滤控制，只有当 Filter.filter 函数返回 True 的时候，这条日志才会被输出。
+
+    https://docs.python.org/zh-cn/3/howto/logging-cookbook.html#using-loggeradapters-to-impart-contextual-information
+    """
+
+    def filter(self, record):
+        record.reqid = getattr(butterfly_local, 'reqid', "XXXXXXXXXXXXXXXX")
+        return True
+
+
 def init_log(log_path, level=logging.INFO, when="D", backup=7,
-             format="%(levelname)s: %(asctime)s: %(filename)s:%(lineno)d * %(thread)d %(message)s",
+             format="%(levelname)s: %(asctime)s: %(filename)s:%(lineno)d %(thread)d %(reqid)s * %(message)s",
              datefmt="%m-%d %H:%M:%S"):
     """
     init_log - initialize log module
@@ -172,6 +189,8 @@ def init_log(log_path, level=logging.INFO, when="D", backup=7,
     formatter = logging.Formatter(format, datefmt)
     logger = logging.getLogger()
     logger.setLevel(level)
+    filter = RequestLogFilter()
+    logger.addFilter(filter)
 
     dir = os.path.dirname(log_path)
     if not os.path.isdir(dir):

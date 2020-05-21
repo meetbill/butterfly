@@ -4,6 +4,12 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.19] - 2020-05-21
+### Changed
+- 使用 logging 库记录日志时，日志中将自动添加 reqid 信息
+- xlib.util.host_util 更改方法名
+- xlib.util.shell 去掉了对 reqid 的传参
+
 ## [1.0.18] - 2020-05-19
 ### Fixed
 - 修复 1.0.17 因 version 字段导致 acclog 不打印情况

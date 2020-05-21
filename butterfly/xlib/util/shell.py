@@ -22,6 +22,11 @@
     Example2 直接执行:
         python shell.py run "echo xx"   # 执行成功命令
         python shell.py run "echoxx"    # 执行失败命令
+
+# 版本更新
+    v1.0.1(2020-05-17 11:49:36)
+    v1.0.2(2020-05-21 08:12:33)
+        去掉 reqid 参数，通过 logging 添加 Filters 自动添加 reqid 方式
 """
 
 import inspect
@@ -35,19 +40,17 @@ class Result(object):
     easyrun 返回结果封装
     """
 
-    def __init__(self, command="", retcode="", output="", reqid=""):
+    def __init__(self, command="", retcode="", output=""):
         """
         command : (str) 执行命令
         retcode : (int) 执行结果返回码
         output  : (str) 输出结果
-        reqid   : (str) 请求 id
         """
         self.command = command or ''
         self.retcode = retcode
         self.output = output
         self.output_len = len(output)
         self.success = False
-        self.reqid = reqid
         if retcode == 0:
             self.success = True
         self._logger()
@@ -74,10 +77,9 @@ class Result(object):
         else:
             output_log = self.output.replace("\n", ">>>") + ":)"
 
-        log_msg = ("[reqid]:{reqid} [command]:{command} [success]:{success} "
+        log_msg = ("[command]:{command} [success]:{success} "
                    "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
                    "[req_info]:{file_name}:{func_name}:{lineno}".format(
-                       reqid=self.reqid,
                        command=self.command,
                        success=self.success,
                        retcode=self.retcode,
@@ -100,12 +102,11 @@ class Result(object):
         return f.f_back.f_code.co_filename, f.f_back.f_lineno, f.f_back.f_code.co_name
 
 
-def run(command, timeout=10, reqid=""):
+def run(command, timeout=10):
     """
     Args:
         command : (str) 执行的命令
         timeout : (int) 默认 10s
-        reqid   : (str) reqid
     Returns:
         Result
     """
@@ -125,13 +126,13 @@ def run(command, timeout=10, reqid=""):
         seconds_passed = time.time() - t_beginning
         if timeout and seconds_passed > timeout:
             process.terminate()
-            return Result(command=command, retcode=124, output="exe timeout", reqid=reqid)
+            return Result(command=command, retcode=124, output="exe timeout")
 
         time.sleep(0.1)
 
     output, _ = process.communicate()
     output = output.strip('\n')
-    return Result(command=command, retcode=process.returncode, output=output, reqid=reqid)
+    return Result(command=command, retcode=process.returncode, output=output)
 
 
 if __name__ == '__main__':

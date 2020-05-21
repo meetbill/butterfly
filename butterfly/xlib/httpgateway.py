@@ -17,7 +17,7 @@ import inspect
 
 import xlib
 import xlib.uuid64
-
+import xlib.logger
 
 def parse_cookie(cookie):
     """
@@ -151,6 +151,10 @@ class WSGIGateway(object):
         """
         ip = "0.0.0.0"
         reqid = self._uuid64.gen()
+
+        # xlib.logger.butterfly_local 为线程内的共享变量, 用于使用 logging 日志库时自动添加 reqid 字段
+        xlib.logger.butterfly_local.reqid = reqid
+
         req = Request(reqid, wsgienv, ip)
         try:
             # 当使用 nginx ，可在 nginx 上配置 "proxy_set_header X-Real-IP  $remote_addr;" 获取真实源 IP
