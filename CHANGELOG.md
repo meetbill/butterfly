@@ -4,6 +4,12 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.20] - 2020-05-24
+### Changed
+- 修改 xlib/util/shell.py ==> xlib/util/shell_util.py
+- 修改 xlib/util/shell_util.py 打印日志内容
+- 增加 xlib/util/http_util.py 库, 用于访问第三方接口
+
 ## [1.0.19] - 2020-05-21
 ### Changed
 - 使用 logging 库记录日志时，日志中将自动添加 reqid 信息

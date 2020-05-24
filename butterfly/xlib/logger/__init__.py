@@ -137,9 +137,9 @@ class LoggerBase(object):
                 self._writed_lines += len(self._batches)
                 self._batches = []
 
-
+#-------------------------------------------------------------------------------------------------------------
+# logging 记录日志时添加 reqid
 butterfly_local = threading.local()
-
 
 class RequestLogFilter(logging.Filter):
     """
@@ -153,6 +153,7 @@ class RequestLogFilter(logging.Filter):
     def filter(self, record):
         record.reqid = getattr(butterfly_local, 'reqid', "XXXXXXXXXXXXXXXX")
         return True
+#-------------------------------------------------------------------------------------------------------------
 
 
 def init_log(log_path, level=logging.INFO, when="D", backup=7,

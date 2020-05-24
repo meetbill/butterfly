@@ -4,7 +4,7 @@
 # Author: meetbill
 # Created Time : 2020-05-17 11:49:36
 
-# File Name: shell.py
+# File Name: shell_util.py
 # Description:
     基于 subprocess.Popen 封装, 增加如下功能
         (1) 超时，默认 10s
@@ -40,19 +40,25 @@ class Result(object):
     easyrun 返回结果封装
     """
 
-    def __init__(self, command="", retcode="", output=""):
+    def __init__(self, command="", retcode="", output="", cost=""):
         """
         command : (str) 执行命令
         retcode : (int) 执行结果返回码
         output  : (str) 输出结果
+        cost    : (str) 执行命令耗时
         """
         self.command = command or ''
         self.retcode = retcode
         self.output = output
         self.output_len = len(output)
         self.success = False
+        self.cost = cost
         if retcode == 0:
             self.success = True
+            self.err_msg = "OK"
+        else:
+            self.err_msg = output
+
         self._logger()
 
     def __str__(self):
@@ -77,17 +83,25 @@ class Result(object):
         else:
             output_log = self.output.replace("\n", ">>>") + ":)"
 
-        log_msg = ("[command]:{command} [success]:{success} "
-                   "[code]:{retcode} [output_len]:{output_len} [output]:{output} "
-                   "[req_info]:{file_name}:{func_name}:{lineno}".format(
-                       command=self.command,
-                       success=self.success,
-                       retcode=self.retcode,
-                       output_len=self.output_len,
-                       output=output_log,
-                       file_name=file_name,
-                       func_name=func_name,
-                       lineno=lineno
+        log_msg = ( "[file={file_name}:{func_name}:{lineno} "
+                    "type=shell "
+                    "req_path={req_path} "
+                    "req_data=None "
+                    "cost={cost} "
+                    "is_success={is_success} "
+                    "err_no={err_no} "
+                    "err_msg={err_msg} "
+                    "res_len={res_len} "
+                    "res_data={res_data} "
+                    "res_attr=None]".format(
+                        file_name=file_name, func_name=func_name, lineno=lineno,
+                        req_path=self.command,
+                        cost=self.cost,
+                        is_success=self.success,
+                        err_no=self.retcode,
+                        err_msg=self.err_msg,
+                        res_len=self.output_len,
+                        res_data=output_log,
                    ))
 
         if self.success:
@@ -126,13 +140,15 @@ def run(command, timeout=10):
         seconds_passed = time.time() - t_beginning
         if timeout and seconds_passed > timeout:
             process.terminate()
-            return Result(command=command, retcode=124, output="exe timeout")
+            cost_str = "%.6f" % seconds_passed
+            return Result(command=command, retcode=124, output="exe timeout", cost=cost_str)
 
         time.sleep(0.1)
 
     output, _ = process.communicate()
     output = output.strip('\n')
-    return Result(command=command, retcode=process.returncode, output=output)
+    cost_str = "%.6f" % seconds_passed
+    return Result(command=command, retcode=process.returncode, output=output, cost=cost_str)
 
 
 if __name__ == '__main__':
