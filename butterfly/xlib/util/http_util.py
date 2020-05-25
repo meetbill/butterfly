@@ -36,6 +36,9 @@ import time
 import json
 
 
+log = logging.getLogger("butterfly")
+
+
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3
 
@@ -255,9 +258,9 @@ class RequestTool(object):
                    ))
 
         if self.success():
-            logging.info(log_msg)
+            log.info(log_msg)
         else:
-            logging.error(log_msg)
+            log.error(log_msg)
 
     def _get_backframe_info(self, f):
         """

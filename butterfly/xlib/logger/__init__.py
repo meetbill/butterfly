@@ -137,9 +137,11 @@ class LoggerBase(object):
                 self._writed_lines += len(self._batches)
                 self._batches = []
 
-#-------------------------------------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------------------------------------
 # logging 记录日志时添加 reqid
 butterfly_local = threading.local()
+
 
 class RequestLogFilter(logging.Filter):
     """
@@ -153,12 +155,10 @@ class RequestLogFilter(logging.Filter):
     def filter(self, record):
         record.reqid = getattr(butterfly_local, 'reqid', "XXXXXXXXXXXXXXXX")
         return True
-#-------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------
 
 
-def init_log(log_path, level=logging.INFO, when="D", backup=7,
-             format="%(levelname)s: %(asctime)s: %(filename)s:%(lineno)d %(thread)d %(reqid)s * %(message)s",
-             datefmt="%m-%d %H:%M:%S"):
+def init_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d %H:%M:%S"):
     """
     init_log - initialize log module
 
@@ -176,10 +176,6 @@ def init_log(log_path, level=logging.INFO, when="D", backup=7,
                       'D' : Days
                       'W' : Week day
                       default value: 'D'
-      format        - format of the log
-                      default format:
-                      %(levelname)s: %(asctime)s: %(filename)s:%(lineno)d * %(thread)d %(message)s
-                      INFO: 12-09 18:02:42: log.py:40 * 139814749787872 HELLO WORLD
       backup        - how many backup file to keep
                       default value: 7
 
@@ -187,15 +183,39 @@ def init_log(log_path, level=logging.INFO, when="D", backup=7,
         OSError: fail to create log directories
         IOError: fail to open log file
     """
-    formatter = logging.Formatter(format, datefmt)
-    logger = logging.getLogger()
-    logger.setLevel(level)
-    filter = RequestLogFilter()
-    logger.addFilter(filter)
-
     dir = os.path.dirname(log_path)
     if not os.path.isdir(dir):
         os.makedirs(dir)
+
+    # ---------------------------------------------------- root
+    format = "%(levelname)s %(name)s %(asctime)s: %(filename)s:%(lineno)d %(thread)d @@@@@@@@@@@@@@@@ * %(message)s"
+    formatter = logging.Formatter(format, datefmt)
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    handler = logging.handlers.TimedRotatingFileHandler(log_path,
+                                                        when=when,
+                                                        backupCount=backup)
+    handler.setLevel(level)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    handler = logging.handlers.TimedRotatingFileHandler(log_path + ".wf",
+                                                        when=when,
+                                                        backupCount=backup)
+    handler.setLevel(logging.WARNING)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    # ---------------------------------------------------- butterfly
+    format = "%(levelname)s %(name)s %(asctime)s: %(filename)s:%(lineno)d %(thread)d %(reqid)s * %(message)s"
+    formatter = logging.Formatter(format, datefmt)
+    logger = logging.getLogger("butterfly")
+    # propagate 属性设置为 False, 不向父级 logger 传递日志, 否则日志中会打印两条重复日志
+    logger.propagate = False
+    logger.setLevel(level)
+    filter = RequestLogFilter()
+    logger.addFilter(filter)
 
     handler = logging.handlers.TimedRotatingFileHandler(log_path,
                                                         when=when,

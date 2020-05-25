@@ -27,12 +27,17 @@
     v1.0.1(2020-05-17 11:49:36)
     v1.0.2(2020-05-21 08:12:33)
         去掉 reqid 参数，通过 logging 添加 Filters 自动添加 reqid 方式
+    v1.0.3(2020-05-25 11:02:38)
+        增加 butterfly logger
 """
 
 import inspect
 import subprocess
 import time
 import logging
+
+
+log = logging.getLogger("butterfly")
 
 
 class Result(object):
@@ -83,31 +88,31 @@ class Result(object):
         else:
             output_log = self.output.replace("\n", ">>>") + ":)"
 
-        log_msg = ( "[file={file_name}:{func_name}:{lineno} "
-                    "type=shell "
-                    "req_path={req_path} "
-                    "req_data=None "
-                    "cost={cost} "
-                    "is_success={is_success} "
-                    "err_no={err_no} "
-                    "err_msg={err_msg} "
-                    "res_len={res_len} "
-                    "res_data={res_data} "
-                    "res_attr=None]".format(
-                        file_name=file_name, func_name=func_name, lineno=lineno,
-                        req_path=self.command,
-                        cost=self.cost,
-                        is_success=self.success,
-                        err_no=self.retcode,
-                        err_msg=self.err_msg,
-                        res_len=self.output_len,
-                        res_data=output_log,
+        log_msg = ("[file={file_name}:{func_name}:{lineno} "
+                   "type=shell "
+                   "req_path={req_path} "
+                   "req_data=None "
+                   "cost={cost} "
+                   "is_success={is_success} "
+                   "err_no={err_no} "
+                   "err_msg={err_msg} "
+                   "res_len={res_len} "
+                   "res_data={res_data} "
+                   "res_attr=None]".format(
+                       file_name=file_name, func_name=func_name, lineno=lineno,
+                       req_path=self.command,
+                       cost=self.cost,
+                       is_success=self.success,
+                       err_no=self.retcode,
+                       err_msg=self.err_msg,
+                       res_len=self.output_len,
+                       res_data=output_log,
                    ))
 
         if self.success:
-            logging.info(log_msg)
+            log.info(log_msg)
         else:
-            logging.error(log_msg)
+            log.error(log_msg)
 
     def _get_backframe_info(self, f):
         """
