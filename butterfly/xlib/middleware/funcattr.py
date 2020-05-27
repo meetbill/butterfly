@@ -18,17 +18,45 @@
 def api(func):
     """
     common api
+
+    (1) 解析请求 body 中数据
+    (2) 编码 Response body 数据
+
+    Args:
+        func: handler func
+    Returns:
+        func
     """
     func.apiattr = {"is_parse_post": True, "is_encode_response": True}
     return func
 
 
 def api_download(func):
+    """
+
+    (1) 解析请求 body 中数据
+    (2) 不编码 Response body 数据
+
+    Args:
+        func: handler func
+    Returns:
+        func
+    """
     # default
     func.apiattr = {"is_parse_post": True, "is_encode_response": False}
     return func
 
 
 def api_upload(func):
+    """
+
+    (1) 不解析请求 body 中数据
+    (2) 编码 Response body 数据
+
+    Args:
+        func: handler func
+    Returns:
+        func
+    """
     func.apiattr = {"is_parse_post": False, "is_encode_response": True}
     return func

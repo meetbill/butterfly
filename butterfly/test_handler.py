@@ -40,43 +40,55 @@ if __name__ == "__main__":
     # 封装 req
     ip = "0.0.0.0"
     reqid = uuid64.UUID64().gen()
-    wsgienv={"PATH_INFO":"/echo"}
+    wsgienv = {"PATH_INFO": "/echo"}
     req = httpgateway.Request(reqid, wsgienv, ip)
 
     import inspect
     if len(sys.argv) < 2:
-        print "Usage:"
+        print("Usage:")
         for url in apicube:
             func = apicube[url]._func
             # ArgSpec(args=['req', 'str_info'], varargs=None, keywords=None, defaults=None)
             args, __, __, defaults = inspect.getargspec(func)
             if defaults:
-                print sys.argv[0], url, str(args[1:-len(defaults)])[1:-1].replace(",", ""), str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
+                line = (sys.argv[0],
+                        url,
+                        str(args[1:-len(defaults)])[1:-1].replace(",", ""),
+                        str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
+                        )
             else:
-                print sys.argv[0], url, str(func.func_code.co_varnames[1:func.func_code.co_argcount])[1:-1].replace(",", "")
+                line = (sys.argv[0],
+                        url,
+                        str(func.func_code.co_varnames[1:func.func_code.co_argcount])[1:-1].replace(",", "")
+                        )
+            print(" ".join(line))
 
         sys.exit(-1)
     else:
         url = sys.argv[1]
         func = apicube[url]._func
         args = sys.argv[2:]
-        args.insert(0,req)
+        args.insert(0, req)
         try:
-            @pysnooper.snoop(thread_info=True,depth=2)
+            @pysnooper.snoop(thread_info=True, depth=2)
             def main():
                 return func(*args)
 
             result = main()
-            print "============================================================="
-            print result
-            print "============================================================="
-        except Exception, e:
-            print "-------------------------------------------------------------"
-            print "Usage:"
-            print "\t", "python %s" % sys.argv[1], str(func.func_code.co_varnames[:func.func_code.co_argcount])[1:-1].replace(",", "")
-            print "-------------------------------------------------------------"
+            print("=============================================================")
+            print(result)
+            print("=============================================================")
+        except Exception:
+            print("-------------------------------------------------------------")
+            print("Usage:")
+            line = (sys.argv[0],
+                    sys.argv[1],
+                    str(func.func_code.co_varnames[:func.func_code.co_argcount])[1:-1].replace(",", "")
+                    )
+            print(" ".join(line))
+            print("-------------------------------------------------------------")
             if func.func_doc:
-                print "\n".join(["\t\t" + line.strip() for line in func.func_doc.strip().split("\n")])
+                print("\n".join(["\t\t" + line.strip() for line in func.func_doc.strip().split("\n")]))
 
             import traceback
             traceback.print_exc()
