@@ -1,3 +1,14 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# Author: wangbin34(meetbill)
+# Created Time : 2020-05-27 14:49:50
+
+# File Name: __init__.py
+# Description:
+    封装管理 db 相关接口
+
+"""
 try:
     from urlparse import parse_qsl, unquote, urlparse
 except ImportError:
@@ -77,6 +88,15 @@ def _parseresult_to_dict(parsed, unquote_password=False):
 
 
 def connect(url, unquote_password=False, **connect_params):
+    """
+    MySQL connect
+
+    Args:
+        url: url config
+             Example: "mysql+retrypool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
+    Returns:
+        instance
+    """
     parsed = urlparse(url)
     connect_kwargs = _parseresult_to_dict(parsed, unquote_password)
     connect_kwargs.update(connect_params)
@@ -98,7 +118,8 @@ my_database = connect(url=config.mysql_config_url)
 
 class BaseModel(peewee.Model):
     """Common base model"""
-    class Meta:
+    class Meta(object):
+        """Meta class"""
         database = my_database
 
 

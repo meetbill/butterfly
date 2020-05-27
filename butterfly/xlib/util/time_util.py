@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf8
 """
-# Author: meetbill
+# Author: wangbin34(meetbill)
 # Created Time : 2020-02-22 11:45:54
 
 # File Name: time_util.py

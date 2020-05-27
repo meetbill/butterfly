@@ -41,5 +41,14 @@ def ping(req):
 
 @funcattr.api
 def hello(req, str_info):
+    """
+    带参数请求例子
+
+    Args:
+        req     : Request
+        str_info: (str)
+    Returns:
+        json_status, Content, headers
+    """
     isinstance(req, Request)
     return retstat.OK, {"str_info": str_info}, [(__info, __version)]

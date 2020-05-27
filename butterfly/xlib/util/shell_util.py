@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf8
 """
-# Author: meetbill
+# Author: wangbin34(meetbill)
 # Created Time : 2020-05-17 11:49:36
 
 # File Name: shell_util.py

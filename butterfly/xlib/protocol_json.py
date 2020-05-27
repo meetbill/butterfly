@@ -1,6 +1,6 @@
 # coding:utf8
 """
-# Author: meetbill
+# Author: wangbin34(meetbill)
 # Created Time : 2019-03-04 14:44:34
 
 # File Name: protocol_json.py

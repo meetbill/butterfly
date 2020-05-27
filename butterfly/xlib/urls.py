@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf8
 """
-# Author: meetbill
+# Author: wangbin34(meetbill)
 # Created Time : 2019-08-02 21:14:43
 
 # File Name: urls.py

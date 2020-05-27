@@ -1,4 +1,13 @@
-# coding:utf8
+#!/usr/bin/python
+# coding=utf8
+"""
+# Author: wangbin34(meetbill)
+# Created Time : 2020-05-27 14:56:20
+
+# File Name: mysqlutil.py
+# Description:
+    用于非 orm 方式使用 MySQL
+"""
 
 from threading import local
 from xlib.db import pymysql
@@ -20,6 +29,7 @@ class MysqlConnManager(local):
         self._conn = None
 
     def get_connection(self):
+        """get_connection"""
         if not self._is_conn_vaild():
             self._create_conn()
             if not self._is_conn_vaild():
@@ -27,6 +37,7 @@ class MysqlConnManager(local):
         return self._conn
 
     def _create_conn(self):
+        """create a connection"""
         if self._is_conn_vaild():
             return
         self._conn = pymysql.connect(autocommit=False,
@@ -39,6 +50,7 @@ class MysqlConnManager(local):
                                      charset="utf8")
 
     def _is_conn_vaild(self):
+        """check connection is vaild by ping"""
         if self._conn:
             try:
                 self._conn.ping()

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf8
 """
-# Author: meetbill
+# Author: wangbin34(meetbill)
 # Created Time : 2019-08-07 16:53:27
 
 # File Name: auth

@@ -1,4 +1,7 @@
 # coding=utf8
+"""
+返回 httpstatus, content, headers 例子
+"""
 import os
 import struct
 
@@ -13,7 +16,7 @@ __version = "1.0.1"
 def ping(req):
     """demo
     Args:
-        req:
+        req: Request
     Returns:
         当此函数作为简单接口函数返回时:
             json_status, [content], [headers]
@@ -34,9 +37,18 @@ def ping(req):
     req.log_params["x"] = 1
     clen = struct.unpack("i", os.urandom(4))[0] % 64 + 64
     randstr = util.Base64_16.bin_to_b64(os.urandom(clen))
-    return retstat.HTTP_OK, {"stat":"OK","randstr": randstr}, [(__info, __version)]
+    return retstat.HTTP_OK, {"stat": "OK", "randstr": randstr}, [(__info, __version)]
 
 
 def hello(req, str_info):
+    """
+    带参数请求例子
+
+    Args:
+        req     : Request
+        str_info: (str)
+    Returns:
+        httpstatus, Content, headers
+    """
     isinstance(req, Request)
-    return retstat.HTTP_OK, {"stat":"OK","str_info": str_info}, [(__info, __version)]
+    return retstat.HTTP_OK, {"stat": "OK", "str_info": str_info}, [(__info, __version)]
