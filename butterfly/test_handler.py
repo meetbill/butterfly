@@ -72,6 +72,10 @@ if __name__ == "__main__":
         try:
             @pysnooper.snoop(thread_info=True, depth=2)
             def main():
+                """
+                test main
+                此函数用于 pysnooper 输出 debug 信息
+                """
                 return func(*args)
 
             result = main()

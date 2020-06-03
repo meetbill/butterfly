@@ -21,6 +21,9 @@ class MysqlConnManager(local):
     """
 
     def __init__(self, host, port, db, usr, pwd):
+        """
+        Init
+        """
         self._host = host
         self._port = port
         self._db = db
@@ -37,9 +40,17 @@ class MysqlConnManager(local):
         return self._conn
 
     def _create_conn(self):
-        """create a connection"""
+        """
+        create a connection
+
+        游标类型有 Cursor、DictCursor、SSCursor、SSDictCursor 等 4 种类型，但是常用的是前面两种
+
+        Cursor 默认类型，查询返回 list，如果是默认 Cursor，那么在 cursorclass 中就不需要指定
+        DictCursor 类型，查询返回 dict，包括属性名
+        """
         if self._is_conn_vaild():
             return
+
         self._conn = pymysql.connect(autocommit=False,
                                      host=self._host,
                                      user=self._usr,
@@ -62,8 +73,14 @@ class MysqlConnManager(local):
 
 
 class MysqlExecutor(object):
+    """
+    Basic db actions
+    """
 
     def __init__(self, conn_mgr):
+        """
+        Init
+        """
         self._conn_mgr = conn_mgr
 
     def query(self, sql, how=0):

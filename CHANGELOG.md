@@ -4,13 +4,16 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.0.22] - 2020-06-03
+### Added
+- 增加 db 之 redis lib
+
 ## [1.0.21] - 2020-05-25
 ### Added
 - 增加 butterfly Logger, butterfly logger 日志中会记录 reqid, root logger 中 reqid 字段则以 16 个 "@" 替代
 
 ### Fixed
 - 修复自定义 logger 从 root Logger 继承后，reqid 不存在问题
-
 
 ## [1.0.20] - 2020-05-24
 ### Changed

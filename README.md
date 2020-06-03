@@ -2,7 +2,7 @@
 
 <div align=center><img src="https://github.com/meetbill/butterfly/blob/master/images/butterfly.png" width="350"/></div>
 
-蝴蝶（轻量化 Web 框架）如同蝴蝶一样，此框架小而美
+蝴蝶（轻量化 Web 框架）如同蝴蝶一样，此框架小而美, 简单可依赖
 
 ```
     __          __  __            ______

@@ -50,13 +50,14 @@ def make_int(val):
 class MaxConnectionsExceeded(ValueError): pass
 
 
-PoolConnection = namedtuple('PoolConnection', ('timestamp', 'connection',
-                                               'checked_out'))
+PoolConnection = namedtuple('PoolConnection', ('timestamp', 'connection', 'checked_out'))
 
 
 class PooledDatabase(object):
-    def __init__(self, database, max_connections=20, stale_timeout=None,
-                 timeout=None, **kwargs):
+    """
+    Pool Class
+    """
+    def __init__(self, database, max_connections=20, stale_timeout=None, timeout=None, **kwargs):
         self._max_connections = make_int(max_connections)
         self._stale_timeout = make_int(stale_timeout)
         self._wait_timeout = make_int(timeout)
@@ -79,8 +80,7 @@ class PooledDatabase(object):
 
         super(PooledDatabase, self).__init__(database, **kwargs)
 
-    def init(self, database, max_connections=None, stale_timeout=None,
-             timeout=None, **connect_kwargs):
+    def init(self, database, max_connections=None, stale_timeout=None, timeout=None, **connect_kwargs):
         super(PooledDatabase, self).init(database, **connect_kwargs)
         if max_connections is not None:
             self._max_connections = make_int(max_connections)
