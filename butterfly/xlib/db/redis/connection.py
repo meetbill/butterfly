@@ -9,12 +9,12 @@ import socket
 import threading
 import warnings
 
-from redis._compat import (xrange, imap, unicode, long,
+from xlib.db.redis._compat import (xrange, imap, unicode, long,
                            nativestr, basestring, iteritems,
                            LifoQueue, Empty, Full, urlparse, parse_qs,
                            recv, recv_into, unquote, BlockingIOError,
                            sendall, shutdown, ssl_wrap_socket)
-from redis.exceptions import (
+from xlib.db.redis.exceptions import (
     AuthenticationError,
     AuthenticationWrongNumberOfArgsError,
     BusyLoadingError,
@@ -30,7 +30,7 @@ from redis.exceptions import (
     ResponseError,
     TimeoutError,
 )
-from redis.utils import HIREDIS_AVAILABLE
+from xlib.db.redis.utils import HIREDIS_AVAILABLE
 
 try:
     import ssl

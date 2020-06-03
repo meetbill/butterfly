@@ -15,7 +15,7 @@ def from_url(url, db=None, **kwargs):
     Will attempt to extract the database id from the path url fragment, if
     none is provided.
     """
-    from redis.client import Redis
+    from xlib.db.redis.client import Redis
     return Redis.from_url(url, db, **kwargs)
 
 

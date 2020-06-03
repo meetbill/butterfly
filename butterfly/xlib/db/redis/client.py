@@ -7,12 +7,12 @@ import threading
 import time as mod_time
 import re
 import hashlib
-from redis._compat import (basestring, imap, iteritems, iterkeys,
+from xlib.db.redis._compat import (basestring, imap, iteritems, iterkeys,
                            itervalues, izip, long, nativestr, safe_unicode)
-from redis.connection import (ConnectionPool, UnixDomainSocketConnection,
+from xlib.db.redis.connection import (ConnectionPool, UnixDomainSocketConnection,
                               SSLConnection)
-from redis.lock import Lock
-from redis.exceptions import (
+from xlib.db.redis.lock import Lock
+from xlib.db.redis.exceptions import (
     ConnectionError,
     DataError,
     ExecAbortError,
