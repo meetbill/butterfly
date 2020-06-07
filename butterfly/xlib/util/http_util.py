@@ -323,6 +323,14 @@ if __name__ == "__main__":
     res = get("http://127.0.0.1:8585/x/ping", debug=True)
     if res.success():
         print(res.output())
+        assert isinstance(res.output(), dict)
+
+    print("[GET], no pargs---------------------------------, check status")
+    res = get("http://127.0.0.1:8585/x/ping", check_key="stat", check_value=0)
+    assert res.success() == False
+    res = get("http://127.0.0.1:8585/x/ping", check_key="stat", check_value="OK")
+    assert res.success() == True
+    print res.output()
 
     print("[GET], have pargs---------------------------------")
     get("http://127.0.0.1:8585/x/hello", data={"str_info": "meetbill"}, debug=True)

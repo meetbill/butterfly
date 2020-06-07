@@ -9,6 +9,9 @@ Changelog
 - http_util 默认会将 response json 转为 dict, 同时可以通过 check_key 和 check_value 两个参数来检查返回结果是否符合预期
 - shell_util 检查是否成功，由 success 属性修改为 success() 方法
 
+### Added
+单独测试框架中的某些函数时，可以通过 `source ./run.sh env` 进行设置 PYTHONPATH 环境变量
+
 ## [1.0.22] - 2020-06-03
 ### Added
 - 增加 db 之 redis lib
