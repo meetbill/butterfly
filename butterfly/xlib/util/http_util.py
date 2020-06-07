@@ -16,10 +16,10 @@
     RequestTool(
         'http://127.0.0.1:8585',
         data = {},
-        type = 'GET',                   # GET POST default: POST
-        is_decode_response = False,     # 是否将 json 转为 dict
-        check_key = None,               # 检查 key
-        check_value = None,             # 检查 value
+        type = 'GET',                   # (str) GET POST default: POST
+        is_decode_response = False,     # (bool) 是否将 json 转为 dict
+        check_key = None,               # (str) 检查 key
+        check_value = None,             # (str, int, list) 检查 value, 可以使用 list 提供多个预期 value
         referer = '',
         user_agent = '',
         cookie = None,                  # CookieJar, Cookie.S*Cookie, dict, string
@@ -242,7 +242,15 @@ class RequestTool(object):
                 check_key = kwargs.get('check_key', None)
                 check_value = kwargs.get('check_value', None)
                 if check_key is not None and check_value is not None:
-                    if self.content_dict[check_key] != check_value:
+                    # 检查 check_value 类型
+                    if isinstance(check_value, list):
+                        if self.content_dict[check_key] not in check_value:
+                            self.code = -1
+                            self.reason = "[response not match: {response_value} not in {check_value}]".format(
+                                response_value=self.content_dict[check_key],
+                                check_value=check_value
+                            )
+                    elif self.content_dict[check_key] != check_value:
                         self.code = -1
                         self.reason = "[response not match: {response_value} != {check_value}]".format(
                             response_value=self.content_dict[check_key],
