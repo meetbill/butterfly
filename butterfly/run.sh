@@ -90,8 +90,8 @@ function docker_start_procs()
 
 function set_env()
 {
-    export PYTHONPATH=$(PWD):$PYTHONPATH
-    export butterfly_dir=$(PWD)
+    export PYTHONPATH=$(pwd):$PYTHONPATH
+    export butterfly_dir=$(pwd)
     echo "Done"
 }
 
