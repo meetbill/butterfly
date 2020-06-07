@@ -88,6 +88,13 @@ function docker_start_procs()
     $EXEC $MAIN_FILE $PROC_SIG
 }
 
+function set_env()
+{
+    export PYTHONPATH=$(PWD):$PYTHONPATH
+    export butterfly_dir=$(PWD)
+    echo "Done"
+}
+
 MODE=${1}
 case ${MODE} in
     "start")
@@ -111,6 +118,10 @@ case ${MODE} in
         status_procs
         ;;
 
+    "env")
+        set_env
+        ;;
+
     *)
         # usage
         echo -e "\nUsage: $0 {start|stop|restart|status}"
@@ -118,7 +129,8 @@ case ${MODE} in
         echo -e ${WITE}" docker_start   "${NC}"Start $DISP_NAME processes for docker."
         echo -e ${WITE}" stop           "${NC}"Kill all $DISP_NAME processes."
         echo -e ${WITE}" restart        "${NC}"Kill all $DISP_NAME processes and start again."
-        echo -e ${WITE}" status         "${NC}"Show $DISP_NAME processes status.\n"
+        echo -e ${WITE}" status         "${NC}"Show $DISP_NAME processes status."
+        echo -e ${WITE}" env            "${NC}"set env(source ./run.sh env).\n"
         exit 1
         ;;
 esac

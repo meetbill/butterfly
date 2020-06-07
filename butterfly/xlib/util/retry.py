@@ -17,6 +17,8 @@
 
 被装饰函数可以按特定间隔进行下次重试
 
+本装饰器本质上是个带参数的装饰器
+
 base: https://github.com/seemethere/retry.it
 """
 import functools
@@ -45,7 +47,7 @@ class MaximumTimeoutExceeded(Exception):
     pass
 
 
-def retry(exceptions=(Exception,), interval=0, max_retries=10, success=None, timeout=-1):
+def retry(exceptions=None, interval=0, max_retries=10, success=None, timeout=-1):
     """Decorator to retry a function 'max_retries' amount of times
 
     :param tuple exceptions: Exceptions to be caught for retries
@@ -78,6 +80,9 @@ def retry(exceptions=(Exception,), interval=0, max_retries=10, success=None, tim
             foo(0)
             # Should raise MaximumRetriesExceeded
     """
+    if exceptions is None:
+        exceptions = (Exception,)
+
     if not exceptions and success is None:
         raise TypeError('`exceptions` and `success` parameter can not both be None')
 
@@ -88,6 +93,9 @@ def retry(exceptions=(Exception,), interval=0, max_retries=10, success=None, tim
 
     @decorator
     def wrapper(func, *args, **kwargs):
+        """
+        wrapper
+        """
         run_func = functools.partial(func, *args, **kwargs)
         logger = logging.getLogger(func.__module__)
 

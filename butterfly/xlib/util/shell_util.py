@@ -16,8 +16,8 @@
     Example1 程序调用:
         from xlib.util import shell
         result = shell.run("echo hello world")
-        if not result.success:
-            print result.output
+        if not result.success():
+            print result.output()
 
     Example2 直接执行:
         python shell.py run "echo xx"   # 执行成功命令
@@ -54,12 +54,12 @@ class Result(object):
         """
         self.command = command or ''
         self.retcode = retcode
-        self.output = output
-        self.output_len = len(output)
-        self.success = False
+        self._output = output
+        self._output_len = len(output)
+        self._success = False
         self.cost = cost
         if retcode == 0:
-            self.success = True
+            self._success = True
             self.err_msg = "OK"
         else:
             self.err_msg = output
@@ -72,8 +72,8 @@ class Result(object):
         """
         return "[command]:{command} [success]:{success} [output]:{output}".format(
             command=self.command,
-            success=self.success,
-            output=self.output
+            success=self._success,
+            output=self._output
         )
 
     def _logger(self):
@@ -83,10 +83,10 @@ class Result(object):
         f = inspect.currentframe().f_back.f_back
         file_name, lineno, func_name = self._get_backframe_info(f)
 
-        if self.output_len > 50:
-            output_log = self.output[:50].replace("\n", ">>>") + "... :("
+        if self._output_len > 50:
+            output_log = self._output[:50].replace("\n", ">>>") + "... :("
         else:
-            output_log = self.output.replace("\n", ">>>") + ":)"
+            output_log = self._output.replace("\n", ">>>") + ":)"
 
         log_msg = ("[file={file_name}:{func_name}:{lineno} "
                    "type=shell "
@@ -102,14 +102,14 @@ class Result(object):
                        file_name=file_name, func_name=func_name, lineno=lineno,
                        req_path=self.command,
                        cost=self.cost,
-                       is_success=self.success,
+                       is_success=self._success,
                        err_no=self.retcode,
                        err_msg=self.err_msg,
-                       res_len=self.output_len,
+                       res_len=self._output_len,
                        res_data=output_log,
                    ))
 
-        if self.success:
+        if self._success:
             log.info(log_msg)
         else:
             log.error(log_msg)
@@ -119,6 +119,18 @@ class Result(object):
         get backframe info
         """
         return f.f_back.f_code.co_filename, f.f_back.f_lineno, f.f_back.f_code.co_name
+
+    def success(self):
+        """
+        检查执行是否成功
+        """
+        return self._success
+
+    def output(self):
+        """
+        返回输出结果
+        """
+        return self._output
 
 
 def run(command, timeout=10):

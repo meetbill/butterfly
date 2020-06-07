@@ -2,7 +2,7 @@
 
 <div align=center><img src="https://github.com/meetbill/butterfly/blob/master/images/butterfly.png" width="350"/></div>
 
-蝴蝶（轻量化 Web 框架）如同蝴蝶一样，此框架小而美, 简单可依赖
+蝴蝶（轻量化 Web 框架）如同蝴蝶一样，此框架小而美，简单可依赖
 
 ```
     __          __  __            ______
@@ -95,15 +95,15 @@ $ curl "http://127.0.0.1:8585/x/hello?str_info=meetbill"
 ```
 ###  2.2 五分钟体验之编写 handler （预计 3 分钟）
 
-> 创建 app （handlers 目录下的子目录均为 app）,直接拷贝个现有的 app 即可
+> 创建 app （handlers 目录下的子目录均为 app）, 直接拷贝个现有的 app 即可
 ```
 $ cp -rf handlers/x handlers/test_app
 ```
-> 新增 handler (app 目录下的`__init__.py` 中编写 handler 函数)
+> 新增 handler (app 目录下的`__init__.py` 中编写 handler 函数）
 ```
 $ vim handlers/test_app/__init__.py
 
-新增如下内容:
+新增如下内容：
 
 # ------------------------------ handler
 @funcattr.api
@@ -291,7 +291,7 @@ controller 函数是第一个参数为 "req" 的非私有函数
 > 厂内线上项目 ([接口认证方案](https://github.com/meetbill/butterfly/wiki/butterfly_cas)), 使用前后端分离 + 单点登录
 >  * 整体方案的后端接口认证使用 nginx auth_request 进行验证
 
-如下是 butterfly-fe(前端) + butterfly-auth(基于 butterfly 框架的后端接口认证) + app-backend(butterfly app) + butterfly-nginx(web 服务) 请求流程
+如下是 butterfly-fe（前端） + butterfly-auth（基于 butterfly 框架的后端接口认证） + app-backend(butterfly app) + butterfly-nginx(web 服务） 请求流程
 ```
                +--------------------------------------------------------------------------+
                |                          butterfly-nginx                                 |

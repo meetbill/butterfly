@@ -1,3 +1,4 @@
+# coding=utf8
 from datetime import datetime
 from threading import Thread
 from time import sleep
@@ -51,10 +52,11 @@ def test_interval():
     assert elapsed.seconds >= 5
 
 
-def test_invalid_parameters():
-    """The exceptions and success parameter can not both be None"""
-    with pytest.raises(TypeError):
-        retry.retry(exceptions=None, success=None)(foo)
+# 设置了 exceptions 默认值，此 test 目前无效
+#def test_invalid_parameters():
+#    """The exceptions and success parameter can not both be None"""
+#    with pytest.raises(TypeError):
+#        retry.retry(exceptions=None, success=None)(foo)
 
 
 def test_unsuccessful_timeout():

@@ -12,14 +12,18 @@
     get(url, **kwargs)
     post(url, **kwargs)
     download(url, **kwargs)
+
     RequestTool(
-        'http://jeeker.net',
+        'http://127.0.0.1:8585',
         data = {},
-        type = 'GET',               # GET POST default:GET
+        type = 'GET',                   # GET POST default: POST
+        is_decode_response = False,     # 是否将 json 转为 dict
+        check_key = None,               # 检查 key
+        check_value = None,             # 检查 value
         referer = '',
         user_agent = '',
-        cookie = None,              # CookieJar, Cookie.S*Cookie, dict, string
-        auth = {'usr':'', 'pwd':''}, # Only Basic Authorization
+        cookie = None,                  # CookieJar, Cookie.S*Cookie, dict, string
+        auth = {'usr':'', 'pwd':''},    # Only Basic Authorization
         debug = False
         )
 """
@@ -71,6 +75,7 @@ def get(url, **kwargs):
     http get request
     """
     kwargs.update(type='GET')
+    kwargs.update(is_decode_response=True)
     return RequestTool(url, **kwargs)
 
 
@@ -80,6 +85,7 @@ def post_form(url, **kwargs):
     """
     kwargs.update(type='POST')
     kwargs.update(post_type='form')
+    kwargs.update(is_decode_response=True)
     return RequestTool(url, **kwargs)
 
 
@@ -89,6 +95,7 @@ def post_json(url, **kwargs):
     """
     kwargs.update(type='POST')
     kwargs.update(post_type='json')
+    kwargs.update(is_decode_response=True)
     return RequestTool(url, **kwargs)
 
 
@@ -121,7 +128,14 @@ def download(url, local, **kwargs):
 
 
 class RequestTool(object):
+    """
+    Request Class
+    """
+
     def __init__(self, url, **kwargs):
+        """
+        Request init
+        """
         self.request = None
         self.response = None
         self.code = -1
@@ -129,6 +143,10 @@ class RequestTool(object):
         self.cookieJar = None
         self.reason = ''
         self.content = ''
+        self.content_dict = {}
+
+        # 是否将服务端返回结果从 json 转为 dict
+        self.is_decode_response = kwargs.get('is_decode_response', False)
 
         data = kwargs.get('data', None)
         # 当请求是 GET 请求，同时传了 data 字典的话，post_type 默认是 form，会进行 urlencode，并拼接到请求 URL 上
@@ -216,6 +234,20 @@ class RequestTool(object):
             self.header = self.response.info().dict
             self.cookieJar = cj
             self.content = self.response.read()
+            # 进行将 response 转为 dict
+            if self.is_decode_response:
+                self.content_dict = json.loads(self.content)
+
+                # 检查 response 内容是否符合预期
+                check_key = kwargs.get('check_key', None)
+                check_value = kwargs.get('check_value', None)
+                if check_key is not None and check_value is not None:
+                    if self.content_dict[check_key] != check_value:
+                        self.code = -1
+                        self.reason = "[response not match: {response_value} != {check_value}]".format(
+                            response_value=self.content_dict[check_key],
+                            check_value=check_value
+                        )
         except HTTPError as e:
             self.code = e.code
             self.reason = '{}'.format(e)
@@ -229,8 +261,8 @@ class RequestTool(object):
         seconds_passed = time.time() - t_beginning
         cost_str = "%.6f" % seconds_passed
 
+        # 打印日志
         f = inspect.currentframe().f_back
-        #f = inspect.currentframe().f_back.f_back
         file_name, lineno, func_name = self._get_backframe_info(f)
 
         log_msg = ("[file={file_name}:{func_name}:{lineno} "
@@ -269,10 +301,19 @@ class RequestTool(object):
         return f.f_back.f_code.co_filename, f.f_back.f_lineno, f.f_back.f_code.co_name
 
     def success(self):
+        """
+        check http code
+        """
         return 200 <= self.code < 300
 
     def output(self):
-        return self.content
+        """
+        return content
+        """
+        if self.is_decode_response:
+            return self.content_dict
+        else:
+            return self.content
 
 
 if __name__ == "__main__":
