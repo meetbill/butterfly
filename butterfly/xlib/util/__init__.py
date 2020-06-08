@@ -6,6 +6,7 @@ Butterfly 工具 module
 import os
 import urlparse
 import base64
+import inspect
 
 
 def is_digit_vars(variables):
@@ -77,3 +78,22 @@ def spliturl(url):
     if r.fragment:
         path += ("#" + r.fragment)
     return host, port, path
+
+
+def msg(msg_str):
+    """
+    Args:
+        msg_str: (str)
+    Returns:
+        cur_info
+    """
+
+    func = inspect.currentframe().f_back
+    filename = func.f_code.co_filename
+    lineno = func.f_lineno
+    cur_info = "[line={filename}:{lineno} msg={msg_str}]".format(filename=filename, lineno=lineno, msg_str=msg_str)
+    return cur_info
+
+
+if __name__ == "__main__":
+    print msg("ceshi info")
