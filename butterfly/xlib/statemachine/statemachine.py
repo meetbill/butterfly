@@ -100,6 +100,9 @@ class Transition(object):
             return self
 
     def _verify_can_run(self, machine):
+        """
+        检查当前状态是否和动作的初始状态一致
+        """
         transition = self._can_run(machine)
         if not transition:
             raise TransitionNotAllowed(self, machine.current_state)
@@ -397,6 +400,15 @@ class BaseStateMachine(object):
         ]
 
     def _activate(self, transition, *args, **kwargs):
+        """
+        Args:
+            transition: CallableInstance
+        举个栗子:
+            绿灯转变为黄灯栗子, 会执行 3 个 callback 方法
+            -------------------------- green    # 先执行   on_cycle         (on_action)
+            exit green                          # 然后执行 on_exit_green    (on_exit_state)
+            enter yellow                        # 最后执行 on_enter_yellow  (on_enter_state)
+        """
         bounded_on_event = getattr(self, 'on_{}'.format(transition.identifier), None)
         on_event = transition.on_execute
 
@@ -441,6 +453,9 @@ class BaseStateMachine(object):
         return transition
 
     def run(self, transition_identifier, *args, **kwargs):
+        """
+        触发动作
+        """
         transition = self.get_transition(transition_identifier)
         return transition(*args, **kwargs)
 

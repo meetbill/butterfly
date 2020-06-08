@@ -48,9 +48,17 @@ class InvalidDestinationState(InvalidDefinition):
 
 
 class TransitionNotAllowed(StateMachineError):
-    "The transition can't run from the current state."
+    """
+    The transition can't run from the current state.
+
+    当触发 action 时，初始状态与 action 初始状态不一致时，则抛出异常
+    """
 
     def __init__(self, transition, state):
+        """
+        transition: CallableInstance
+        state: State
+        """
         self.transition = transition
         self.state = state
         msg = _("Can't {} when in {}.").format(
@@ -58,6 +66,21 @@ class TransitionNotAllowed(StateMachineError):
             self.state.name
         )
         super(TransitionNotAllowed, self).__init__(msg)
+
+
+class TransitionNotAllowedOnExitCheckFaild(StateMachineError):
+    """
+    The transition can't run from the current state.
+
+    当触发 action 时，on_exit_state 检查失败时，抛出此异常
+    """
+
+    def __init__(self, msg):
+        """
+        msg: (str)
+        """
+        msg = _(msg)
+        super(TransitionNotAllowedOnExitCheckFaild, self).__init__(msg)
 
 
 class MultipleStatesFound(StateMachineError):
