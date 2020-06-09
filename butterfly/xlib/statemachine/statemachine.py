@@ -204,6 +204,10 @@ class State(object):
         self.transitions = []  # type: List[Transition]
 
     def __repr__(self):
+        """
+        __repr__() 方法是类的实例化对象用来做 “自我介绍” 的方法
+        默认情况下，__repr__() 会返回当前对象的 “类名+object at+内存地址”
+        """
         return "{}({!r}, identifier={!r}, value={!r}, initial={!r})".format(
             type(self).__name__, self.name, self.identifier, self.value, self.initial
         )
@@ -322,6 +326,9 @@ class BaseStateMachine(object):
         self.check()
 
     def __repr__(self):
+        """
+        在 on_{action}, on_exit_{state}, on_enter_{state} 中 print self 时默认输出以下内容
+        """
         return "{}(model={!r}, state_field={!r}, current_state={!r})".format(
             type(self).__name__, self.model, self.state_field,
             self.current_state.identifier,
