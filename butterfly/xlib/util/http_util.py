@@ -276,7 +276,7 @@ class RequestTool(object):
         log_msg = ("[file={file_name}:{func_name}:{lineno} "
                    "type=http_{method} "
                    "req_path={req_path} "
-                   "req_data=None "
+                   "req_data={req_data} "
                    "cost={cost} "
                    "is_success={is_success} "
                    "err_no={err_no} "
