@@ -140,7 +140,7 @@ def notify_module_loaded(module):
 # interest. When a module of interest is imported, then any post import
 # hooks which are registered will be invoked.
 
-class _ImportHookLoader:
+class _ImportHookLoader(object):
 
     def load_module(self, fullname):
         module = sys.modules[fullname]
@@ -148,7 +148,8 @@ class _ImportHookLoader:
 
         return module
 
-class _ImportHookChainedLoader:
+
+class _ImportHookChainedLoader(object):
 
     def __init__(self, loader):
         self.loader = loader
@@ -159,7 +160,8 @@ class _ImportHookChainedLoader:
 
         return module
 
-class ImportHookFinder:
+
+class ImportHookFinder(object):
 
     def __init__(self):
         self.in_progress = {}

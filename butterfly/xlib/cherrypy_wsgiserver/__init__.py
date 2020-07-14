@@ -1643,19 +1643,20 @@ class HTTPServer(object):
             'Worker Threads': {},
             }
         logging.statistics["CherryPy HTTPServer %d" % id(self)] = self.stats
-    
+
     def runtime(self):
         if self._start_time is None:
             return self._run_time
         else:
             return self._run_time + (time.time() - self._start_time)
-    
+
     def __str__(self):
         return "%s.%s(%r)" % (self.__module__, self.__class__.__name__,
                               self.bind_addr)
-    
+
     def _get_bind_addr(self):
         return self._bind_addr
+
     def _set_bind_addr(self, value):
         if isinstance(value, tuple) and value[0] in ('', None):
             # Despite the socket module docs, using '' does not
@@ -1674,16 +1675,16 @@ class HTTPServer(object):
         self._bind_addr = value
     bind_addr = property(_get_bind_addr, _set_bind_addr,
         doc="""The interface on which to listen for connections.
-        
+
         For TCP sockets, a (host, port) tuple. Host values may be any IPv4
         or IPv6 address, or any valid hostname. The string 'localhost' is a
         synonym for '127.0.0.1' (or '::1', if your hosts file prefers IPv6).
         The string '0.0.0.0' is a special IPv4 entry meaning "any active
         interface" (INADDR_ANY), and '::' is the similar IN6ADDR_ANY for
         IPv6. The empty string or None are not allowed.
-        
+
         For UNIX sockets, supply the filename as a string.""")
-    
+
     def start(self):
         """Run the server forever."""
         # We don't have to trap KeyboardInterrupt or SystemExit here,
@@ -1902,9 +1903,10 @@ class HTTPServer(object):
                 # See http://www.cherrypy.org/ticket/686.
                 return
             raise
-    
+
     def _get_interrupt(self):
         return self._interrupt
+
     def _set_interrupt(self, interrupt):
         self._interrupt = True
         self.stop()
@@ -1912,14 +1914,14 @@ class HTTPServer(object):
     interrupt = property(_get_interrupt, _set_interrupt,
                          doc="Set this to an Exception instance to "
                              "interrupt the server.")
-    
+
     def stop(self):
         """Gracefully shutdown a server that is serving forever."""
         self.ready = False
         if self._start_time is not None:
             self._run_time += (time.time() - self._start_time)
         self._start_time = None
-        
+
         sock = getattr(self, "socket", None)
         if sock:
             if not isinstance(self.bind_addr, basestring):
@@ -2014,36 +2016,37 @@ class CherryPyWSGIServer(HTTPServer):
         self._perfork = perfork
         self._after_perfork = after_perfork
         self._wsgiapp_getter = wsgiapp_getter
-        
+
         self.bind_addr = bind_addr
         if not server_name:
             server_name = socket.gethostname()
         self.server_name = server_name
         self.request_queue_size = request_queue_size
-        
+
         self.timeout = timeout
         self.shutdown_timeout = shutdown_timeout
         self.clear_stats()
-    
+
     def _get_numthreads(self):
         return self.requests.min
+
     def _set_numthreads(self, value):
         self.requests.min = value
     numthreads = property(_get_numthreads, _set_numthreads)
 
 
 class WSGIGateway(Gateway):
-    
+
     def __init__(self, req):
         self.req = req
         self.started_response = False
         self.env = self.get_environ()
         self.remaining_bytes_out = None
-    
+
     def get_environ(self):
         """Return a new environ dict targeting the given wsgi.version"""
         raise NotImplemented
-    
+
     def respond(self):
         response = self.req.server.wsgi_app(self.env, self.start_response)
         try:
@@ -2061,7 +2064,7 @@ class WSGIGateway(Gateway):
         finally:
             if hasattr(response, "close"):
                 response.close()
-    
+
     def start_response(self, status, headers, exc_info = None):
         """WSGI callable to begin the HTTP response."""
         # "The application may call start_response more than once,
@@ -2070,7 +2073,7 @@ class WSGIGateway(Gateway):
             raise AssertionError("WSGI start_response called a second "
                                  "time with no exc_info.")
         self.started_response = True
-        
+
         # "if exc_info is provided, and the HTTP headers have already been
         # sent, start_response must raise an error, and should raise the
         # exc_info tuple."
@@ -2079,7 +2082,7 @@ class WSGIGateway(Gateway):
                 raise exc_info[0], exc_info[1], exc_info[2]
             finally:
                 exc_info = None
-        
+
         self.req.status = status
         for k, v in headers:
             if not isinstance(k, str):
@@ -2089,18 +2092,18 @@ class WSGIGateway(Gateway):
             if k.lower() == 'content-length':
                 self.remaining_bytes_out = int(v)
         self.req.outheaders.extend(headers)
-        
+
         return self.write
-    
+
     def write(self, chunk):
         """WSGI callable to write unbuffered data to the client.
-        
+
         This method is also used internally by start_response (to write
         data from the iterable returned by the WSGI application).
         """
         if not self.started_response:
             raise AssertionError("WSGI write called before start_response.")
-        
+
         chunklen = len(chunk)
         rbo = self.remaining_bytes_out
         if rbo is not None and chunklen > rbo:

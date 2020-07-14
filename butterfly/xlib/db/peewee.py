@@ -242,9 +242,18 @@ class attrdict(dict):
             return self[attr]
         except KeyError:
             raise AttributeError(attr)
-    def __setattr__(self, attr, value): self[attr] = value
-    def __iadd__(self, rhs): self.update(rhs); return self
-    def __add__(self, rhs): d = attrdict(self); d.update(rhs); return d
+
+    def __setattr__(self, attr, value):
+        self[attr] = value
+
+    def __iadd__(self, rhs):
+        self.update(rhs)
+        return self
+
+    def __add__(self, rhs):
+        d = attrdict(self)
+        d.update(rhs)
+        return d
 
 SENTINEL = object()
 
@@ -5193,7 +5202,7 @@ class ManyToManyField(MetaField):
         lhs, rhs = self.get_models()
         tables = [model._meta.table_name for model in (lhs, rhs)]
 
-        class Meta:
+        class Meta(object):
             database = self.model._meta.database
             schema = self.model._meta.schema
             table_name = '%s_%s_through' % tuple(tables)

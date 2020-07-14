@@ -115,7 +115,7 @@ class SSL_fileobject(wsgiserver.CP_fileobject):
                                *args, **kwargs)
 
 
-class SSLConnection:
+class SSLConnection(object):
     """A thread-safe wrapper for an SSL.Connection.
     
     ``*args``: the arguments to create the wrapped ``SSL.Connection(*args)``.

@@ -27,7 +27,7 @@ class Charset(object):
         return self.id == 63
 
 
-class Charsets:
+class Charsets(object):
     def __init__(self):
         self._by_id = {}
         self._by_name = {}
