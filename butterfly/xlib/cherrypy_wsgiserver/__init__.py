@@ -613,7 +613,7 @@ class HTTPRequest(object):
         # Therefore, "/this%2Fpath" becomes "/this%2Fpath", not "/this/path".
         try:
             atoms = [unquote(x) for x in quoted_slash.split(path)]
-        except ValueError, ex:
+        except ValueError as ex:
             self.simple_response("400 Bad Request", ex.args[0])
             return
         path = "%2F".join(atoms)
@@ -649,7 +649,7 @@ class HTTPRequest(object):
         # then all the http headers
         try:
             read_headers(self.rfile, self.inheaders)
-        except ValueError, ex:
+        except ValueError as ex:
             self.simple_response("400 Bad Request", ex.args[0])
             return False
         
@@ -713,7 +713,7 @@ class HTTPRequest(object):
             msg = self.server.protocol + " 100 Continue\r\n\r\n"
             try:
                 self.conn.wfile.sendall(msg)
-            except socket.error, x:
+            except socket.error as x:
                 if x.args[0] not in socket_errors_to_ignore:
                     raise
         return True
@@ -809,7 +809,7 @@ class HTTPRequest(object):
         
         try:
             self.conn.wfile.sendall("".join(buf))
-        except socket.error, x:
+        except socket.error as x:
             if x.args[0] not in socket_errors_to_ignore:
                 raise
     
@@ -912,7 +912,7 @@ class CP_fileobject(socket._fileobject):
             try:
                 bytes_sent = self.send(data)
                 data = data[bytes_sent:]
-            except socket.error, e:
+            except socket.error as e:
                 if e.args[0] not in socket_errors_nonblocking:
                     raise
 
@@ -933,7 +933,7 @@ class CP_fileobject(socket._fileobject):
                 data = self._sock.recv(size)
                 self.bytes_read += len(data)
                 return data
-            except socket.error, e:
+            except socket.error as e:
                 if (e.args[0] not in socket_errors_nonblocking
                     and e.args[0] not in socket_error_eintr):
                     raise
@@ -1245,7 +1245,7 @@ class HTTPConnection(object):
                 req.respond()
                 if req.close_connection:
                     return
-        except socket.error, e:
+        except socket.error as e:
             errnum = e.args[0]
             # sadly SSL sockets return a different (longer) time out string
             if errnum == 'timed out' or errnum == 'The read operation timed out':
@@ -1385,7 +1385,7 @@ class WorkerThread(threading.Thread):
                         self.work_time += time.time() - self.start_time
                         self.start_time = None
                     self.conn = None
-        except (KeyboardInterrupt, SystemExit), exc:
+        except (KeyboardInterrupt, SystemExit) as exc:
             self.server.interrupt = exc
 
 
@@ -1486,7 +1486,7 @@ class ThreadPool(object):
                 except (AssertionError,
                         # Ignore repeated Ctrl-C.
                         # See http://www.cherrypy.org/ticket/691.
-                        KeyboardInterrupt), exc1:
+                        KeyboardInterrupt) as exc1:
                     pass
     
     def _get_qsize(self):
@@ -1849,7 +1849,7 @@ class HTTPServer(object):
                     wfile = CP_fileobject(s, "wb", DEFAULT_BUFFER_SIZE)
                     try:
                         wfile.sendall("".join(buf))
-                    except socket.error, x:
+                    except socket.error as x:
                         if x.args[0] not in socket_errors_to_ignore:
                             raise
                     return
@@ -1884,7 +1884,7 @@ class HTTPServer(object):
             # notice keyboard interrupts on Win32, which don't interrupt
             # accept() by default
             return
-        except socket.error, x:
+        except socket.error as x:
             if self.stats['Enabled']:
                 self.stats['Socket Errors'] += 1
             if x.args[0] in socket_error_eintr:
@@ -1926,7 +1926,7 @@ class HTTPServer(object):
                 # Touch our own socket to make accept() return immediately.
                 try:
                     host, port = sock.getsockname()[:2]
-                except socket.error, x:
+                except socket.error as x:
                     if x.args[0] not in socket_errors_to_ignore:
                         # Changed to use error code and not message
                         # See http://www.cherrypy.org/ticket/860.
