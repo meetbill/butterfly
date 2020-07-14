@@ -9,11 +9,11 @@ http://self-issued.info/docs/draft-jones-json-web-token-01.html
 """
 
 
-__title__ = 'pyjwt'
-__version__ = '1.7.1'
-__author__ = 'José Padilla'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2015-2018 José Padilla'
+__title = 'pyjwt'
+__version = '1.7.1'
+__author = 'José Padilla'
+__license = 'MIT'
+__copyright = 'Copyright 2015-2018 José Padilla'
 
 
 from .api_jwt import (

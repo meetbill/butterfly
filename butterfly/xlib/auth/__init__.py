@@ -16,7 +16,7 @@ import uuid
 import traceback
 import base64
 
-import jwt
+from xlib.auth import jwt
 from conf import config
 
 
@@ -153,8 +153,11 @@ def is_token_valid(req):
         return Result(retcode=401, message=traceback.format_exc())
 
 if __name__ == "__main__":
+    # 根据用户名生成用户 token
     token = gen_token("meetbill")
     print "gen_token:{token}".format(token=token)
+
+    # 检验生成的 token 是否有效
     import sys
     sys.path.append("..")
     import httpgateway
