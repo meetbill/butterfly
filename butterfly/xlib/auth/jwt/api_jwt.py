@@ -1,3 +1,11 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: api_jwt.py
+# Description:
+    json web token 主要类文件
+
+"""
 import json
 import warnings
 from calendar import timegm
@@ -20,6 +28,9 @@ from .utils import merge_dict
 
 
 class PyJWT(PyJWS):
+    """
+    JWT 类
+    """
     header_type = 'JWT'
 
     @staticmethod
