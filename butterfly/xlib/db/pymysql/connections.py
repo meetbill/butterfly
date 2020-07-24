@@ -90,7 +90,7 @@ TEXT_TYPES = {
 
 DEFAULT_CHARSET = 'utf8mb4'
 
-MAX_PACKET_LEN = 2**24-1
+MAX_PACKET_LEN = 2 ** 24 - 1
 
 
 def pack_int24(n):
@@ -188,7 +188,7 @@ class Connection(object):
                  connect_timeout=10, ssl=None, read_default_group=None,
                  compress=None, named_pipe=None,
                  autocommit=False, db=None, passwd=None, local_infile=False,
-                 max_allowed_packet=16*1024*1024, defer_connect=False,
+                 max_allowed_packet=16 * 1024 * 1024, defer_connect=False,
                  auth_plugin_map=None, read_timeout=None, write_timeout=None,
                  bind_address=None, binary_prefix=False, program_name=None,
                  server_public_key=None):
@@ -767,7 +767,7 @@ class Connection(object):
         # tiny optimization: build first packet manually instead of
         # calling self..write_packet()
         prelude = struct.pack('<iB', packet_size, command)
-        packet = prelude + sql[:packet_size-1]
+        packet = prelude + sql[:packet_size - 1]
         self._write_bytes(packet)
         if DEBUG: dump_packet(packet)
         self._next_seq_id = 1
@@ -775,7 +775,7 @@ class Connection(object):
         if packet_size < MAX_PACKET_LEN:
             return
 
-        sql = sql[packet_size-1:]
+        sql = sql[packet_size - 1:]
         while True:
             packet_size = min(MAX_PACKET_LEN, len(sql))
             self.write_packet(sql[:packet_size])

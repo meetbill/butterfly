@@ -192,38 +192,49 @@ def read_headers(rfile, hdict=None):
             if existing:
                 v = ", ".join((existing, v))
         hdict[hname] = v
-    
+
     return hdict
 
 
 class MaxSizeExceeded(Exception):
+    """
+    Request Entity/URI Too Large
+
+    object ----------------+
+                           |
+    exceptions.BaseException --+
+                               |
+    exceptions.Exception ----------+
+                                   |
+                                   MaxSizeExceeded
+    """
     pass
 
 class SizeCheckWrapper(object):
     """Wraps a file-like object, raising MaxSizeExceeded if too large."""
-    
+
     def __init__(self, rfile, maxlen):
         self.rfile = rfile
         self.maxlen = maxlen
         self.bytes_read = 0
-    
+
     def _check_length(self):
         if self.maxlen and self.bytes_read > self.maxlen:
             raise MaxSizeExceeded()
-    
+
     def read(self, size=None):
         data = self.rfile.read(size)
         self.bytes_read += len(data)
         self._check_length()
         return data
-    
+
     def readline(self, size=None):
         if size is not None:
             data = self.rfile.readline(size)
             self.bytes_read += len(data)
             self._check_length()
             return data
-        
+
         # User didn't specify a size ...
         # We read the line in chunks to make sure it's not a 100MB line !
         res = []
@@ -235,7 +246,7 @@ class SizeCheckWrapper(object):
             # See http://www.cherrypy.org/ticket/421
             if len(data) < 256 or data[-1:] == "\n":
                 return ''.join(res)
-    
+
     def readlines(self, sizehint=0):
         # Shamelessly stolen from StringIO
         total = 0
@@ -248,13 +259,13 @@ class SizeCheckWrapper(object):
                 break
             line = self.readline()
         return lines
-    
+
     def close(self):
         self.rfile.close()
-    
+
     def __iter__(self):
         return self
-    
+
     def next(self):
         data = self.rfile.next()
         self.bytes_read += len(data)
@@ -2065,7 +2076,7 @@ class WSGIGateway(Gateway):
             if hasattr(response, "close"):
                 response.close()
 
-    def start_response(self, status, headers, exc_info = None):
+    def start_response(self, status, headers, exc_info=None):
         """WSGI callable to begin the HTTP response."""
         # "The application may call start_response more than once,
         # if and only if the exc_info argument is provided."
@@ -2229,7 +2240,7 @@ class WSGIPathInfoDispatcher(object):
             pass
         
         # Sort the apps by len(path), descending
-        apps.sort(cmp=lambda x,y: cmp(len(x[0]), len(y[0])))
+        apps.sort(cmp=lambda x, y: cmp(len(x[0]), len(y[0])))
         apps.reverse()
         
         # The path_prefix strings must start, but not end, with a slash.
