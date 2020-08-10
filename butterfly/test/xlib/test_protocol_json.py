@@ -9,6 +9,8 @@
 
 """
 from conf import config
+from test.xlib import util
+
 
 def test_demo_test1(init_data):
     """
@@ -21,6 +23,7 @@ def test_demo_test1(init_data):
             }
 
     status, headers, content = init_data.process(environ)
+    header_dict = util.get_header_dict(headers)
     assert status == "200 OK"
     assert content == ('{"stat": "ERR_BAD_PARAMS"}',)
 

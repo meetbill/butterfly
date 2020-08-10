@@ -19,6 +19,7 @@ import xlib
 import xlib.uuid64
 import xlib.logger
 
+
 def parse_cookie(cookie):
     """
     Return a dictionary parsed from a `Cookie:` header string.
@@ -45,25 +46,25 @@ class Request(object):
     Used to package a request
 
     Attributes:
-        reqid: (String)
-        wsgienv: (Dict)
-        ip: (String)
-        log_params: (Dict)
-        log_stat: (Dict)
-        log_ret: (Dict)
-        funcname: (String)
-        error_str: (String)
-        init_tm: (Float)time.time()
-        _tm: (Float)
+        reqid       : (String)
+        wsgienv     : (Dict)
+        ip          : (String)
+        log_params  : (Dict)
+        log_stat    : (Dict)
+        log_ret     : (Dict)
+        funcname    : (String)
+        error_str   : (String)
+        init_tm     : (Float) time.time()
+        _tm         : (Float)
 
     """
 
     def __init__(self, reqid, wsgienv, ip):
         """
         Args:
-            reqid : (String)
+            reqid   : (String)
             wsgienv : (Dict) wsgi env
-            ip : (String)
+            ip      : (String)
         """
         self.reqid = reqid
         self.wsgienv = wsgienv
@@ -83,7 +84,7 @@ class Request(object):
         """butterfly req log
         主要用于记录异常日志以及其他类型日志，日志中会记录 reqid
         Args:
-            logger: logger Instance
+            logger : logger Instance
             logline: log msg
         Examples:
             req.log(self._errlog, "Json dump failed\n%s" % traceback.format_exc())
@@ -193,7 +194,7 @@ class WSGIGateway(object):
     def _mk_err_ret(self, req, err_code, err_msg, log_msg):
         """error return
         Args:
-            req: req
+            req     : (Object) req
             err_code: (Int) err_code
             err_msg : (String) err msg info
             log_msg : (String) log msg info
@@ -315,9 +316,9 @@ def httpget2dict(qs):
     解析 http get 请求参数
 
     Args:
-        qs: req.wsgienv["QUERY_STRING"]
+        qs : (String) req.wsgienv["QUERY_STRING"]
     Returns:
-        ret: (dict) HTTP get 请求参数字典
+        ret: (Dict) HTTP get 请求参数字典
     Examples:
         params = httpget2dict(req.wsgienv.get("QUERY_STRING"))
     """

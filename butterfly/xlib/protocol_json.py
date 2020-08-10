@@ -5,7 +5,25 @@
 
 # File Name: protocol_json.py
 # Description:
-    Used to modify handler
+    json Response 封装, 封装 handler 的返回结果
+
+    + Protocol json--------------------------------+
+    |+ handler -----------------------------------+|
+    ||file  :/handlers/{app}/__init__.py:{handler}||
+    ||return:(stat_str, data_dict, headers_list)  ||
+    |+--------------------------------------------+|
+    | return:httpstatus, headers, content          |
+    +----------------------------------------------+
+
+    HTTP 请求方法
+
+    HTTP 响应状态码及 Content-Type:
+        当需要序列化为 JSON 时, HTTP 状态码均为 200, 响应内容类型均为 ("Content-Type", "application/json"):
+            检查参数错误时，返回 {"stat": "ERR_BAD_PARAMS"}
+            程序执行异常时，返回 {"stat": "ERR_SERVER_EXCEPTION"}
+        当不进行序列化时, HTTP 状态码视情况而定，响应内容类型均为 ("Content-Type", "text/html"):
+            检查参数错误时，HTTP 状态码为 400
+            程序执行异常时，HTTP 状态码为 500
 """
 
 import traceback
@@ -19,17 +37,29 @@ from xlib.util import json_util
 
 
 class Protocol(object):
-    """Returns http Request
-    Args:
-        _func          : (String) func name
-        _errlog        : (Object) err log logger
-        _code_err      : (String) retstat.ERR_SERVER_EXCEPTION
-        _code_badparam : (String) retstat.ERR_BAD_PARAMS
-        _is_parse_post : _is_encode_response:
+    """HTTP Response
+    Attributes:
+        _func               : (Object) func
+        _errlog             : (Object) err log logger
+        _code_err           : (String) retstat.ERR_SERVER_EXCEPTION
+                            : 需要序列化为 JSON 时使用
+        _code_badparam      : (String) retstat.ERR_BAD_PARAMS
+                            : 需要序列化为 JSON 时使用
+        _is_parse_post      : (Bool) Whether to convert the data in body in post request to dict
+        _is_encode_response : (Bool) Whether to return handler results as JSON to HTTP content
     """
 
     def __init__(self, func, code_err, code_badparam,
                  is_parse_post, is_encode_response, errlog):
+        """
+        Args:
+            func               : (Object) func
+            code_err           : (String) retstat.ERR_SERVER_EXCEPTION (500)
+            code_badparam      : (String) retstat.ERR_BAD_PARAMS (400)
+            is_parse_post      : (Bool) Whether to convert the data in body in post request to dict
+            is_encode_response : (Bool) Whether to return handler results as JSON to HTTP content
+            errlog             : (Object) err log logger
+        """
         self._func = func
         self._errlog = errlog
         self._code_err = code_err
@@ -39,11 +69,13 @@ class Protocol(object):
 
     def _mk_ret(self, req, stat, data, headers):
         """
+        将 handler 结果进行封装, 封装为 JSON 后进行返回
+
         Args:
-            req: Request instance
-            stat: (String) Value with the name stat in the return value. default: ERR_SERVER_EXCEPTION
-            data: (Dict) Http body data
-            headers: (List) http headers
+            req     : (Object) Request instance
+            stat    : (String) Value with the name stat in the return value. default: ERR_SERVER_EXCEPTION
+            data    : (Dict) Http body data
+            headers : (List) http headers
         Returns:
             status, headders, content
         """
@@ -62,11 +94,13 @@ class Protocol(object):
 
     def _mk_json_content(self, data, stat=None):
         """make json content
+        将 stat(状态信息) 和 data(数据信息) 合成 JSON
+
         Args:
-            data:(Dict) return content
-            stat:(string) Value with the name stat in the return value. default: ERR_SERVER_EXCEPTION
+            data: (Dict) return content
+            stat: (string) Value with the name stat in the return value. default: ERR_SERVER_EXCEPTION
         Returns:
-            ret:(json)
+            ret : (json)
         """
         if stat is not None:
             data["stat"] = stat
@@ -78,10 +112,12 @@ class Protocol(object):
     def _mk_err_ret(self, req, is_bad_param, err_msg, log_msg):
         """make err return
         Args:
-            req: Request instance
-            is_bad_param:(Bool)
-            err_msg:(String) err msg
-            log_msg:(String) err log msg
+            req         : (Object) Request instance
+            is_bad_param: (Bool)
+            err_msg     : (String) err msg
+                        : (1) 记录在 acc.log 访问日志中
+                        : (2) 在响应头中 x-reason 记录此信息
+            log_msg     : (String) err log msg
         Returns:
             status, headders, content
         """

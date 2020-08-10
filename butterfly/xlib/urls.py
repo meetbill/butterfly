@@ -15,6 +15,7 @@ import inspect
 
 from xlib import retstat
 from xlib import protocol_json
+from xlib import protocol_file
 
 
 def import_submodules(package):
@@ -65,16 +66,33 @@ class Route(object):
         self._errlog = errlog
         self.apicube = {}
 
-    def addapi(self, name, func, is_parse_post, is_encode_response):
+    def addapi(self, name, func, is_serialize_response, is_parse_post, is_encode_response):
         """注册函数
         Args:
-            name: 函数的注册名，默认为包中函数的全小写方法名
-            func：函数
-            is_parse_post: 是否将请求 Body 中的内容解析为参数，传递给后端 handler
-            is_encode_response: 是否 encode 为 utf8
+            name                    : (String)函数的注册名，默认为包中函数的全小写方法名
+            func                    : (Object) 函数
+            is_serialize_response   : (Bool) 是否进行将 handler 返回结果进行封装为 json 还是 file Protocol
+                                    : True 时，handler return 为: (stat_str, data_dict, headers_list)
+                                    : False 时，handler, return 为: (httpcode_int, data_str, headers_list)
+            is_parse_post           : (Bool) 是否将请求 Body 中的内容解析为参数，传递给后端 handler
+            is_encode_response      : (Bool) 是否进行序列化为 JSON
+        Returns:
+            response_type
+                json/file/none
         """
-        self.apicube[name] = protocol_json.Protocol(func, retstat.ERR_SERVER_EXCEPTION, retstat.ERR_BAD_PARAMS,
-                                                    is_parse_post, is_encode_response, self._errlog)
+        if not is_serialize_response:
+            self.apicube[name] = protocol_json.Protocol(func, retstat.ERR_SERVER_EXCEPTION, retstat.ERR_BAD_PARAMS,
+                                                        is_parse_post, is_encode_response, self._errlog)
+            return "none"
+
+        if is_encode_response:
+            self.apicube[name] = protocol_json.Protocol(func, retstat.ERR_SERVER_EXCEPTION, retstat.ERR_BAD_PARAMS,
+                                                        is_parse_post, is_encode_response, self._errlog)
+            return "json"
+        else:
+            self.apicube[name] = protocol_file.Protocol(func, retstat.ERR_SERVER_EXCEPTION, retstat.ERR_BAD_PARAMS,
+                                                        is_parse_post, is_encode_response, self._errlog)
+            return "file"
 
     def add_apis(self, py_module, package_name=""):
         """将某个 module 文件中函数注册到路由中
@@ -100,23 +118,23 @@ class Route(object):
 
             # adder_args 为 [is_parse_post,is_encode_response] 默认值为 [True, False]
             adder_args = [True, False]
-            attr_option_flag = False
+            is_serialize_response = False
             if hasattr(func, 'apiattr'):
-                attr_option_flag = True
+                is_serialize_response = True
                 apiattr = getattr(func, 'apiattr')
                 is_parse_post = apiattr['is_parse_post']
                 is_encode_response = apiattr['is_encode_response']
                 adder_args = [is_parse_post, is_encode_response]
-            self.addapi(path_name.lower(), func, *adder_args)
+            response_type = self.addapi(path_name.lower(), func, is_serialize_response, *adder_args)
 
             args_count = func.func_code.co_argcount - 1 if inspect.ismethod(func) else func.func_code.co_argcount
             func_args = func.func_code.co_varnames[:args_count]
             self._infolog.log(
-                "[Init handler] {path:20} [args]:{func_args:30} [attr_option]:{attr_option_flag} [is_parse_post]:{is_parse_post}"
+                "[Init handler] {path:20} [args]:{func_args:30} [response_type]:{response_type} [is_parse_post]:{is_parse_post}"
                 " [is_encode_response]:{is_encode_response}".format(
                     path=path_name,
                     func_args=func_args,
-                    attr_option_flag=attr_option_flag,
+                    response_type=response_type,
                     is_parse_post=adder_args[0],
                     is_encode_response=adder_args[1]))
 
