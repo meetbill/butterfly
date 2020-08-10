@@ -3,6 +3,16 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.0.24] - 2020-08-10
+### Added
+- 新增 protocol_file 用于封装文件下载 handler, 用于实现报表导出，日志下载等功能
+
+```
+【普通 API】当 handler 使用 @funcattr.api 装饰器装饰时，使用 protocol_json 进行封装
+【文件上传】当 handler 使用 @funcattr.api_upload 装饰器装饰时，使用 protocol_json 进行封装
+【文件下载】当 handler 使用 @funcattr.api_download 装饰器装饰时，使用 protocol_file 进行封装
+【自定义】当 handler 不使用装饰器时，会使用 protocol_json 进行封装，但不会将结果进行封装为 json
+```
 
 ## [1.0.23] - 2020-06-07
 ### Changed
