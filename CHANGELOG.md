@@ -3,6 +3,20 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.0] - 2020-08-10
+### Changed
+- 更新 wsgiserver, 为支持 Py3 做准备
+
+```
+Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
+```
+
+基于 CherryPy/8.9.1 wsgiserver , 增加 perfork
+
+> * 修改 HTTPServer
+> * 修改 CherryPyWSGIServer
+> * 使用本地 six
+
 ## [1.0.24] - 2020-08-10
 ### Added
 - 新增 protocol_file 用于封装文件下载 handler, 用于实现报表导出，日志下载等功能
