@@ -17,7 +17,15 @@ def generate_landing_page():
 ----------------------------------------------------
 """
 
+from conf import config
 from xlib import diskcache as _dc
 
-_cache = _dc.Cache()
+if "diskcache_dir" in dir(config):
+    _cache = _dc.Cache(directory=config.diskcache_dir)
+else:
+    _cache = _dc.Cache()
+
+# 开启命中率统计
+_cache.stats()
+
 cache_page = _cache.memoize

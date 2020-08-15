@@ -22,6 +22,9 @@ STATIC_PREFIX="static"
 # DB
 mysql_config_url="mysql+retrypool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
 
+# Cache
+diskcache_dir = "data/diskcache"
+
 # Auth
 SECRET_KEY = None        # If it is None, a key will be randomly generated each time butterfly is started
 JWT_TOKEN_TTL = 28800    # default 8 hours
