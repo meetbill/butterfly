@@ -3,6 +3,22 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.1] - 2020-08-23
+### Added
+
+- 新增【星枢】用于管理服务 API，比如在线调整 log level ，以及获取服务运行信息等  
+- 新增加权随机算法 util
+- 新增磁盘缓存 diskcache
+
+### Changed
+
+```
+handlers/report ==> handlers/x_lv
+```
+### Fixed
+
+- 修复日志按日期切割时句柄不释放问题(原因是不同的 logger 写入了同一个日志文件)
+
 ## [1.1.0] - 2020-08-10
 ### Changed
 - 更新 wsgiserver, 为支持 Py3 做准备
