@@ -160,7 +160,7 @@ class RequestLogFilter(logging.Filter):
 
 def init_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d %H:%M:%S"):
     """
-    init_log - initialize log module
+    init_log - initialize log module, root logger
 
     Args:
       log_path      - Log file path prefix.
@@ -206,6 +206,36 @@ def init_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d %H
     handler.setLevel(logging.WARNING)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
+
+def init_bf_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d %H:%M:%S"):
+    """
+    init_log - initialize log module, Butterfly logger
+
+    Args:
+      log_path      - Log file path prefix.
+                      Log data will go to two files: log_path.log and log_path.log.wf
+                      Any non-exist parent directories will be created automatically
+      level         - msg above the level will be displayed
+                      DEBUG < INFO < WARNING < ERROR < CRITICAL
+                      the default value is logging.INFO
+      when          - how to split the log file by time interval
+                      'S' : Seconds
+                      'M' : Minutes
+                      'H' : Hours
+                      'D' : Days
+                      'W' : Week day
+                      default value: 'D'
+      backup        - how many backup file to keep
+                      default value: 7
+
+    Raises:
+        OSError: fail to create log directories
+        IOError: fail to open log file
+    """
+    dir = os.path.dirname(log_path)
+    if not os.path.isdir(dir):
+        os.makedirs(dir)
 
     # ---------------------------------------------------- butterfly
     format = "%(levelname)s %(name)s %(asctime)s: %(filename)s:%(lineno)d %(thread)d %(reqid)s * %(message)s"

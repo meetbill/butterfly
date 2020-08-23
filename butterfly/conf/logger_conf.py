@@ -11,6 +11,8 @@ from conf import config
 
 # 通用 logging 初始化
 logger.init_log(config.PATH_COMMON_LOG)
+# Butterfly logger 日志初始化
+logger.init_bf_log(config.PATH_COMMON_BF_LOG)
 
 critlog = logger.LoggerBase(config.PATH_CRIT_LOG, False, config.LOG_SIZE_LIMIT, config.LOG_BATCH_WRITE)
 
