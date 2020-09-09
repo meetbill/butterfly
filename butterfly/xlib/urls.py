@@ -116,8 +116,8 @@ class Route(object):
             # handlers.api.ping ==> /api/ping
             path_name = "/" + "/".join(name.split(".")[1:])
 
-            # adder_args 为 [is_parse_post,is_encode_response] 默认值为 [True, False]
-            adder_args = [True, False]
+            # adder_args 为 [is_parse_post,is_encode_response] 默认值为 [False, False]
+            adder_args = [False, False]
             is_serialize_response = False
             if hasattr(func, 'apiattr'):
                 is_serialize_response = True
