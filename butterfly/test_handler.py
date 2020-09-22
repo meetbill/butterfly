@@ -46,7 +46,9 @@ if __name__ == "__main__":
     import inspect
     if len(sys.argv) < 2:
         print("Usage:")
-        for url in apicube:
+        func_list = apicube.keys()
+        func_list.sort()
+        for url in func_list:
             func = apicube[url]._func
             # ArgSpec(args=['req', 'str_info'], varargs=None, keywords=None, defaults=None)
             args, __, __, defaults = inspect.getargspec(func)
