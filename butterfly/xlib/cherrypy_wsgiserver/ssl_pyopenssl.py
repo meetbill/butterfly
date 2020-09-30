@@ -109,7 +109,7 @@ class SSL_fileobject(wsgiserver.CP_makefile):
                                *args, **kwargs)
 
 
-class SSLConnection:
+class SSLConnection(object):
 
     """A thread-safe wrapper for an SSL.Connection.
 

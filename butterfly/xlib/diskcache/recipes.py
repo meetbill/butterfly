@@ -46,6 +46,7 @@ class Averager(object):
     None
 
     """
+
     def __init__(self, cache, key, expire=None, tag=None):
         self._cache = cache
         self._key = key
@@ -85,6 +86,7 @@ class Lock(object):
     ...     pass
 
     """
+
     def __init__(self, cache, key, expire=None, tag=None):
         self._cache = cache
         self._key = key
@@ -130,6 +132,7 @@ class RLock(object):
     AssertionError: cannot release un-acquired lock
 
     """
+
     def __init__(self, cache, key, expire=None, tag=None):
         self._cache = cache
         self._key = key
@@ -193,6 +196,7 @@ class BoundedSemaphore(object):
     AssertionError: cannot release un-acquired semaphore
 
     """
+
     def __init__(self, cache, key, value=1, expire=None, tag=None):
         self._cache = cache
         self._key = key

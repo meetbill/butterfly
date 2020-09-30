@@ -63,7 +63,7 @@ class BuiltinSSLAdapter(wsgiserver.SSLAdapter):
         """Wrap and return the given socket, plus WSGI environ entries."""
         try:
             if self.context is not None:
-                s = self.context.wrap_socket(sock,do_handshake_on_connect=True,
+                s = self.context.wrap_socket(sock, do_handshake_on_connect=True,
                                              server_side=True)
             else:
                 s = ssl.wrap_socket(sock, do_handshake_on_connect=True,
