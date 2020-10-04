@@ -49,6 +49,9 @@ except AttributeError:
 # Use int.to_bytes if it exists (Python 3)
 if getattr(int, 'to_bytes', None):
     def bytes_from_int(val):
+        """
+        int --> bytes
+        """
         remaining = val
         byte_length = 0
 
@@ -59,6 +62,9 @@ if getattr(int, 'to_bytes', None):
         return val.to_bytes(byte_length, 'big', signed=False)
 else:
     def bytes_from_int(val):
+        """
+        int --> bytes
+        """
         buf = []
         while val:
             val, remainder = divmod(val, 256)

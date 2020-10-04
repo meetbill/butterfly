@@ -1,3 +1,12 @@
+# coding=utf8
+"""
+# Description:
+JWT (Json Web Token), 有 JWS 和 JWE 两种实现方式
+    JWS (JSON Web Signature), 由三个部分组成
+        "头部 (header). 载荷 (payload). 签名 (signature)"
+    JWE (JSON Web Encryption), 由五个部分组成
+        "(JWE header).(JWE Encrypted Key).(JWE initialization vector).(JWE Ciphertext).(JWE Authentication Tag)"
+"""
 import binascii
 import json
 import warnings
@@ -19,6 +28,10 @@ from .utils import base64url_decode, base64url_encode, force_bytes, merge_dict
 
 
 class PyJWS(object):
+    """
+    JWS 类
+    JWS (JSON Web Signature), 由三个部分组成 "头部 (header). 载荷 (payload). 签名 (signature)"
+    """
     header_typ = 'JWT'
 
     def __init__(self, algorithms=None, options=None):
@@ -80,6 +93,9 @@ class PyJWS(object):
                headers=None,  # type: Optional[Dict]
                json_encoder=None  # type: Optional[Callable]
                ):
+        """
+        生成 jwt
+        """
         segments = []
 
         if algorithm is None:
@@ -133,6 +149,9 @@ class PyJWS(object):
                algorithms=None,  # type: List[str]
                options=None,  # type: Dict
                **kwargs):
+        """
+        解码 jwt
+        """
 
         merged_options = merge_dict(self.options, options)
         verify_signature = merged_options['verify_signature']

@@ -1,3 +1,8 @@
+# coding=utf8
+"""
+# Description:
+    pyjwt 工具
+"""
 import base64
 import binascii
 import struct
@@ -13,6 +18,14 @@ except ImportError:
 
 
 def force_unicode(value):
+    """
+    Python3 字符序列的两种表示为 byte 和 str
+       前者的实例包含原始的 8 位值，即原始的字节；后者的实例包括 Unicode 字符。
+    Python2 字符序列的两种表示为 str 和 unicode
+        与 Python3 不同的是，str 实例包含原始的 8 位值；而 unicode 的实例，则包含 Unicode 字符。
+
+    所以强制转为 unicode 的话，Python3 是 str 字符序列， Python2 是 unicode 序列
+    """
     if isinstance(value, binary_type):
         return value.decode('utf-8')
     elif isinstance(value, text_type):
@@ -22,6 +35,9 @@ def force_unicode(value):
 
 
 def force_bytes(value):
+    """
+    转为字节
+    """
     if isinstance(value, text_type):
         return value.encode('utf-8')
     elif isinstance(value, binary_type):

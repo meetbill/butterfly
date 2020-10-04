@@ -135,6 +135,9 @@ if six.PY3:
         return n.encode(encoding)
 
     def bton(b, encoding='ISO-8859-1'):
+        """
+        bytes to str
+        """
         return b.decode(encoding)
 else:
     def ntob(n, encoding='ISO-8859-1'):
@@ -147,6 +150,9 @@ else:
         return n
 
     def bton(b, encoding='ISO-8859-1'):
+        """
+        bytes to str
+        """
         return b
 
 
@@ -262,6 +268,9 @@ def read_headers(rfile, hdict=None):
 
 
 class MaxSizeExceeded(Exception):
+    """
+    Request Entity Too Large Exception
+    """
     pass
 
 

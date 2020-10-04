@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# Description:
+    算法
+
+"""
 import hashlib
 import hmac
 import json
