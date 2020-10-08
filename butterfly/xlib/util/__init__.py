@@ -31,8 +31,18 @@ def write_pid(path):
 
 
 class Base64_16(object):
+    """
+    Base64 相关工具
+
+    Base64 是一种将不可见字符转换为可见字符的编码方式
+    b64 是基于 64 个可打印字符来表示二进制数据的表示方法
+    b16 是基于 16 个可打印字符来表示二进制数据的表示方法
+    """
     @staticmethod
     def b16_to_b64(b16str):
+        """
+        b16 ==> b64
+        """
         if len(b16str) % 2 == 0:
             return base64.b64encode(base64.b16decode(b16str, True), "()").strip("=")
         else:
@@ -40,6 +50,9 @@ class Base64_16(object):
 
     @staticmethod
     def b64_to_b16(b64str_v):
+        """
+        b64 ==> b16
+        """
         if b64str_v[0] == "@":
             return b64str_v[1] + base64.b16encode(Base64_16.b64_to_bin(b64str_v[2:])).lower()
         else:
@@ -47,6 +60,11 @@ class Base64_16(object):
 
     @staticmethod
     def b64_to_bin(b64str):
+        """
+        b64 ==> bytes
+
+        进行转换时，先补齐 = 号
+        """
         slen = len(b64str)
         tail = slen % 4
         if tail:
@@ -55,6 +73,15 @@ class Base64_16(object):
 
     @staticmethod
     def bin_to_b64(b):
+        """
+        bytes ==> b64
+        由于 = 字符也可能出现在 Base64 编码中，但 = 用在 URL、Cookie 里面会造成歧义，所以去掉 =
+
+        # 标准 Base64:
+        'abcd' -> 'YWJjZA=='
+        # 自动去掉 =:
+        'abcd' -> 'YWJjZA'
+        """
         return base64.b64encode(b, "()").strip("=")
 
 

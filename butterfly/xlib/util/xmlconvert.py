@@ -1,15 +1,37 @@
-# coding:utf8
+# coding=utf8
+"""
+# Author: meetbill(wangbin34)
+# Created Time : 2020-10-08 22:31:35
 
-'''
-Xml与py对象相互转换的工具集
-'''
+# File Name: xmlconvert.py
+# Description:
+  Xml 与 py 对象相互转换的工具集
+
+"""
 
 from xml.etree import cElementTree as ElementTree
 from xml.sax.saxutils import escape
 
 
 def addXmlNodes2Dict(xmlParentNode, resultDict):
+    """
+    添加 xmlnodes 到字典中，从父节点往子节点递归
+    Args:
+        xmlParentNode: (object), eg: <Element 'xLive' at 0x10491eae0>
+        resultDict: (Dict)
+    Returns:
+        resultDict: (Dict)
+    """
     def addChild(parentNode, childNodeName, childNode):
+        """
+
+        Args:
+            parentNode: (Dict)
+            childNodeName: (Str)
+            childNode:
+        Returns:
+            None
+        """
         if parentNode.get(childNodeName):
             if not isinstance(parentNode[childNodeName], list):
                 parentNode[childNodeName] = [parentNode[childNodeName]]
@@ -29,7 +51,7 @@ def addXmlNodes2Dict(xmlParentNode, resultDict):
 
 
 def xml2dict(xmlStr):
-    '''
+    """
     Convert an XML format string to python dict, attributes in XML node will be ignored
     @param xmlStr: XML String
     @return: Python dict
@@ -37,7 +59,7 @@ def xml2dict(xmlStr):
     >>> s = "<note><to>Tove</to><from>Jani</from><heading>Reminder</heading><body>Don't forget me this weekend!</body></note>"
     >>> xml2dict(s)
     {'note': {'body': "Don't forget me this weekend!", 'to': 'Tove', 'from': 'Jani', 'heading': 'Reminder'}}
-    '''
+    """
     if not xmlStr:
         return {}
 
@@ -45,7 +67,7 @@ def xml2dict(xmlStr):
 
 
 def dict2xml(d):
-    '''
+    """
     Convert a dictionary to xml string, no version head, no attributes
     @param d: dictionary
     @return : XML string
@@ -59,7 +81,7 @@ def dict2xml(d):
     >>> sample = {'key':[{'subkey1':1}, {'subkey2':2}]}
     >>> dict2xml(sample)
     '<key><subkey1>1</subkey1></key><key><subkey2>2</subkey2></key>'
-    '''
+    """
     if not isinstance(d, dict):
         return ''
 

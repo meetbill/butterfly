@@ -11,7 +11,7 @@ import struct
 nsead_body_len = 36
 
 
-class nshead(object):
+class Nshead(object):
     """
     # nshead 类定义
     """
@@ -49,9 +49,9 @@ def nshead_write(sock, info, custom=None):
     """
     body_len = len(info)
     if custom and isinstance(custom, dict):
-        send_nshead = nshead(custom)
+        send_nshead = Nshead(custom)
     else:
-        send_nshead = nshead({'provider': 'pynshead', 'log_id': 1234, 'body_len': body_len})
+        send_nshead = Nshead({'provider': 'pynshead', 'log_id': 1234, 'body_len': body_len})
     send_nshead_info = send_nshead.generate()
     msglen = len(send_nshead_info + info)
     totalsent = 0
