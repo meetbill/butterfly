@@ -88,6 +88,11 @@ def dict2xml(d):
     strList = []
 
     def addNodes(parentName, pyObj):
+        """
+        Args:
+            parentName: (Str)
+            pyObj: (object)
+        """
         if isinstance(parentName, tuple):
             parentHead = '<%s ' % parentName[0] + \
                 " ".join(parentName[1:]) + '>'
@@ -116,11 +121,34 @@ def dict2xml(d):
 
 
 def xml2dict_ignore_xmlns(xmlStr):
+    """
+    Args:
+        xmlStr: (Str)
+    Returns:
+        resultDict: (Dict)
+    """
     if not xmlStr:
         return {}
 
     def addXmlNodes2Dict_ignore_xmlns(xmlParentNode, resultDict):
+        """
+        添加 xmlnodes 到字典中，从父节点往子节点递归
+        Args:
+            xmlParentNode: (object), eg: <Element 'xLive' at 0x10491eae0>
+            resultDict: (Dict)
+        Returns:
+            resultDict: (Dict)
+        """
         def addChild(parentNode, childNodeName, childNode):
+            """
+
+            Args:
+                parentNode: (Dict)
+                childNodeName: (Str)
+                childNode:
+            Returns:
+                None
+            """
             if parentNode.get(childNodeName):
                 if not isinstance(parentNode[childNodeName], list):
                     parentNode[childNodeName] = [parentNode[childNodeName]]

@@ -1,3 +1,14 @@
+# coding=utf8
+"""
+# File Name: __init__.py
+# Description:
+    代理对象: ObjectProxy, CallableObjectProxy, WeakFunctionProxy
+    包装对象: FunctionWrapper, BoundFunctionWrapper
+    装饰器工厂函数: function_wrapper, decorator
+    辅助测试的工厂函数: wrap_function_wrapper, patch_function_wrapper, transient_function_wrapper
+    猴子补丁相关: .importer
+    synchronized: java synchronized 的 Python 实现
+"""
 __version_info__ = ('1', '11', '2')
 __version__ = '.'.join(__version_info__)
 

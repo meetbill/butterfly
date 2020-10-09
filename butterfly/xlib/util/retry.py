@@ -26,7 +26,7 @@ import itertools
 import logging
 import time
 
-from decorator import decorator
+from xlib.util import wrapt
 
 
 class _DummyException(Exception):
@@ -91,8 +91,8 @@ def retry(exceptions=None, interval=0, max_retries=10, success=None, timeout=-1)
     _retries_error_msg = '[retry] Exceeded maximum number of retries {} at an interval of {}s for function {}'
     _timeout_error_msg = '[retry] Maximum timeout of {}s reached for function {}'
 
-    @decorator
-    def wrapper(func, *args, **kwargs):
+    @wrapt.decorator
+    def wrapper(func, instance, args, kwargs):
         """
         wrapper
         """

@@ -31,8 +31,6 @@ schemes = {
     'mysql': peewee.MySQLDatabase,
     'mysql+pool': PooledMySQLDatabase,
     'mysql+retrypool': RetryPooledMySQLDatabase,
-    'postgres': peewee.PostgresqlDatabase,
-    'postgresql': peewee.PostgresqlDatabase,
     'sqlite': peewee.SqliteDatabase,
 }
 
