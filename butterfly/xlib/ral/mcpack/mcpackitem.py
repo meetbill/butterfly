@@ -10,7 +10,8 @@
     2）构建实例化 McpackItem 的工厂类 McpackItemFactory。
 """
 import struct
-from mctype import *
+
+from xlib.ral.mcpack import mctype
 
 MCPACKV2_BOOL = 0x31  # 49
 """布尔值字节标识"""
@@ -407,7 +408,7 @@ class McpackNull(McpackItem):
 
 
 class McpackInt8(McpackItem):
-    """8位整形"""
+    """8位整型"""
     flag = MCPACKV2_INT_8
     fmt = 'b'
     byte_len = 1
@@ -421,7 +422,7 @@ class McpackInt8(McpackItem):
 
 
 class McpackUInt8(McpackItem):
-    """8位无符号位整形"""
+    """8位无符号位整型"""
     flag = MCPACKV2_UINT_8
     fmt = 'B'
     byte_len = 1
@@ -436,6 +437,7 @@ class McpackUInt8(McpackItem):
 
 
 class McpackInt16(McpackItem):
+    """16 位整型"""
     flag = MCPACKV2_INT_16
     fmt = 'h'
     byte_len = 2
@@ -449,6 +451,7 @@ class McpackInt16(McpackItem):
 
 
 class McpackUInt16(McpackItem):
+    """16 位无符号整型"""
     flag = MCPACKV2_UINT_16
     fmt = 'H'
     byte_len = 2
@@ -463,6 +466,7 @@ class McpackUInt16(McpackItem):
 
 
 class McpackInt32(McpackItem):
+    """32 位整型"""
     flag = MCPACKV2_INT_32
     fmt = 'i'
     byte_len = 4
@@ -476,6 +480,7 @@ class McpackInt32(McpackItem):
 
 
 class McpackUInt32(McpackItem):
+    """32 位无符号整型"""
     flag = MCPACKV2_UINT_32
     fmt = 'I'
     byte_len = 4
@@ -490,6 +495,7 @@ class McpackUInt32(McpackItem):
 
 
 class McpackInt64(McpackItem):
+    """64 位整型"""
     flag = MCPACKV2_INT_64
     fmt = 'q'
     byte_len = 8
@@ -503,6 +509,7 @@ class McpackInt64(McpackItem):
 
 
 class McpackUInt64(McpackItem):
+    """64 位无符号整型"""
     flag = MCPACKV2_UINT_64
     fmt = 'L'
     byte_len = 8
@@ -824,13 +831,13 @@ class McpackItemFactory(object):
             return McpackItemFactory.null_item
         if isinstance(element, bool):
             return McpackItemFactory.boolean_item
-        elif isinstance(element, McUint8):
+        elif isinstance(element, mctype.McUint8):
             return McpackItemFactory.uint8_item
-        elif isinstance(element, McUint16):
+        elif isinstance(element, mctype.McUint16):
             return McpackItemFactory.uint16_item
-        elif isinstance(element, McUint32):
+        elif isinstance(element, mctype.McUint32):
             return McpackItemFactory.uint32_item
-        elif isinstance(element, McUint64):
+        elif isinstance(element, mctype.McUint64):
             return McpackItemFactory.uint64_item
         elif isinstance(element, int):
             return McpackItemFactory.int32_item

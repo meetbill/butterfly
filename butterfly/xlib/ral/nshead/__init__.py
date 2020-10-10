@@ -31,14 +31,21 @@ class Nshead(object):
         self.size = self.struct.size
 
     def load(self, bin):
+        """
+        获取响应中的 head 信息
+        """
         (self.head["id"], self.head["version"], self.head["log_id"], self.head["provider"],
          self.head["magic_num"], self.head["reserved"], self.head["body_len"]) = self.struct.unpack(bin)
         if self.head["magic_num"] != self.magic_num:
             raise UserWarning("magic_num check fail")
 
     def generate(self):
+        """
+        生成要发送数据的 head 信息
+        """
         return self.struct.pack(self.head["id"], self.head["version"], self.head["log_id"],
-                                self.head["provider"], self.head["magic_num"], self.head["reserved"], self.head["body_len"])
+                                self.head["provider"], self.head["magic_num"],
+                                self.head["reserved"], self.head["body_len"])
 
 
 def nshead_write(sock, info, custom=None):
@@ -74,7 +81,7 @@ def nshead_read(sock):
     info = sock.recv(nsead_body_len)
     if info == '':
         raise RuntimeError("socket connection broken")
-    receive_nshead = nshead()
+    receive_nshead = Nshead()
     receive_nshead.load(info)
     while(len(msg) < receive_nshead.head['body_len']):
         recever_buf = sock.recv(receive_nshead.head['body_len'])
