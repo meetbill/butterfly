@@ -34,7 +34,7 @@ import socket
 import threading
 import time
 
-from cherrypy import wsgiserver
+from xlib import cherrypy_wsgiserver as wsgiserver
 
 try:
     from OpenSSL import SSL
@@ -43,7 +43,7 @@ except ImportError:
     SSL = None
 
 
-class SSL_fileobject(wsgiserver.CP_makefile):
+class SSLfileobject(wsgiserver.CP_makefile):
 
     """SSL file object attached to a socket object."""
 
@@ -98,14 +98,14 @@ class SSL_fileobject(wsgiserver.CP_makefile):
                 raise socket.timeout('timed out')
 
     def recv(self, size):
-        return self._safe_call(True, super(SSL_fileobject, self).recv, size)
+        return self._safe_call(True, super(SSLfileobject, self).recv, size)
 
     def sendall(self, *args, **kwargs):
-        return self._safe_call(False, super(SSL_fileobject, self).sendall,
+        return self._safe_call(False, super(SSLfileobject, self).sendall,
                                *args, **kwargs)
 
     def send(self, *args, **kwargs):
-        return self._safe_call(False, super(SSL_fileobject, self).send,
+        return self._safe_call(False, super(SSLfileobject, self).send,
                                *args, **kwargs)
 
 
@@ -145,7 +145,7 @@ class SSLConnection(object):
             self._lock.release()
 
 
-class pyOpenSSLAdapter(wsgiserver.SSLAdapter):
+class PyOpenSSLAdapter(wsgiserver.SSLAdapter):
 
     """A wrapper for integrating pyOpenSSL with CherryPy."""
 
@@ -246,7 +246,7 @@ class pyOpenSSLAdapter(wsgiserver.SSLAdapter):
     def makefile(self, sock, mode='r', bufsize=-1):
         if SSL and isinstance(sock, SSL.ConnectionType):
             timeout = sock.gettimeout()
-            f = SSL_fileobject(sock, mode, bufsize)
+            f = SSLfileobject(sock, mode, bufsize)
             f.ssl_timeout = timeout
             return f
         else:

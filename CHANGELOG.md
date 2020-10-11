@@ -3,6 +3,19 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.2] - 2020-10-11
+### Added
+
+- 新增百度特有协议 nshead + mcpack 协议支持
+- 新增解析 reqid 方法，可以解析 reqid 获取生成 reqid 的时间戳
+- add pep8 tool
+
+### Changed
+
+- Modify the dependency decorator of retry to wrapt (decorator.py 也是个第三方包)
+- 使用 test_handler.py 调试时，排序输出 handler
+- handler 方法当没有 funcattr 装饰时，修改为默认不读取 body 中内容
+
 ## [1.1.1] - 2020-08-23
 ### Added
 

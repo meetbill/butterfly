@@ -1,3 +1,4 @@
+# coding=utf8
 """A high-speed, production ready, thread pooled, generic HTTP server.
 
 Simplest example on how to use this module directly
@@ -71,7 +72,7 @@ number of requests and their responses, so we run a nested loop::
 import os
 try:
     import queue
-except:
+except BaseException:
     import Queue as queue
 import re
 import email.utils
@@ -110,7 +111,7 @@ __all__ = ['HTTPRequest', 'HTTPConnection', 'HTTPServer',
            'MaxSizeExceeded', 'NoSSLError', 'FatalSSLAlert',
            'WorkerThread', 'ThreadPool', 'SSLAdapter',
            'CherryPyWSGIServer',
-           'Gateway', 'WSGIGateway', 'WSGIGateway_10', 'WSGIGateway_u0',
+           'Gateway', 'WSGIGateway', 'WSGIGateway10', 'WSGIGatewayU0',
            'WSGIPathInfoDispatcher', 'get_ssl_adapter_class',
            'socket_errors_to_ignore']
 
@@ -123,7 +124,6 @@ if 'win' in sys.platform and hasattr(socket, 'AF_INET6'):
 
 
 DEFAULT_BUFFER_SIZE = io.DEFAULT_BUFFER_SIZE
-
 
 
 if six.PY3:
@@ -181,6 +181,7 @@ def plat_specific_errors(*errnames):
     nums = [getattr(errno, k) for k in errnames if k in errno_names]
     # de-dupe the list
     return list(dict.fromkeys(nums).keys())
+
 
 socket_error_eintr = plat_specific_errors('EINTR', 'WSAEINTR')
 
@@ -276,7 +277,9 @@ class MaxSizeExceeded(Exception):
 
 class SizeCheckWrapper(object):
 
-    """Wraps a file-like object, raising MaxSizeExceeded if too large."""
+    """Wraps a file-like object, raising MaxSizeExceeded if too large.
+    封装 rfile
+    """
 
     def __init__(self, rfile, maxlen):
         self.rfile = rfile
@@ -288,12 +291,20 @@ class SizeCheckWrapper(object):
             raise MaxSizeExceeded()
 
     def read(self, size=None):
+        """
+        读取 size 个字节的数据
+        """
         data = self.rfile.read(size)
         self.bytes_read += len(data)
         self._check_length()
         return data
 
     def readline(self, size=None):
+        """
+        HTTP 请求报文由 3 部分组成（请求行+请求头+请求体）
+        此方法用于读取请求行
+        eg:(GET / HTTP/1.0)
+        """
         if size is not None:
             data = self.rfile.readline(size)
             self.bytes_read += len(data)
@@ -313,7 +324,10 @@ class SizeCheckWrapper(object):
                 return EMPTY.join(res)
 
     def readlines(self, sizehint=0):
+        """
         # Shamelessly stolen from StringIO
+        目前没有用到
+        """
         total = 0
         lines = []
         line = self.readline()
@@ -326,6 +340,9 @@ class SizeCheckWrapper(object):
         return lines
 
     def close(self):
+        """
+        关闭 HTTPConnection.rfile
+        """
         self.rfile.close()
 
     def __iter__(self):
@@ -338,6 +355,9 @@ class SizeCheckWrapper(object):
         return data
 
     def next(self):
+        """
+        将一个对象变为迭代器
+        """
         data = self.rfile.next()
         self.bytes_read += len(data)
         self._check_length()
@@ -353,6 +373,9 @@ class KnownLengthRFile(object):
         self.remaining = content_length
 
     def read(self, size=None):
+        """
+        读取 conn.rfile 数据，此处即请求体中的数据
+        """
         if self.remaining == 0:
             return b''
         if size is None:
@@ -365,6 +388,12 @@ class KnownLengthRFile(object):
         return data
 
     def readline(self, size=None):
+        """
+        读取一行数据
+
+        self.rfile.readline 中会找行中的 \n , 即 index = data.find('\n', 0, size), return data[:index]
+        详情可以查看 CPMakefilePY2
+        """
         if self.remaining == 0:
             return b''
         if size is None:
@@ -377,6 +406,9 @@ class KnownLengthRFile(object):
         return data
 
     def readlines(self, sizehint=0):
+        """
+        读取所有数据
+        """
         # Shamelessly stolen from StringIO
         total = 0
         lines = []
@@ -390,6 +422,9 @@ class KnownLengthRFile(object):
         return lines
 
     def close(self):
+        """
+        关闭 conn.rfile
+        """
         self.rfile.close()
 
     def __iter__(self):
@@ -1004,7 +1039,7 @@ class FatalSSLAlert(Exception):
     pass
 
 
-class CP_BufferedWriter(io.BufferedWriter):
+class CPBufferedWriter(io.BufferedWriter):
 
     """Faux file object attached to a socket object."""
 
@@ -1030,14 +1065,17 @@ class CP_BufferedWriter(io.BufferedWriter):
             del self._write_buf[:n]
 
 
-def CP_makefile_PY3(sock, mode='r', bufsize=DEFAULT_BUFFER_SIZE):
+def CPMakefilePY3(sock, mode='r', bufsize=DEFAULT_BUFFER_SIZE):
+    """
+    Py3 makefile 实现
+    """
     if 'r' in mode:
         return io.BufferedReader(socket.SocketIO(sock, mode), bufsize)
     else:
-        return CP_BufferedWriter(socket.SocketIO(sock, mode), bufsize)
+        return CPBufferedWriter(socket.SocketIO(sock, mode), bufsize)
 
 
-class CP_makefile_PY2(getattr(socket, '_fileobject', object)):
+class CPMakefilePY2(getattr(socket, '_fileobject', object)):
 
     """Faux file object attached to a socket object."""
 
@@ -1361,7 +1399,7 @@ class CP_makefile_PY2(getattr(socket, '_fileobject', object)):
                 return ''.join(buffers)
 
 
-CP_makefile = CP_makefile_PY2 if six.PY2 else CP_makefile_PY3
+CP_makefile = CPMakefilePY2 if six.PY2 else CPMakefilePY3
 
 
 class HTTPConnection(object):
@@ -1518,6 +1556,8 @@ class TrueyZero(object):
 
     def __radd__(self, other):
         return other
+
+
 trueyzero = TrueyZero()
 
 
@@ -1622,7 +1662,7 @@ class ThreadPool(object):
     """
 
     def __init__(self, server, min=10, max=-1,
-        accepted_queue_size=-1, accepted_queue_timeout=10):
+                 accepted_queue_size=-1, accepted_queue_timeout=10):
         self.server = server
         self.min = min
         self.max = max
@@ -1973,13 +2013,13 @@ class HTTPServer(object):
             # So we can reuse the socket...
             try:
                 os.unlink(self.bind_addr)
-            except:
+            except BaseException:
                 pass
 
             # So everyone can access the socket...
             try:
                 os.chmod(self.bind_addr, 0o777)
-            except:
+            except BaseException:
                 pass
 
             info = [
@@ -2054,7 +2094,7 @@ class HTTPServer(object):
                 self.tick()
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except:
+            except BaseException:
                 self.error_log('Error in HTTPServer.tick', level=logging.ERROR,
                                traceback=True)
 
@@ -2270,8 +2310,8 @@ class Gateway(object):
 # These may either be wsgiserver.SSLAdapter subclasses or the string names
 # of such classes (in which case they will be lazily loaded).
 ssl_adapters = {
-    'builtin': 'cherrypy.wsgiserver.ssl_builtin.BuiltinSSLAdapter',
-    'pyopenssl': 'cherrypy.wsgiserver.ssl_pyopenssl.pyOpenSSLAdapter',
+    'builtin': 'xlib.cherrypy_wsgiserver.ssl_builtin.BuiltinSSLAdapter',
+    'pyopenssl': 'xlib.cherrypy_wsgiserver.ssl_pyopenssl.PyOpenSSLAdapter',
 }
 
 
@@ -2315,8 +2355,8 @@ class CherryPyWSGIServer(HTTPServer):
                  accepted_queue_size=-1, accepted_queue_timeout=10,
                  perfork=0, after_perfork=None, wsgiapp_getter=None):
         self.requests = ThreadPool(self, min=numthreads or 1, max=max,
-            accepted_queue_size=accepted_queue_size,
-            accepted_queue_timeout=accepted_queue_timeout)
+                                   accepted_queue_size=accepted_queue_size,
+                                   accepted_queue_timeout=accepted_queue_timeout)
         self.wsgi_app = wsgi_app
         self.gateway = wsgi_gateways[self.wsgi_version]
         # By meetbill
@@ -2469,7 +2509,7 @@ class WSGIGateway(Gateway):
                     'Response body exceeds the declared Content-Length.')
 
 
-class WSGIGateway_10(WSGIGateway):
+class WSGIGateway10(WSGIGateway):
 
     """A Gateway class to interface HTTPServer with WSGI 1.0.x."""
 
@@ -2528,7 +2568,7 @@ class WSGIGateway_10(WSGIGateway):
         return env
 
 
-class WSGIGateway_u0(WSGIGateway_10):
+class WSGIGatewayU0(WSGIGateway10):
 
     """A Gateway class to interface HTTPServer with WSGI u.0.
 
@@ -2539,7 +2579,7 @@ class WSGIGateway_u0(WSGIGateway_10):
     def get_environ(self):
         """Return a new environ dict targeting the given wsgi.version"""
         req = self.req
-        env_10 = WSGIGateway_10.get_environ(self)
+        env_10 = WSGIGateway10.get_environ(self)
         env = dict(map(self._decode_key, env_10.items()))
         env[six.u('wsgi.version')] = ('u', 0)
 
@@ -2575,8 +2615,8 @@ class WSGIGateway_u0(WSGIGateway_10):
 
 
 wsgi_gateways = {
-    (1, 0): WSGIGateway_10,
-    ('u', 0): WSGIGateway_u0,
+    (1, 0): WSGIGateway10,
+    ('u', 0): WSGIGatewayU0,
 }
 
 
@@ -2594,7 +2634,7 @@ class WSGIPathInfoDispatcher(object):
             pass
 
         # Sort the apps by len(path), descending
-        by_path_len = lambda app: len(app[0])
+        def by_path_len(app): return len(app[0])
         apps.sort(key=by_path_len, reverse=True)
 
         # The path_prefix strings must start, but not end, with a slash.

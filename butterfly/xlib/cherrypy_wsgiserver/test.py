@@ -8,7 +8,7 @@
 # Description:
 
 """
-import __init__
+from xlib import cherrypy_wsgiserver
 
 
 def simple_app(environ, start_response):
@@ -20,5 +20,5 @@ def simple_app(environ, start_response):
     return ['My Own Hello World!']
 
 
-s = __init__.CherryPyWSGIServer(("localhost", 8080), simple_app, perfork=2)
+s = cherrypy_wsgiserver.CherryPyWSGIServer(("localhost", 8080), simple_app, perfork=1)
 s.start()

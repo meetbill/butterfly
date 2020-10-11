@@ -21,7 +21,7 @@ except ImportError:
 
 import sys
 
-from cherrypy import wsgiserver
+from xlib import cherrypy_wsgiserver as wsgiserver
 
 
 class BuiltinSSLAdapter(wsgiserver.SSLAdapter):
