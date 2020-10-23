@@ -30,9 +30,6 @@ from .err import (
     Warning, Error, InterfaceError, DataError,
     DatabaseError, OperationalError, IntegrityError, InternalError,
     NotSupportedError, ProgrammingError, MySQLError)
-from .times import (
-    Date, Time, Timestamp,
-    DateFromTicks, TimeFromTicks, TimestampFromTicks)
 
 
 VERSION = (0, 9, 3, None)
@@ -126,8 +123,7 @@ def install_as_MySQLdb():
 
 
 __all__ = [
-    'BINARY', 'Binary', 'Connect', 'Connection', 'DATE', 'Date',
-    'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
+    'BINARY', 'Binary', 'Connect', 'Connection', 'DATE',
     'DataError', 'DatabaseError', 'Error', 'FIELD_TYPE', 'IntegrityError',
     'InterfaceError', 'InternalError', 'MySQLError', 'NULL', 'NUMBER',
     'NotSupportedError', 'DBAPISet', 'OperationalError', 'ProgrammingError',

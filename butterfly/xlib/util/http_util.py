@@ -341,7 +341,7 @@ if __name__ == "__main__":
     print res.output()
 
     print("[GET], have pargs---------------------------------")
-    get("http://127.0.0.1:8585/x/hello", data={"str_info": "meetbill"}, debug=True)
+    get("http://127.0.0.1:8585/x/hello?str_info=meetbill", debug=True)
 
     print("[POST], post json---------------------------------")
     post_json("http://127.0.0.1:8585/x/hello", data={"str_info": "meetbill"}, debug=True)
