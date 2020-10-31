@@ -58,6 +58,9 @@ else:
     else:
         # It's possible to have sizeof(long) != sizeof(Py_ssize_t).
         class X(object):
+            """
+            计算 MAXSIZE
+            """
 
             def __len__(self):
                 return 1 << 31
@@ -101,8 +104,15 @@ class _LazyDescr(object):
 
 
 class MovedModule(_LazyDescr):
+    """
+    Create a mapping for six.moves called name that references different modules in Python 2 and 3
+    """
 
     def __init__(self, name, old, new=None):
+        """
+        old: old is the name of the Python 2 module
+        new: old is the name of the Python 3 module
+        """
         super(MovedModule, self).__init__(name)
         if PY3:
             if new is None:
@@ -137,8 +147,15 @@ class _LazyModule(types.ModuleType):
 
 
 class MovedAttribute(_LazyDescr):
+    """
+    Create a mapping for six.moves called name that references different attributes in Python 2 and 3
+    """
 
     def __init__(self, name, old_mod, new_mod, old_attr=None, new_attr=None):
+        """
+        old_mod is the name of the Python 2 module.
+        new_mod is the name of the Python 3 module.
+        """
         super(MovedAttribute, self).__init__(name)
         if PY3:
             if new_mod is None:
@@ -182,6 +199,9 @@ class _SixMetaPathImporter(object):
         return self.known_modules[self.name + "." + fullname]
 
     def find_module(self, fullname, path=None):
+        """
+        find module in known_modules dict
+        """
         if fullname in self.known_modules:
             return self
         return None
@@ -193,6 +213,9 @@ class _SixMetaPathImporter(object):
             raise ImportError("This loader does not know module " + fullname)
 
     def load_module(self, fullname):
+        """
+        load_module
+        """
         try:
             # in case of a reload
             return sys.modules[fullname]
@@ -321,7 +344,7 @@ moves = _MovedItems(__name__ + ".moves")
 _importer._add_module(moves, "moves")
 
 
-class Module_six_moves_urllib_parse(_LazyModule):
+class ModuleSixMovesUrllibParse(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_parse"""
 
@@ -354,16 +377,16 @@ _urllib_parse_moved_attributes = [
     MovedAttribute("uses_relative", "urlparse", "urllib.parse"),
 ]
 for attr in _urllib_parse_moved_attributes:
-    setattr(Module_six_moves_urllib_parse, attr.name, attr)
+    setattr(ModuleSixMovesUrllibParse, attr.name, attr)
 del attr
 
-Module_six_moves_urllib_parse._moved_attributes = _urllib_parse_moved_attributes
+ModuleSixMovesUrllibParse._moved_attributes = _urllib_parse_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_parse(__name__ + ".moves.urllib_parse"),
+_importer._add_module(ModuleSixMovesUrllibParse(__name__ + ".moves.urllib_parse"),
                       "moves.urllib_parse", "moves.urllib.parse")
 
 
-class Module_six_moves_urllib_error(_LazyModule):
+class ModuleSixMovesUrllibError(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_error"""
 
@@ -374,16 +397,16 @@ _urllib_error_moved_attributes = [
     MovedAttribute("ContentTooShortError", "urllib", "urllib.error"),
 ]
 for attr in _urllib_error_moved_attributes:
-    setattr(Module_six_moves_urllib_error, attr.name, attr)
+    setattr(ModuleSixMovesUrllibError, attr.name, attr)
 del attr
 
-Module_six_moves_urllib_error._moved_attributes = _urllib_error_moved_attributes
+ModuleSixMovesUrllibError._moved_attributes = _urllib_error_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_error(__name__ + ".moves.urllib.error"),
+_importer._add_module(ModuleSixMovesUrllibError(__name__ + ".moves.urllib.error"),
                       "moves.urllib_error", "moves.urllib.error")
 
 
-class Module_six_moves_urllib_request(_LazyModule):
+class ModuleSixMovesUrllibRequest(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_request"""
 
@@ -426,16 +449,16 @@ _urllib_request_moved_attributes = [
     MovedAttribute("parse_keqv_list", "urllib2", "urllib.request"),
 ]
 for attr in _urllib_request_moved_attributes:
-    setattr(Module_six_moves_urllib_request, attr.name, attr)
+    setattr(ModuleSixMovesUrllibRequest, attr.name, attr)
 del attr
 
-Module_six_moves_urllib_request._moved_attributes = _urllib_request_moved_attributes
+ModuleSixMovesUrllibRequest._moved_attributes = _urllib_request_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_request(__name__ + ".moves.urllib.request"),
+_importer._add_module(ModuleSixMovesUrllibRequest(__name__ + ".moves.urllib.request"),
                       "moves.urllib_request", "moves.urllib.request")
 
 
-class Module_six_moves_urllib_response(_LazyModule):
+class ModuleSixMovesUrllibResponse(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_response"""
 
@@ -447,16 +470,16 @@ _urllib_response_moved_attributes = [
     MovedAttribute("addinfourl", "urllib", "urllib.response"),
 ]
 for attr in _urllib_response_moved_attributes:
-    setattr(Module_six_moves_urllib_response, attr.name, attr)
+    setattr(ModuleSixMovesUrllibResponse, attr.name, attr)
 del attr
 
-Module_six_moves_urllib_response._moved_attributes = _urllib_response_moved_attributes
+ModuleSixMovesUrllibResponse._moved_attributes = _urllib_response_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_response(__name__ + ".moves.urllib.response"),
+_importer._add_module(ModuleSixMovesUrllibResponse(__name__ + ".moves.urllib.response"),
                       "moves.urllib_response", "moves.urllib.response")
 
 
-class Module_six_moves_urllib_robotparser(_LazyModule):
+class ModuleSixMovesUrllibRobotparser(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_robotparser"""
 
@@ -465,16 +488,16 @@ _urllib_robotparser_moved_attributes = [
     MovedAttribute("RobotFileParser", "robotparser", "urllib.robotparser"),
 ]
 for attr in _urllib_robotparser_moved_attributes:
-    setattr(Module_six_moves_urllib_robotparser, attr.name, attr)
+    setattr(ModuleSixMovesUrllibRobotparser, attr.name, attr)
 del attr
 
-Module_six_moves_urllib_robotparser._moved_attributes = _urllib_robotparser_moved_attributes
+ModuleSixMovesUrllibRobotparser._moved_attributes = _urllib_robotparser_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_robotparser(__name__ + ".moves.urllib.robotparser"),
+_importer._add_module(ModuleSixMovesUrllibRobotparser(__name__ + ".moves.urllib.robotparser"),
                       "moves.urllib_robotparser", "moves.urllib.robotparser")
 
 
-class Module_six_moves_urllib(types.ModuleType):
+class ModuleSixMovesUrllib(types.ModuleType):
 
     """Create a six.moves.urllib namespace that resembles the Python 3 namespace"""
     __path__ = []  # mark as package
@@ -487,7 +510,7 @@ class Module_six_moves_urllib(types.ModuleType):
     def __dir__(self):
         return ['parse', 'error', 'request', 'response', 'robotparser']
 
-_importer._add_module(Module_six_moves_urllib(__name__ + ".moves.urllib"),
+_importer._add_module(ModuleSixMovesUrllib(__name__ + ".moves.urllib"),
                       "moves.urllib")
 
 
@@ -525,49 +548,95 @@ else:
     _func_globals = "func_globals"
 
 
+#################################################################
+# six.next(it) 获取到迭代器的下一个
+#################################################################
 try:
     advance_iterator = next
 except NameError:
     def advance_iterator(it):
+        """
+        在 python2 环境中，使用 it.next()；在 python3 环境中，使用 next(it)
+        """
         return it.next()
 next = advance_iterator
 
 
+#################################################################
+# six.callable(obj) 该方法用来检验 obj 是否可以进行调用
+# * 如果返回 True，object 仍然可能调用失败；
+# * 如果返回 False，调用对象 ojbect 绝对不会成功。
+# 类是可调用的，而类的实例实现了 __call__() 方法才可调用
+#################################################################
 try:
     callable = callable
 except NameError:
     def callable(obj):
+        """
+        callable 函数在 python2.x 版本中都可用。但是在 python3.0 版本中被移除，而在 python3.2 以后版本中被重新添加
+        """
         return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
 
+################################################################
+# 对象模型兼容
+# 在 python2 中存在 unbound function，在 python3 中不存在 unbound function
+################################################################
 if PY3:
     def get_unbound_function(unbound):
+        """
+        Args:
+            unbound: 类名.方法名
+        """
         return unbound
 
     create_bound_method = types.MethodType
 
     def create_unbound_method(func, cls):
+        """
+        返回一个未绑定的方法对象包装函数。
+        在 Python 3 中，未绑定的方法不存在，并且此包装将简单地返回 func
+        """
         return func
 
     Iterator = object
 else:
     def get_unbound_function(unbound):
+        """
+        Args:
+            unbound: 类名.方法名
+        """
+        # im_func 等同于 __func__
         return unbound.im_func
 
     def create_bound_method(func, obj):
+        """
+        返回一个方法对象包装 func 并绑定到 obj
+        在 Python 2 和 Python 3 上，这将返回一个 types.MethodType 对象。
+        这个包装器函数存在的原因是，在 Python 2 中，MethodType 构造函数需要传递 obj 的类。
+        """
         return types.MethodType(func, obj, obj.__class__)
 
     def create_unbound_method(func, cls):
+        """
+        返回一个未绑定的方法对象包装函数。
+        在 Python 2 中，这将返回一个 types.MethodType 对象
+        """
         return types.MethodType(func, None, cls)
 
     class Iterator(object):
+        """
+        一个用于制作小型迭代器的类
+        """
 
         def next(self):
+            """
+            next
+            """
             return type(self).__next__(self)
 
     callable = callable
-_add_doc(get_unbound_function,
-         """Get the function out of a possibly unbound function""")
+_add_doc(get_unbound_function, """Get the function out of a possibly unbound function""")
 
 
 get_method_function = operator.attrgetter(_meth_func)
@@ -580,15 +649,52 @@ get_function_globals = operator.attrgetter(_func_globals)
 
 if PY3:
     def iterkeys(d, **kw):
+        """
+        返回字典键上的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 3 中为 dictionary.keys()
+        """
         return iter(d.keys(**kw))
 
     def itervalues(d, **kw):
+        """
+        返回字典值的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 3 中为 dictionary.values()
+        """
         return iter(d.values(**kw))
 
     def iteritems(d, **kw):
+        """
+        返回字典项目的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 3 中为 dictionary.items()
+        """
         return iter(d.items(**kw))
 
     def iterlists(d, **kw):
+        """
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        """
         return iter(d.lists(**kw))
 
     viewkeys = operator.methodcaller("keys")
@@ -598,15 +704,52 @@ if PY3:
     viewitems = operator.methodcaller("items")
 else:
     def iterkeys(d, **kw):
+        """
+        返回字典键上的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 2 中为 dictionary.iterkeys()
+        """
         return d.iterkeys(**kw)
 
     def itervalues(d, **kw):
+        """
+        返回字典值的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 2 中为 dictionary.itervalues()
+        """
         return d.itervalues(**kw)
 
     def iteritems(d, **kw):
+        """
+        返回字典项目的迭代器
+
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        Python 2 中为 dictionary.iteritems()
+        """
         return d.iteritems(**kw)
 
     def iterlists(d, **kw):
+        """
+        Args:
+            d: dict
+            **kw: kwargs 被传递给底层方法。
+        Returns:
+            迭代器
+        """
         return d.iterlists(**kw)
 
     viewkeys = operator.methodcaller("viewkeys")
@@ -842,7 +985,7 @@ def with_metaclass(meta, *bases):
     # This requires a bit of explanation: the basic idea is to make a dummy
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
-    class metaclass(type):
+    class Metaclass(type):
 
         def __new__(cls, name, this_bases, d):
             if sys.version_info[:2] >= (3, 7):
@@ -858,7 +1001,7 @@ def with_metaclass(meta, *bases):
         @classmethod
         def __prepare__(cls, name, this_bases):
             return meta.__prepare__(name, bases)
-    return type.__new__(metaclass, 'temporary_class', (), {})
+    return type.__new__(Metaclass, 'temporary_class', (), {})
 
 
 def add_metaclass(metaclass):

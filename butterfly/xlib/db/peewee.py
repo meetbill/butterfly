@@ -5795,6 +5795,10 @@ class DoesNotExist(Exception):
 
 
 class ModelBase(type):
+    """
+    ModelBase
+    """
+    # 定义可被继承的属性列表（全局）
     inheritable = set(['constraints', 'database', 'indexes', 'primary_key',
                        'options', 'schema', 'table_function', 'temporary',
                        'only_save_dirty', 'legacy_table_names',
@@ -5804,19 +5808,25 @@ class ModelBase(type):
         if name == MODEL_BASE or bases[0].__name__ == MODEL_BASE:
             return super(ModelBase, cls).__new__(cls, name, bases, attrs)
 
+        # Meta 类的属性通过 meta_options 存储在 Model 类中
         meta_options = {}
+        # 将 Meta 从属性中移除，将 Meta 中的非私有属性加入 meta_options 中
         meta = attrs.pop('Meta', None)
         if meta:
             for k, v in meta.__dict__.items():
                 if not k.startswith('_'):
                     meta_options[k] = v
 
+        # 从 meta 中获取主键信息
         pk = getattr(meta, 'primary_key', None)
         pk_name = parent_pk = None
 
         # Inherit any field descriptors by deep copying the underlying field
         # into the attrs of the new model, additionally see if the bases define
         # inheritable model options and swipe them.
+        ##################################################################
+        # 开始考虑从父类中继承的情况
+        #################################################################
         for b in bases:
             if not hasattr(b, '_meta'):
                 continue
@@ -5825,11 +5835,14 @@ class ModelBase(type):
             if parent_pk is None:
                 parent_pk = deepcopy(base_meta.primary_key)
             all_inheritable = cls.inheritable | base_meta._additional_keys
+
+            # 获取父类中的 Meta 内部类字段，只考虑 all_inheritable 中的字段
             for k in base_meta.__dict__:
                 if k in all_inheritable and k not in meta_options:
                     meta_options[k] = base_meta.__dict__[k]
             meta_options.setdefault('schema', base_meta.schema)
 
+            # 获取父类中的 Fields, 即表的字段
             for (k, v) in b.__dict__.items():
                 if k in attrs:
                     continue
@@ -5848,6 +5861,7 @@ class ModelBase(type):
         cls._meta = Meta(cls, **meta_options)
         cls._schema = Schema(cls, **sopts)
 
+        # 检查 attr 中的 Field 类型字段，设置 Model 中的数据类型
         fields = []
         for key, value in cls.__dict__.items():
             if isinstance(value, Field):
@@ -5858,6 +5872,7 @@ class ModelBase(type):
                 else:
                     fields.append((key, value))
 
+        # 默认主键的设置，如果无法从父类继承，则使用 'id' 为key
         if pk is None:
             if parent_pk is not False:
                 pk, pk_name = ((parent_pk, parent_pk.name)
@@ -5869,9 +5884,11 @@ class ModelBase(type):
             pk_name = '__composite_key__'
             cls._meta.composite_key = True
 
+        # 如果 model 本身有主键的情况
         if pk is not False:
             cls._meta.set_primary_key(pk_name, pk)
 
+        # 设置 Fields
         for name, field in fields:
             cls._meta.add_field(name, field)
 
@@ -5880,6 +5897,7 @@ class ModelBase(type):
             setattr(cls, '__repr__', lambda self: '<%s: %s>' % (
                 cls.__name__, self.__str__()))
 
+        # 错误信息
         exc_name = '%sDoesNotExist' % cls.__name__
         exc_attrs = {'__module__': cls.__module__}
         exception_class = type(exc_name, (DoesNotExist,), exc_attrs)

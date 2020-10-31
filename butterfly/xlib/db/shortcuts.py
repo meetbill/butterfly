@@ -1,7 +1,16 @@
-from peewee import *
-from peewee import Alias
-from peewee import SENTINEL
-from peewee import callable_
+# coding=utf8
+"""
+# File Name: shortcuts.py
+# Description: https://github.com/coleifer/peewee/blob/master/playhouse/shortcuts.py
+
+"""
+from xlib.db.peewee import Field
+from xlib.db.peewee import ForeignKeyField
+from xlib.db.peewee import Alias
+from xlib.db.peewee import SENTINEL
+from xlib.db.peewee import callable_
+
+from xlib.db.peewee import OperationalError
 
 
 _clone_set = lambda s: set(s) if s else set()
@@ -125,6 +134,16 @@ def model_to_dict(model, recurse=True, backrefs=False, only=None,
 
 
 def update_model_from_dict(instance, data, ignore_unknown=False):
+    """
+    使用给定的数据字典更新模型实例。
+
+    Args:
+        instance (Model) -- 要更新的模型实例
+        data (dict) -- 数据字典。外键可以作为嵌套字典包含，而后面的引用可以作为字典列表包含。
+        ignore_unknown (bool) -- 是否允许不可识别的（非字段）属性。
+    Returns:
+        instance
+    """
     meta = instance._meta
     backrefs = dict([(fk.backref, fk) for fk in meta.backrefs])
 
@@ -167,6 +186,16 @@ def update_model_from_dict(instance, data, ignore_unknown=False):
 
 
 def dict_to_model(model_class, data, ignore_unknown=False):
+    """
+    将数据字典转换为模型实例, 并在适当的情况下创建相关实例。
+
+    Args:
+        model_class (Model) -- 要构造的模型类。
+        data (dict) -- 数据字典。外键可以作为嵌套字典包含，而后面的引用可以作为字典列表包含。
+        ignore_unknown (bool) -- 是否允许不可识别的（非字段）属性。
+    Returns:
+        instance
+    """
     return update_model_from_dict(model_class(), data, ignore_unknown)
 
 

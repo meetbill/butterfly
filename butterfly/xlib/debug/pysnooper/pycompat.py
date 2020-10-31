@@ -1,6 +1,8 @@
 # Copyright 2019 Ram Rachum and collaborators.
 # This program is distributed under the MIT license.
-'''Python 2/3 compatibility'''
+"""
+Python 2/3 compatibility
+"""
 
 import abc
 import os

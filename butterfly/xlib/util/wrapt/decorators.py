@@ -41,13 +41,14 @@ except ImportError:
     pass
 
 from .wrappers import (FunctionWrapper, BoundFunctionWrapper, ObjectProxy,
-    CallableObjectProxy)
+                       CallableObjectProxy)
 
 # Adapter wrapper for the wrapped function which will overlay certain
 # properties from the adapter function onto the wrapped function so that
 # functions such as inspect.getargspec(), inspect.getfullargspec(),
 # inspect.signature() and inspect.getsource() return the correct results
 # one would expect.
+
 
 class _AdapterFunctionCode(CallableObjectProxy):
 
@@ -75,6 +76,7 @@ class _AdapterFunctionCode(CallableObjectProxy):
     def co_varnames(self):
         return self._self_adapter_code.co_varnames
 
+
 class _AdapterFunctionSurrogate(CallableObjectProxy):
 
     def __init__(self, wrapped, adapter):
@@ -84,7 +86,7 @@ class _AdapterFunctionSurrogate(CallableObjectProxy):
     @property
     def __code__(self):
         return _AdapterFunctionCode(self.__wrapped__.__code__,
-                self._self_adapter.__code__)
+                                    self._self_adapter.__code__)
 
     @property
     def __defaults__(self):
@@ -110,15 +112,17 @@ class _AdapterFunctionSurrogate(CallableObjectProxy):
         func_code = __code__
         func_defaults = __defaults__
 
+
 class _BoundAdapterWrapper(BoundFunctionWrapper):
 
     @property
     def __func__(self):
         return _AdapterFunctionSurrogate(self.__wrapped__.__func__,
-                self._self_parent._self_adapter)
+                                         self._self_parent._self_adapter)
 
     if PY2:
         im_func = __func__
+
 
 class AdapterWrapper(FunctionWrapper):
 
@@ -128,7 +132,7 @@ class AdapterWrapper(FunctionWrapper):
         adapter = kwargs.pop('adapter')
         super(AdapterWrapper, self).__init__(*args, **kwargs)
         self._self_surrogate = _AdapterFunctionSurrogate(
-                self.__wrapped__, adapter)
+            self.__wrapped__, adapter)
         self._self_adapter = adapter
 
     @property
@@ -151,16 +155,20 @@ class AdapterWrapper(FunctionWrapper):
     def __signature__(self):
         return self._self_surrogate.__signature__
 
+
 class AdapterFactory(object):
     def __call__(self, wrapped):
         raise NotImplementedError()
+
 
 class DelegatedAdapterFactory(AdapterFactory):
     def __init__(self, factory):
         super(DelegatedAdapterFactory, self).__init__()
         self.factory = factory
+
     def __call__(self, wrapped):
         return self.factory(wrapped)
+
 
 adapter_factory = DelegatedAdapterFactory
 
@@ -170,6 +178,7 @@ adapter_factory = DelegatedAdapterFactory
 # themselves acting like a transparent proxy for the original wrapped
 # function so the wrapper is effectively indistinguishable from the
 # original wrapped function.
+
 
 def decorator(wrapper=None, enabled=None, adapter=None):
     # The decorator should be supplied with a single positional argument
@@ -210,10 +219,10 @@ def decorator(wrapper=None, enabled=None, adapter=None):
                     adapter = ns['adapter']
 
                 return AdapterWrapper(wrapped=wrapped, wrapper=wrapper,
-                        enabled=enabled, adapter=adapter)
+                                      enabled=enabled, adapter=adapter)
 
             return FunctionWrapper(wrapped=wrapped, wrapper=wrapper,
-                    enabled=enabled)
+                                   enabled=enabled)
 
         # The wrapper has been provided so return the final decorator.
         # The decorator is itself one of our function wrappers so we
@@ -257,7 +266,7 @@ def decorator(wrapper=None, enabled=None, adapter=None):
                     # the target function to be wrapped is returned instead.
 
                     _enabled = enabled
-                    if type(_enabled) is bool:
+                    if isinstance(_enabled, bool):
                         if not _enabled:
                             return target_wrapped
                         _enabled = None
@@ -272,7 +281,7 @@ def decorator(wrapper=None, enabled=None, adapter=None):
                     # Finally build the wrapper itself and return it.
 
                     return _build(target_wrapped, target_wrapper,
-                            _enabled, adapter)
+                                  _enabled, adapter)
 
                 return _capture
 
@@ -286,7 +295,7 @@ def decorator(wrapper=None, enabled=None, adapter=None):
             # function to be wrapped is returned instead.
 
             _enabled = enabled
-            if type(_enabled) is bool:
+            if isinstance(_enabled, bool):
                 if not _enabled:
                     return target_wrapped
                 _enabled = None
@@ -418,6 +427,7 @@ def decorator(wrapper=None, enabled=None, adapter=None):
 # synchronization primitive without creating a separate lock against the
 # derived or supplied context.
 
+
 def synchronized(wrapped):
     # Determine if being passed an object which is a synchronization
     # primitive. We can't check by type for Lock, RLock, Semaphore etc,
@@ -510,5 +520,6 @@ def synchronized(wrapped):
             self._self_lock.release()
 
     return _FinalDecorator(wrapped=wrapped, wrapper=_synchronized_wrapper)
+
 
 synchronized._synchronized_meta_lock = Lock()

@@ -9,8 +9,8 @@
     猴子补丁相关: .importer
     synchronized: java synchronized 的 Python 实现
 """
-__version_info__ = ('1', '11', '2')
-__version__ = '.'.join(__version_info__)
+__version_info = ('1', '11', '2')
+__version__ = '.'.join(__version_info)
 
 from .wrappers import (ObjectProxy, CallableObjectProxy, FunctionWrapper,
         BoundFunctionWrapper, WeakFunctionProxy, PartialCallableObjectProxy,
