@@ -47,6 +47,9 @@ def force_bytes(value):
 
 
 def base64url_decode(input):
+    """
+    Base64 解码, 需要通过补 "=", 成为 4 的倍数
+    """
     if isinstance(input, text_type):
         input = input.encode('ascii')
 
@@ -59,10 +62,16 @@ def base64url_decode(input):
 
 
 def base64url_encode(input):
+    """
+    在 Base64 的基础上，将末尾的 "=" 去掉
+    """
     return base64.urlsafe_b64encode(input).replace(b'=', b'')
 
 
 def to_base64url_uint(val):
+    """
+    int 转为 base64url
+    """
     if val < 0:
         raise ValueError('Must be a positive integer')
 
@@ -75,6 +84,9 @@ def to_base64url_uint(val):
 
 
 def from_base64url_uint(val):
+    """
+    base64url 转为 int
+    """
     if isinstance(val, text_type):
         val = val.encode('ascii')
 
@@ -85,6 +97,9 @@ def from_base64url_uint(val):
 
 
 def merge_dict(original, updates):
+    """
+    两个字典（dict）合并
+    """
     if not updates:
         return original
 
@@ -98,16 +113,30 @@ def merge_dict(original, updates):
 
 
 def number_to_bytes(num, num_bytes):
+    """
+    数字转为二进制格式
+    """
     padded_hex = '%0*x' % (2 * num_bytes, num)
     big_endian = binascii.a2b_hex(padded_hex.encode('ascii'))
     return big_endian
 
 
 def bytes_to_number(string):
+    """
+    二进制格式转为数字
+    """
     return int(binascii.b2a_hex(string), 16)
 
 
 def der_to_raw_signature(der_sig, curve):
+    """
+    生成签名
+    Args:
+        der_sig: header.payload
+        curve: key
+    Returns:
+        签名
+    """
     num_bits = curve.key_size
     num_bytes = (num_bits + 7) // 8
 
@@ -117,6 +146,13 @@ def der_to_raw_signature(der_sig, curve):
 
 
 def raw_to_der_signature(raw_sig, curve):
+    """
+    Args:
+        raw_sig: signature
+        curve: key
+    Returns:
+        header.payload
+    """
     num_bits = curve.key_size
     num_bytes = (num_bits + 7) // 8
 

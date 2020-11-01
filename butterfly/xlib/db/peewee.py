@@ -3,6 +3,7 @@
 # File Name: peewee.py
 # Description:
     https://github.com/coleifer/peewee
+    doc: http://docs.peewee-orm.com/en/latest/genindex.html
 """
 from bisect import bisect_left
 from bisect import bisect_right
@@ -93,7 +94,6 @@ __all__ = [
     'Context',
     'Database',
     'DatabaseError',
-    'DatabaseProxy',
     'DataError',
     'DateField',
     'DateTimeField',
@@ -129,7 +129,6 @@ __all__ = [
     'PrimaryKeyField',  # XXX: Deprecated, change to AutoField.
     'prefetch',
     'ProgrammingError',
-    'Proxy',
     'QualifiedNames',
     'SchemaManager',
     'SmallIntegerField',
@@ -147,10 +146,19 @@ __all__ = [
     'Window',
 ]
 
+
+##########################################################
+# 该 Handler 实例会忽略 error messages
+# 通常被想使用 logging 的 library 开发者使用来避免 'No handlers could be found for logger XXX' 信息的出现
+##########################################################
 try:  # Python 2.7+
     from logging import NullHandler
 except ImportError:
     class NullHandler(logging.Handler):
+        """
+        NullHandler class
+        """
+
         def emit(self, record):
             pass
 
@@ -167,6 +175,9 @@ if sys.version_info[0] == 2:
     exec('def reraise(tp, value, tb=None): raise tp, value, tb')
 
     def print_(s):
+        """
+        输出到标准输出函数
+        """
         sys.stdout.write(s)
         sys.stdout.write('\n')
 else:
@@ -177,7 +188,12 @@ else:
         from collections import Callable
     from functools import reduce
 
-    def callable_(c): return isinstance(c, Callable)
+    def callable_(c):
+        """
+        bool
+        callable 函数在 python2.x 版本中都可用。但是在 python3.0 版本中被移除，而在 python3.2 以后版本中被重新添加
+        """
+        return isinstance(c, Callable)
     text_type = str
     bytes_type = bytes
     buffer_type = memoryview
@@ -187,6 +203,9 @@ else:
     izip_longest = itertools.zip_longest
 
     def reraise(tp, value, tb=None):
+        """
+        re raise
+        """
         if value.__traceback__ is not tb:
             raise value.with_traceback(tb)
         raise value
@@ -196,16 +215,16 @@ if sqlite3:
     sqlite3.register_adapter(decimal.Decimal, str)
     sqlite3.register_adapter(datetime.date, str)
     sqlite3.register_adapter(datetime.time, str)
-    __sqlite_version__ = sqlite3.sqlite_version_info
+    __sqlite_version = sqlite3.sqlite_version_info
 else:
-    __sqlite_version__ = (0, 0, 0)
+    __sqlite_version = (0, 0, 0)
 
 
-__date_parts__ = set(('year', 'month', 'day', 'hour', 'minute', 'second'))
+__date_parts = set(('year', 'month', 'day', 'hour', 'minute', 'second'))
 
 # Sqlite does not support the `date_part` SQL function, so we will define an
 # implementation in python.
-__sqlite_datetime_formats__ = (
+__sqlite_datetime_formats = (
     '%Y-%m-%d %H:%M:%S',
     '%Y-%m-%d %H:%M:%S.%f',
     '%Y-%m-%d',
@@ -213,7 +232,7 @@ __sqlite_datetime_formats__ = (
     '%H:%M:%S.%f',
     '%H:%M')
 
-__sqlite_date_trunc__ = {
+__sqlite_date_trunc = {
     'year': '%Y-01-01 00:00:00',
     'month': '%Y-%m-01 00:00:00',
     'day': '%Y-%m-%d 00:00:00',
@@ -221,32 +240,35 @@ __sqlite_date_trunc__ = {
     'minute': '%Y-%m-%d %H:%M:00',
     'second': '%Y-%m-%d %H:%M:%S'}
 
-__mysql_date_trunc__ = __sqlite_date_trunc__.copy()
-__mysql_date_trunc__['minute'] = '%Y-%m-%d %H:%i:00'
-__mysql_date_trunc__['second'] = '%Y-%m-%d %H:%i:%S'
+__mysql_date_trunc = __sqlite_date_trunc.copy()
+__mysql_date_trunc['minute'] = '%Y-%m-%d %H:%i:00'
+__mysql_date_trunc['second'] = '%Y-%m-%d %H:%i:%S'
 
 
 def _sqlite_date_part(lookup_type, datetime_string):
-    assert lookup_type in __date_parts__
+    assert lookup_type in __date_parts
     if not datetime_string:
         return
-    dt = format_date_time(datetime_string, __sqlite_datetime_formats__)
+    dt = format_date_time(datetime_string, __sqlite_datetime_formats)
     return getattr(dt, lookup_type)
 
 
 def _sqlite_date_trunc(lookup_type, datetime_string):
-    assert lookup_type in __sqlite_date_trunc__
+    assert lookup_type in __sqlite_date_trunc
     if not datetime_string:
         return
-    dt = format_date_time(datetime_string, __sqlite_datetime_formats__)
-    return dt.strftime(__sqlite_date_trunc__[lookup_type])
+    dt = format_date_time(datetime_string, __sqlite_datetime_formats)
+    return dt.strftime(__sqlite_date_trunc[lookup_type])
 
 
-def __deprecated__(s):
+def __deprecated(s):
     warnings.warn(s, DeprecationWarning)
 
 
-class attrdict(dict):
+class AttrDict(dict):
+    """
+    将字典像属性那样操作
+    """
     def __getattr__(self, attr):
         try:
             return self[attr]
@@ -261,7 +283,7 @@ class attrdict(dict):
         return self
 
     def __add__(self, rhs):
-        d = attrdict(self)
+        d = AttrDict(self)
         d.update(rhs)
         return d
 
@@ -269,7 +291,7 @@ class attrdict(dict):
 SENTINEL = object()
 
 #: Operations for use in SQL expressions.
-OP = attrdict(
+OP = AttrDict(
     AND='AND',
     OR='OR',
     ADD='+',
@@ -300,7 +322,7 @@ OP = attrdict(
 
 # To support "django-style" double-underscore filters, create a mapping between
 # operation name and operation code, e.g. "__eq" == OP.EQ.
-DJANGO_MAP = attrdict({
+DJANGO_MAP = AttrDict({
     'eq': operator.eq,
     'lt': operator.lt,
     'lte': operator.le,
@@ -316,7 +338,7 @@ DJANGO_MAP = attrdict({
 
 #: Mapping of field type to the data-type supported by the database. Databases
 #: may override or add to this list.
-FIELD = attrdict(
+FIELD = AttrDict(
     AUTO='INTEGER',
     BIGAUTO='BIGINT',
     BIGINT='BIGINT',
@@ -339,7 +361,7 @@ FIELD = attrdict(
 
 #: Join helpers (for convenience) -- all join types are supported, this object
 #: is just to help avoid introducing errors by using strings everywhere.
-JOIN = attrdict(
+JOIN = AttrDict(
     INNER='INNER',
     LEFT_OUTER='LEFT OUTER',
     RIGHT_OUTER='RIGHT OUTER',
@@ -349,7 +371,7 @@ JOIN = attrdict(
     NATURAL='NATURAL')
 
 # Row representations.
-ROW = attrdict(
+ROW = AttrDict(
     TUPLE=1,
     DICT=2,
     NAMED_TUPLE=3,
@@ -379,10 +401,28 @@ MODEL_BASE = '_metaclass_helper_'
 
 
 def with_metaclass(meta, base=object):
+    """
+    用基类 base 和 metaclass 元类创建一个新类
+
+    Args:
+        meta: 元类
+        base: 基类
+    Returns:
+        新类
+    """
     return meta(MODEL_BASE, (base,), {})
 
 
 def merge_dict(source, overrides):
+    """
+    合并字典
+
+    Args:
+        source: dict
+        overrides: dict
+    Returns:
+        dict
+    """
     merged = source.copy()
     if overrides:
         merged.update(overrides)
@@ -390,30 +430,61 @@ def merge_dict(source, overrides):
 
 
 def quote(path, quote_chars):
+    """
+    对引号的处理
+    path – Components that make up the dotted-path of the entity name.
+    """
     if len(path) == 1:
         return path[0].join(quote_chars)
     return '.'.join([part.join(quote_chars) for part in path])
 
 
-def is_model(o): return isclass(o) and issubclass(o, Model)
+def is_model(o):
+    """
+    判断对象是否是个类，同时是否是 Model 的子类
+
+    Args:
+        o: {object}
+    Returns:
+        bool
+    """
+    return isclass(o) and issubclass(o, Model)
 
 
 def ensure_tuple(value):
+    """
+    返回元组
+    """
     if value is not None:
         return value if isinstance(value, (list, tuple)) else (value,)
 
 
 def ensure_entity(value):
+    """
+    返回 entity 对象
+    """
     if value is not None:
         return value if isinstance(value, Node) else Entity(value)
 
 
 def make_snake_case(s):
+    """
+    返回蛇形命名法(snake case)名字，即用下划线将小写单词连接
+    """
     first = SNAKE_CASE_STEP1.sub(r'\1_\2', s)
     return SNAKE_CASE_STEP2.sub(r'\1_\2', first).lower()
 
 
 def chunked(it, n):
+    """
+    分块辅助函数
+
+    Example:
+        # 一次插入 100 行.
+        with db.atomic():
+            for batch in chunked(data, 100):
+                Person.insert_many(batch).execute()
+    """
     marker = object()
     for group in (list(g) for g in izip_longest(*[iter(it)] * n,
                                                 fillvalue=marker)):
@@ -422,7 +493,7 @@ def chunked(it, n):
         yield group
 
 
-class _callable_context_manager(object):
+class _CallableContextManager(object):
     def __call__(self, fn):
         @wraps(fn)
         def inner(*args, **kwargs):
@@ -430,73 +501,15 @@ class _callable_context_manager(object):
                 return fn(*args, **kwargs)
         return inner
 
-
-class Proxy(object):
-    """
-    Create a proxy or placeholder for another object.
-    """
-    __slots__ = ('obj', '_callbacks')
-
-    def __init__(self):
-        self._callbacks = []
-        self.initialize(None)
-
-    def initialize(self, obj):
-        self.obj = obj
-        for callback in self._callbacks:
-            callback(obj)
-
-    def attach_callback(self, callback):
-        self._callbacks.append(callback)
-        return callback
-
-    def passthrough(method):
-        def inner(self, *args, **kwargs):
-            if self.obj is None:
-                raise AttributeError('Cannot use uninitialized Proxy.')
-            return getattr(self.obj, method)(*args, **kwargs)
-        return inner
-
-    # Allow proxy to be used as a context-manager.
-    __enter__ = passthrough('__enter__')
-    __exit__ = passthrough('__exit__')
-
-    def __getattr__(self, attr):
-        if self.obj is None:
-            raise AttributeError('Cannot use uninitialized Proxy.')
-        return getattr(self.obj, attr)
-
-    def __setattr__(self, attr, value):
-        if attr not in self.__slots__:
-            raise AttributeError('Cannot set attribute on proxy.')
-        return super(Proxy, self).__setattr__(attr, value)
-
-
-class DatabaseProxy(Proxy):
-    """
-    Proxy implementation specifically for proxying `Database` objects.
-    """
-
-    def connection_context(self):
-        return ConnectionContext(self)
-
-    def atomic(self):
-        return _atomic(self)
-
-    def manual_commit(self):
-        return _manual(self)
-
-    def transaction(self):
-        return _transaction(self)
-
-    def savepoint(self):
-        return _savepoint(self)
-
-
+################################################################
 # SQL Generation.
-
+################################################################
 
 class AliasManager(object):
+    """
+    AliasManager
+    管理 source 在 SELECT 查询中分配给对象的别名
+    """
     __slots__ = ('_counter', '_current_index', '_mapping')
 
     def __init__(self):
@@ -511,12 +524,18 @@ class AliasManager(object):
         return self._mapping[self._current_index - 1]
 
     def add(self, source):
+        """
+        add source to self.mapping
+        """
         if source not in self.mapping:
             self._counter += 1
             self[source] = 't%d' % self._counter
         return self.mapping[source]
 
     def get(self, source, any_depth=False):
+        """
+        返回别名
+        """
         if any_depth:
             for idx in reversed(range(self._current_index)):
                 if source in self._mapping[idx]:
@@ -540,8 +559,10 @@ class AliasManager(object):
         self._current_index -= 1
 
 
-class State(collections.namedtuple('_State', ('scope', 'parentheses',
-                                              'settings'))):
+class State(collections.namedtuple('_State', ('scope', 'parentheses', 'settings'))):
+    """
+    轻量级对象
+    """
     def __new__(cls, scope=SCOPE_NORMAL, parentheses=False, **kwargs):
         return super(State, cls).__new__(cls, scope, parentheses, kwargs)
 
@@ -563,7 +584,7 @@ class State(collections.namedtuple('_State', ('scope', 'parentheses',
         return self.settings.get(attr_name)
 
 
-def __scope_context__(scope):
+def __scope_context(scope):
     @contextmanager
     def inner(self, **kwargs):
         with self(scope=scope, **kwargs):
@@ -607,11 +628,11 @@ class Context(object):
         self.state = self.state(**overrides)
         return self
 
-    scope_normal = __scope_context__(SCOPE_NORMAL)
-    scope_source = __scope_context__(SCOPE_SOURCE)
-    scope_values = __scope_context__(SCOPE_VALUES)
-    scope_cte = __scope_context__(SCOPE_CTE)
-    scope_column = __scope_context__(SCOPE_COLUMN)
+    scope_normal = __scope_context(SCOPE_NORMAL)
+    scope_source = __scope_context(SCOPE_SOURCE)
+    scope_values = __scope_context(SCOPE_VALUES)
+    scope_cte = __scope_context(SCOPE_CTE)
+    scope_column = __scope_context(SCOPE_COLUMN)
 
     def __enter__(self):
         if self.parentheses:
@@ -879,7 +900,7 @@ class BaseTable(Source):
     __rmul__ = __join__(JOIN.CROSS, inverted=True)
 
 
-class _BoundTableContext(_callable_context_manager):
+class _BoundTableContext(_CallableContextManager):
     def __init__(self, table, database):
         self.table = table
         self.database = database
@@ -2891,7 +2912,7 @@ class _NoopLock(object):
     def __exit__(self, exc_type, exc_val, exc_tb): pass
 
 
-class ConnectionContext(_callable_context_manager):
+class ConnectionContext(_CallableContextManager):
     __slots__ = ('db',)
 
     def __init__(self, db): self.db = db
@@ -2903,7 +2924,7 @@ class ConnectionContext(_callable_context_manager):
     def __exit__(self, exc_type, exc_val, exc_tb): self.db.close()
 
 
-class Database(_callable_context_manager):
+class Database(_CallableContextManager):
     context_class = Context
     field_types = {}
     operations = {}
@@ -2945,7 +2966,7 @@ class Database(_callable_context_manager):
             self._lock = _NoopLock()
 
         if autocommit is not None:
-            __deprecated__('Peewee no longer uses the "autocommit" option, as '
+            __deprecated('Peewee no longer uses the "autocommit" option, as '
                            'the semantics now require it to always be True. '
                            'Because some database-drivers also use the '
                            '"autocommit" parameter, you are receiving a '
@@ -3296,7 +3317,7 @@ class SqliteDatabase(Database):
         'ILIKE': 'LIKE'}
     index_schema_prefix = True
     limit_max = -1
-    server_version = __sqlite_version__
+    server_version = __sqlite_version
     truncate_table = False
 
     def __init__(self, database, *args, **kwargs):
@@ -3836,7 +3857,7 @@ class MySQLDatabase(Database):
         return fn.EXTRACT(NodeList((SQL(date_part), SQL('FROM'), date_field)))
 
     def truncate_date(self, date_part, date_field):
-        return fn.DATE_FORMAT(date_field, __mysql_date_trunc__[date_part],
+        return fn.DATE_FORMAT(date_field, __mysql_date_trunc[date_part],
                               python_value=simple_date_time)
 
     def to_timestamp(self, date_field):
@@ -3855,7 +3876,7 @@ class MySQLDatabase(Database):
 # TRANSACTION CONTROL.
 
 
-class _manual(_callable_context_manager):
+class _manual(_CallableContextManager):
     def __init__(self, db):
         self.db = db
 
@@ -3872,7 +3893,7 @@ class _manual(_callable_context_manager):
                              'manual commit block.')
 
 
-class _atomic(_callable_context_manager):
+class _atomic(_CallableContextManager):
     def __init__(self, db, lock_type=None):
         self.db = db
         self._lock_type = lock_type
@@ -3892,7 +3913,7 @@ class _atomic(_callable_context_manager):
         return self._helper.__exit__(exc_type, exc_val, exc_tb)
 
 
-class _transaction(_callable_context_manager):
+class _transaction(_CallableContextManager):
     def __init__(self, db, lock_type=None):
         self.db = db
         self._lock_type = lock_type
@@ -3933,7 +3954,7 @@ class _transaction(_callable_context_manager):
             self.db.pop_transaction()
 
 
-class _savepoint(_callable_context_manager):
+class _savepoint(_CallableContextManager):
     def __init__(self, db, sid=None):
         self.db = db
         self.sid = sid or 's' + uuid.uuid4().hex
@@ -4209,7 +4230,7 @@ class Field(ColumnBase):
                  help_text=None, verbose_name=None, index_type=None,
                  db_column=None, _hidden=False):
         if db_column is not None:
-            __deprecated__('"db_column" has been deprecated in favor of '
+            __deprecated('"db_column" has been deprecated in favor of '
                            '"column_name" for Field objects.')
             column_name = db_column
 
@@ -4342,7 +4363,7 @@ class IdentityField(AutoField):
 
 class PrimaryKeyField(AutoField):
     def __init__(self, *args, **kwargs):
-        __deprecated__('"PrimaryKeyField" has been renamed to "AutoField". '
+        __deprecated('"PrimaryKeyField" has been renamed to "AutoField". '
                        'Please update your code accordingly as this will be '
                        'completely removed in a subsequent release.')
         super(PrimaryKeyField, self).__init__(*args, **kwargs)
@@ -4438,10 +4459,7 @@ class BlobField(Field):
     def bind(self, model, name, set_attribute=True):
         self._constructor = bytearray
         if model._meta.database:
-            if isinstance(model._meta.database, Proxy):
-                model._meta.database.attach_callback(self._db_hook)
-            else:
-                self._db_hook(model._meta.database)
+            self._db_hook(model._meta.database)
 
         # Attach a hook to the model metadata; in the event the database is
         # changed or set at run-time, we will be sure to apply our callback and
@@ -4868,15 +4886,15 @@ class ForeignKeyField(Field):
         super(ForeignKeyField, self).__init__(*args, **kwargs)
 
         if rel_model is not None:
-            __deprecated__('"rel_model" has been deprecated in favor of '
+            __deprecated('"rel_model" has been deprecated in favor of '
                            '"model" for ForeignKeyField objects.')
             model = rel_model
         if to_field is not None:
-            __deprecated__('"to_field" has been deprecated in favor of '
+            __deprecated('"to_field" has been deprecated in favor of '
                            '"field" for ForeignKeyField objects.')
             field = to_field
         if related_name is not None:
-            __deprecated__('"related_name" has been deprecated in favor of '
+            __deprecated('"related_name" has been deprecated in favor of '
                            '"backref" for Field objects.')
             backref = related_name
 
@@ -5496,7 +5514,7 @@ class Metadata(object):
                  without_rowid=False, temporary=False, legacy_table_names=True,
                  **kwargs):
         if db_table is not None:
-            __deprecated__('"db_table" has been deprecated in favor of '
+            __deprecated('"db_table" has been deprecated in favor of '
                            '"table_name" for Models.')
             table_name = db_table
         self.model = model
@@ -5938,7 +5956,7 @@ class ModelBase(type):
     __nonzero__ = __bool__  # Python 2.
 
 
-class _BoundModelsContext(_callable_context_manager):
+class _BoundModelsContext(_CallableContextManager):
     def __init__(self, models, database, bind_refs, bind_backrefs):
         self.models = models
         self.database = database
@@ -6326,7 +6344,7 @@ class Model(with_metaclass(ModelBase, Node)):
     @classmethod
     def create_table(cls, safe=True, **options):
         if 'fail_silently' in options:
-            __deprecated__('"fail_silently" has been deprecated in favor of '
+            __deprecated('"fail_silently" has been deprecated in favor of '
                            '"safe" for the create_table() method.')
             safe = options.pop('fail_silently')
 

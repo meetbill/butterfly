@@ -98,13 +98,22 @@ class SSLfileobject(wsgiserver.CP_makefile):
                 raise socket.timeout('timed out')
 
     def recv(self, size):
+        """
+        recv data
+        """
         return self._safe_call(True, super(SSLfileobject, self).recv, size)
 
     def sendall(self, *args, **kwargs):
+        """
+        sendall data
+        """
         return self._safe_call(False, super(SSLfileobject, self).sendall,
                                *args, **kwargs)
 
     def send(self, *args, **kwargs):
+        """
+        send data
+        """
         return self._safe_call(False, super(SSLfileobject, self).send,
                                *args, **kwargs)
 
@@ -137,6 +146,9 @@ class SSLConnection(object):
 """ % (f, f))
 
     def shutdown(self, *args):
+        """
+        Close connection
+        """
         self._lock.acquire()
         try:
             # pyOpenSSL.socket.shutdown takes no args

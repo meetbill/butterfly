@@ -1095,17 +1095,27 @@ class CPMakefilePY2(getattr(socket, '_fileobject', object)):
                     raise
 
     def send(self, data):
+        """
+        send data
+        """
         bytes_sent = self._sock.send(data)
         self.bytes_written += bytes_sent
         return bytes_sent
 
     def flush(self):
+        """
+        清空写缓存区列表
+        """
+        # self._wbuf 为写入缓存区, 是字符串组成的列表
         if self._wbuf:
             buffer = ''.join(self._wbuf)
             self._wbuf = []
             self.write(buffer)
 
     def recv(self, size):
+        """
+        recv data
+        """
         while True:
             try:
                 data = self._sock.recv(size)
