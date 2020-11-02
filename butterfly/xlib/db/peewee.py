@@ -593,6 +593,11 @@ def __scope_context(scope):
 
 
 class Context(object):
+    """
+    Converts Peewee structures into parameterized SQL queries.
+
+    Peewee 结构应全部实现 __sql 方法，将由 Context 在 SQL 生成期间初始化。
+    """
     __slots__ = ('stack', '_sql', '_values', 'alias_manager', 'state')
 
     def __init__(self, **settings):
@@ -610,14 +615,26 @@ class Context(object):
 
     @property
     def scope(self):
+        """
+        Return the currently-active scope rules.
+        返回当前活动的作用域规则。
+        """
         return self.state.scope
 
     @property
     def parentheses(self):
+        """
+        Return whether the current state is wrapped in parentheses.
+        返回当前状态是否用括号括起来。
+        """
         return self.state.parentheses
 
     @property
     def subquery(self):
+        """
+        Return whether the current state is the child of another query.
+        返回当前状态是否为其他查询的子级。
+        """
         return self.state.subquery
 
     def __call__(self, **overrides):
@@ -651,14 +668,24 @@ class Context(object):
         self.alias_manager.pop()
 
     def sql(self, obj):
+        """
+        将可组合节点对象、子上下文或其他对象追加到查询 AST
+        """
         if isinstance(obj, (Node, Context)):
-            return obj.__sql__(self)
+            return obj.__sql(self)
         elif is_model(obj):
-            return obj._meta.table.__sql__(self)
+            return obj._meta.table.__sql(self)
         else:
             return self.sql(Value(obj))
 
     def literal(self, keyword):
+        """
+        Append a string-literal to the current query AST.
+        将字符串文本附加到当前查询ast。
+
+        Returns:
+            The updated Context object.
+        """
         self._sql.append(keyword)
         return self
 
@@ -679,15 +706,27 @@ class Context(object):
         self._values.append(value)
         return self.literal(self.state.param or '?') if add_param else self
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         ctx._sql.extend(self._sql)
         ctx._values.extend(self._values)
         return ctx
 
     def parse(self, node):
+        """
+        将给定节点转换为 SQL AST 并返回由 SQL 查询和参数组成的 2 元组。
+
+        Args:
+            node (Node) – Instance of a Node subclass.
+        Returns:
+            a 2-tuple consisting of (sql, parameters).
+        """
         return self.sql(node).query()
 
     def query(self):
+        """
+        Returns:
+            a 2-tuple consisting of (sql, parameters) for the context.
+        """
         return ''.join(self._sql), self._values
 
 
@@ -731,11 +770,16 @@ def _query_val_transform(v):
         v = str(v)
     return v
 
-
+################################################################
 # AST.
+# 抽象语法树（abstract syntax code，AST）
+################################################################
 
 
 class Node(object):
+    """
+    构成 SQL 查询的 AST 的所有组件的基类。
+    """
     _coerce = True
 
     def clone(self):
@@ -743,11 +787,16 @@ class Node(object):
         obj.__dict__ = self.__dict__.copy()
         return obj
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         raise NotImplementedError
 
     @staticmethod
     def copy(method):
+        """
+        修饰器，用于改变节点状态的节点方法。这允许方法链接，例如：
+        query = MyModel.select()
+        new_query = query.where(MyModel.field == 'value')
+        """
         def inner(self, *args, **kwargs):
             clone = self.clone()
             method(clone, *args, **kwargs)
@@ -762,9 +811,15 @@ class Node(object):
         return self
 
     def is_alias(self):
+        """
+        用于确定用户是否已显式地为节点命名的 API
+        """
         return False
 
     def unwrap(self):
+        """
+        用于递归展开“已包装”节点的API
+        """
         return self
 
 
@@ -799,6 +854,16 @@ class _ExplicitColumn(object):
 
 
 class Source(Node):
+    """
+    行元组的源，例如表、联接或选择查询。 默认情况下，提供名为“c”的“magic”属性，该属性是列/属性查找的工厂，例如：
+    +-----------------------------------------
+    |User = Table('users')
+    |query = (User
+    |     .select(User.c.username)
+    |     .where(User.c.active == True)
+    |     .order_by(User.c.username))
+    +-----------------------------------------
+    """
     c = _DynamicColumn()
 
     def __init__(self, alias=None):
@@ -807,17 +872,45 @@ class Source(Node):
 
     @Node.copy
     def alias(self, name):
+        """
+        返回应用了给定别名的对象的副本。
+        """
         self._alias = name
 
     def select(self, *columns):
+        """
+        创建一个 Select 查询表。如果表显式声明列，但未提供任何列，则默认情况下，将选择表的所有已定义列。
+
+        Args:
+            columns : Column 实例、表达式、函数、子查询或任何您想选择的内容。
+        """
         if not columns:
             columns = (SQL('*'),)
         return Select((self,), columns)
 
     def join(self, dest, join_type='INNER', on=None):
+        """
+        联接类型
+
+        Args:
+            dest (Source) -- 将表与给定的目标联接。
+            join_type (str) -- 连接类型。
+            on -- 用作联接谓词的表达式。
+        Returns:
+            Join 实例。
+        """
         return Join(self, dest, join_type, on)
 
     def left_outer_join(self, dest, on=None):
+        """
+        方便调用方法 join() 使用左外部联接。
+
+        Args:
+            dest (Source) -- 将表与给定的目标联接。
+            on -- 用作联接谓词的表达式。
+        Returns:
+            Join 实例。
+        """
         return Join(self, dest, JOIN.LEFT_OUTER, on)
 
     def cte(self, name, recursive=False, columns=None):
@@ -888,6 +981,9 @@ def __join__(join_type='INNER', inverted=False):
 
 
 class BaseTable(Source):
+    """
+    表对象的基类，它支持通过运算符重载进行联接。
+    """
     __and__ = __join__(JOIN.INNER)
     __add__ = __join__(JOIN.LEFT_OUTER)
     __sub__ = __join__(JOIN.RIGHT_OUTER)
@@ -919,6 +1015,9 @@ class _BoundTableContext(_CallableContextManager):
 
 
 class Table(_HashableSource, BaseTable):
+    """
+    数据库中的表
+    """
     def __init__(self, name, columns=None, primary_key=None, schema=None,
                  alias=None, _model=None, _database=None):
         self.__name__ = name
@@ -954,10 +1053,23 @@ class Table(_HashableSource, BaseTable):
             _database=self._database)
 
     def bind(self, database=None):
+        """
+        将此表绑定到给定的数据库（或保留为空取消绑定）
+        Args:
+            database -- Database 对象。
+        """
         self._database = database
         return self
 
     def bind_ctx(self, database=None):
+        """
+        该管理器将表绑定到所包装块期间的给定数据库。
+
+        Args:
+            database -- Database 对象。
+        Returns:
+            返回一个上下文管理器
+        """
         return _BoundTableContext(self, database)
 
     def _get_hash(self):
@@ -965,12 +1077,27 @@ class Table(_HashableSource, BaseTable):
 
     @__bind_database__
     def select(self, *columns):
+        """
+        创建一个 Select 查询表。如果表显式声明列，但未提供任何列，则默认情况下，将选择表的所有已定义列。
+        Args:
+            columns -- Column 实例、表达式、函数、子查询或任何您想选择的内容。
+        """
         if not columns and self._columns:
             columns = [Column(self, column) for column in self._columns]
         return Select((self,), columns)
 
     @__bind_database__
     def insert(self, insert=None, columns=None, **kwargs):
+        """
+        创建一个 Insert 到表中
+
+        Args:
+            insert -- 字典将列映射到值，生成字典（即列表）的iterable，或 Select 查询。
+            columns (list) -- 当要插入的数据不是字典时要插入的列的列表。
+            kwargs -- 列名称到值的映射。
+        Returns:
+            Insert 实例
+        """
         if kwargs:
             insert = {} if insert is None else insert
             src = self if self._columns else self.c
@@ -980,12 +1107,27 @@ class Table(_HashableSource, BaseTable):
 
     @__bind_database__
     def replace(self, insert=None, columns=None, **kwargs):
+        """
+        创建一个 Insert 查询要替换其冲突解决方法的表。
+
+        Args:
+            insert -- 字典将列映射到值，生成字典（即列表）的iterable，或 Select 查询。
+            columns (list) -- 当要插入的数据不是字典时要插入的列的列表。
+            kwargs -- 列名称到值的映射。
+        """
         return (self
                 .insert(insert=insert, columns=columns)
                 .on_conflict('REPLACE'))
 
     @__bind_database__
     def update(self, update=None, **kwargs):
+        """
+        创建一个 Update 查询表
+
+        Args:
+            update -- 将列映射到值的字典。
+            kwargs -- 列名称到值的映射。
+        """
         if kwargs:
             update = {} if update is None else update
             for key, value in kwargs.items():
@@ -995,9 +1137,12 @@ class Table(_HashableSource, BaseTable):
 
     @__bind_database__
     def delete(self):
+        """
+        创建一个 Delete 查询表。
+        """
         return Delete(self)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             # Return the quoted table name.
             return ctx.sql(Entity(*self._path))
@@ -1014,6 +1159,9 @@ class Table(_HashableSource, BaseTable):
 
 
 class Join(BaseTable):
+    """
+    表示到表对象之间的联接。
+    """
     def __init__(self, lhs, rhs, join_type=JOIN.INNER, on=None, alias=None):
         super(Join, self).__init__(alias=alias)
         self.lhs = lhs
@@ -1025,7 +1173,7 @@ class Join(BaseTable):
         self._on = predicate
         return self
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         (ctx
          .sql(self.lhs)
          .literal(' %s JOIN ' % self.join_type)
@@ -1036,6 +1184,15 @@ class Join(BaseTable):
 
 
 class ValuesList(_HashableSource, BaseTable):
+    """
+    表示可以像表一样使用的值列表。
+
+    +---------------------------------------
+    | data = [(1, 'first'), (2, 'second')]
+    | vl = ValuesList(data, columns=('idx', 'name'))
+    | query = (vl.select(vl.c.idx, vl.c.name).order_by(vl.c.idx))
+    +---------------------------------------
+    """
     def __init__(self, values, columns=None, alias=None):
         self._values = values
         self._columns = columns
@@ -1046,9 +1203,12 @@ class ValuesList(_HashableSource, BaseTable):
 
     @Node.copy
     def columns(self, *names):
+        """
+        names -- 要应用于数据列的名称。
+        """
         self._columns = names
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if self._alias:
             ctx.alias_manager[self] = self._alias
 
@@ -1071,7 +1231,16 @@ class ValuesList(_HashableSource, BaseTable):
 
 
 class CTE(_HashableSource, Source):
+    """
+    表示公用表表达式
+    """
     def __init__(self, name, query, recursive=False, columns=None):
+        """
+        name -- CTE 的名称。
+        query -- Select 描述 CTE 的查询。
+        recursive (bool) -- CTE 是否递归。
+        columns (list) -- CTE 生成的列的显式列表（可选）。
+        """
         self._alias = name
         self._query = query
         self._recursive = recursive
@@ -1083,6 +1252,14 @@ class CTE(_HashableSource, Source):
         super(CTE, self).__init__(alias=name)
 
     def select_from(self, *columns):
+        """
+        创建一个选择查询，该查询使用给定的公共表表达式作为新查询的源。
+
+        Args:
+            columns -- 要从 CTE 中选择的一列或多列。
+        Returns:
+            Select 使用公用表表达式的查询
+        """
         if not columns:
             raise ValueError('select_from() must specify one or more columns '
                              'from the CTE to select.')
@@ -1100,11 +1277,19 @@ class CTE(_HashableSource, Source):
         return hash((self.__class__, self._alias, id(self._query)))
 
     def union_all(self, rhs):
+        """
+        用于构造 CTE 的递归项。
+
+        Args:
+            rhs: 递归项，通常为 Select 查询。
+        Returns:
+            递归的 CTE 使用给定的递归项。
+        """
         clone = self._query.clone()
         return CTE(self._alias, clone + rhs, self._recursive, self._columns)
     __add__ = union_all
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope != SCOPE_CTE:
             return ctx.sql(Entity(self._alias))
 
@@ -1121,7 +1306,18 @@ class CTE(_HashableSource, Source):
 
 
 class ColumnBase(Node):
+    """
+    列、属性或表达式的基类。
+    """
     def alias(self, alias):
+        """
+        指示应为指定的列的对象提供的别名。
+
+        Args:
+            alias (str) -- 给定的列对象的别名。
+        Returns:
+            Alias 对象。
+        """
         if alias:
             return Alias(self, alias)
         return self
@@ -1130,13 +1326,35 @@ class ColumnBase(Node):
         return self
 
     def cast(self, as_type):
+        """
+        创建一个 CAST 表达式。
+
+        Args:
+            as_type (str) -- 要强制转换到的类型名。
+        Returns:
+            Cast 对象。
+        """
         return Cast(self, as_type)
 
     def asc(self, collation=None, nulls=None):
+        """
+        Args:
+            collation (str) -- 用于排序的排序规则名称。
+            nulls (str) -- 对空值排序（第一个或最后一个）。
+        Returns:
+            上升的 Ordering 列的对象。
+        """
         return Asc(self, collation=collation, nulls=nulls)
     __pos__ = asc
 
     def desc(self, collation=None, nulls=None):
+        """
+        Args:
+            collation (str) -- 用于排序的排序规则名称。
+            nulls (str) -- 对空值排序（第一个或最后一个）。
+        Returns:
+            降序 Ordering 列的对象。
+        """
         return Desc(self, collation=collation, nulls=nulls)
     __neg__ = desc
 
@@ -1238,7 +1456,14 @@ class ColumnBase(Node):
 
 
 class Column(ColumnBase):
+    """
+    表中的列或子查询返回的列。
+    """
     def __init__(self, source, name):
+        """
+        source (Source) -- 列的源。
+        name (str) -- 列名。
+        """
         self.source = source
         self.name = name
 
@@ -1251,7 +1476,7 @@ class Column(ColumnBase):
     def __hash__(self):
         return hash((self.source, self.name))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             return ctx.sql(Entity(self.name))
         else:
@@ -1291,6 +1516,9 @@ class _DynamicEntity(object):
 
 
 class Alias(WrappedNode):
+    """
+    为给定的列对象创建一个命名别名。
+    """
     c = _DynamicEntity()
 
     def __init__(self, node, alias):
@@ -1309,7 +1537,7 @@ class Alias(WrappedNode):
     def is_alias(self):
         return True
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_SOURCE:
             return (ctx
                     .sql(self.node)
@@ -1320,10 +1548,13 @@ class Alias(WrappedNode):
 
 
 class Negated(WrappedNode):
+    """
+    Represents a negated column-like object.
+    """
     def __invert__(self):
         return self.node
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.literal('NOT ').sql(self.node)
 
 
@@ -1345,7 +1576,7 @@ class BitwiseNegated(BitwiseMixin, WrappedNode):
     def __invert__(self):
         return self.node
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.state.operations:
             op_sql = ctx.state.operations.get(self.op, self.op)
         else:
@@ -1354,9 +1585,17 @@ class BitwiseNegated(BitwiseMixin, WrappedNode):
 
 
 class Value(ColumnBase):
+    """
+    要在参数化查询中使用的值。
+    """
     _multi_types = (list, tuple, frozenset, set)
 
     def __init__(self, value, converter=None, unpack=True):
+        """
+        value -- python 对象或标量值。
+        converter -- 用于将值转换为数据库能理解的类型的函数。
+        unpack (bool) -- 列表或元组是应解包到值列表中还是按原样处理。
+        """
         self.value = value
         self.converter = converter
         self.multi = isinstance(self.value, self._multi_types) and unpack
@@ -1368,7 +1607,7 @@ class Value(ColumnBase):
                 else:
                     self.values.append(Value(item, self.converter))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if self.multi:
             # For multi-part values (e.g. lists of IDs).
             return ctx.sql(EnclosedNodeList(self.values))
@@ -1377,16 +1616,22 @@ class Value(ColumnBase):
 
 
 def AsIs(value):
+    """
+    表示 Value 按原样处理，并直接传递回数据库驱动程序。
+    """
     return Value(value, unpack=False)
 
 
 class Cast(WrappedNode):
+    """
+    表示 CAST(<node> AS <cast>) 表达式
+    """
     def __init__(self, node, cast):
         super(Cast, self).__init__(node)
         self._cast = cast
         self._coerce = False
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return (ctx
                 .literal('CAST(')
                 .sql(self.node)
@@ -1394,6 +1639,9 @@ class Cast(WrappedNode):
 
 
 class Ordering(WrappedNode):
+    """
+    表示按列的对象排序。
+    """
     def __init__(self, node, direction, collation=None, nulls=None):
         super(Ordering, self).__init__(node)
         self.direction = direction
@@ -1404,6 +1652,9 @@ class Ordering(WrappedNode):
                              '"last", got: %s' % nulls)
 
     def collate(self, collation=None):
+        """
+        collation (str) -- 用于排序的排序规则名称。
+        """
         return Ordering(self.node, self.direction, collation)
 
     def _null_ordering_case(self, nulls):
@@ -1415,7 +1666,7 @@ class Ordering(WrappedNode):
             raise ValueError('unsupported value for nulls= ordering.')
         return Case(None, ((self.node.is_null(), ifnull),), notnull)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if self.nulls and not ctx.state.nulls_ordering:
             ctx.sql(self._null_ordering_case(self.nulls)).literal(', ')
 
@@ -1428,21 +1679,36 @@ class Ordering(WrappedNode):
 
 
 def Asc(node, collation=None, nulls=None):
+    """
+    升序
+    """
     return Ordering(node, 'ASC', collation, nulls)
 
 
 def Desc(node, collation=None, nulls=None):
+    """
+    降序
+    """
     return Ordering(node, 'DESC', collation, nulls)
 
 
 class Expression(ColumnBase):
+    """
+    表示二进制表达式（lhs op rhs），例如（foo+1）
+    """
     def __init__(self, lhs, op, rhs, flat=False):
+        """
+        lhs -- 左侧。
+        op -- 操作。
+        rhs -- 右侧。
+        flat (bool) -- 是否将表达式括在括号中。
+        """
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
         self.flat = flat
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         overrides = {'parentheses': not self.flat, 'in_expr': True}
 
         # First attempt to unwrap the node on the left-hand-side, so that we
@@ -1484,6 +1750,11 @@ class StringExpression(Expression):
 
 
 class Entity(ColumnBase):
+    """
+    表示查询中引用的实体，如表、列、别名。名称可以由多个组件组成
+
+    例如 "a_table"."column_name"
+    """
     def __init__(self, *path):
         self._path = [part.replace('"', '""') for part in path if part]
 
@@ -1496,16 +1767,19 @@ class Entity(ColumnBase):
     def __hash__(self):
         return hash((self.__class__.__name__, tuple(self._path)))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.literal(quote(self._path, ctx.state.quote or '""'))
 
 
 class SQL(ColumnBase):
+    """
+    表示参数化的 SQL 查询或查询片段。
+    """
     def __init__(self, sql, params=None):
         self.sql = sql
         self.params = params
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         ctx.literal(self.sql)
         if self.params:
             for param in self.params:
@@ -1514,11 +1788,26 @@ class SQL(ColumnBase):
 
 
 def Check(constraint):
+    """
+    表示检查约束
+
+    Args:
+        constraint (str) -- 约束 SQL。
+    """
     return SQL('CHECK (%s)' % constraint)
 
 
 class Function(ColumnBase):
+    """
+    表示 SQL 函数调用。
+    """
     def __init__(self, name, arguments, coerce=True, python_value=None):
+        """
+        name (str) -- 函数名。
+        arguments (tuple) -- 函数的参数。
+        coerce (bool) -- 从光标读取函数返回值时，是否将函数结果强制为特定的数据类型。
+        python_value (callable) -- 用于转换光标返回值的函数。
+        """
         self.name = name
         self.arguments = arguments
         self._filter = None
@@ -1535,10 +1824,21 @@ class Function(ColumnBase):
 
     @Node.copy
     def filter(self, where=None):
+        """
+        where -- 用于筛选聚合的表达式。
+        添加 FILTER (WHERE...) 子句转换为聚合函数。计算 where 表达式以确定哪些行被送入聚合函数。
+        """
         self._filter = where
 
     @Node.copy
     def python_value(self, func=None):
+        """
+        用于转换光标返回值的函数。
+        指定在转换数据库光标返回的值时要使用的特定函数。例如:
+        +-----------------------------------------
+        | tweet_ids = (fn.GROUP_CONCAT(Tweet.id).python_value(lambda idlist: [int(i) for i in idlist]))
+        +-----------------------------------------
+        """
         self._python_value = func
 
     def over(self, partition_by=None, order_by=None, start=None, end=None,
@@ -1554,7 +1854,7 @@ class Function(ColumnBase):
                           exclude=exclude, _inline=True)
         return NodeList((self, SQL('OVER'), node))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         ctx.literal(self.name)
         if not len(self.arguments):
             ctx.literal('()')
@@ -1574,6 +1874,9 @@ fn = Function(None, None)
 
 
 class Window(Node):
+    """
+    表示 window 子句
+    """
     # Frame start/end and frame exclusion.
     CURRENT_ROW = SQL('CURRENT ROW')
     GROUP = SQL('GROUP')
@@ -1644,7 +1947,7 @@ class Window(Node):
             return SQL('UNBOUNDED PRECEDING')
         return SQL('%d PRECEDING' % value)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope != SCOPE_SOURCE and not self._inline:
             ctx.literal(self._alias)
             ctx.literal(' AS ')
@@ -1691,7 +1994,7 @@ class WindowAlias(Node):
         self.window._alias = window_alias
         return self
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.literal(self.window._alias or 'w')
 
 
@@ -1708,7 +2011,15 @@ def Case(predicate, expression_tuples, default=None):
 
 
 class NodeList(ColumnBase):
+    """
+    表示节点列表、多部分子句、参数列表等。
+    """
     def __init__(self, nodes, glue=' ', parens=False):
+        """
+        nodes (list) -- 零个或多个节点。
+        glue (str) -- 如何在转换为SQL时联接节点。
+        parens (bool) -- 是否将结果SQL括在括号中。
+        """
         self.nodes = nodes
         self.glue = glue
         self.parens = parens
@@ -1717,7 +2028,7 @@ class NodeList(ColumnBase):
                 # Hack to avoid double-parentheses.
                 self.nodes[0].flat = True
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         n_nodes = len(self.nodes)
         if n_nodes == 0:
             return ctx.literal('()') if self.parens else ctx
@@ -1730,10 +2041,16 @@ class NodeList(ColumnBase):
 
 
 def CommaNodeList(nodes):
+    """
+    表示由逗号连接的节点列表。
+    """
     return NodeList(nodes, ', ')
 
 
 def EnclosedNodeList(nodes):
+    """
+    表示用逗号连接并用括号括起来的节点列表。
+    """
     return NodeList(nodes, ', ', True)
 
 
@@ -1753,7 +2070,7 @@ class NamespaceAttribute(ColumnBase):
         self._namespace = namespace
         self._attribute = attribute
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return (ctx
                 .literal(self._namespace._name + '.')
                 .sql(Entity(self._attribute)))
@@ -1763,6 +2080,9 @@ EXCLUDED = _Namespace('EXCLUDED')
 
 
 class DQ(ColumnBase):
+    """
+    表示适用于 Model.filter() 或 ModelSelect.filter() 方法。
+    """
     def __init__(self, **query):
         super(DQ, self).__init__()
         self.query = query
@@ -1783,7 +2103,7 @@ Tuple = lambda *a: EnclosedNodeList(a)
 
 
 class QualifiedNames(WrappedNode):
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         with ctx.scope_column():
             return ctx.sql(self.node)
 
@@ -1871,6 +2191,9 @@ def database_required(method):
 
 
 class BaseQuery(Node):
+    """
+    查询类的父类。不会直接使用 BaseQuery ，它实现了一些在所有查询类型中都很常见的方法。
+    """
     default_row_type = ROW.DICT
 
     def __init__(self, _database=None, **kwargs):
@@ -1881,6 +2204,9 @@ class BaseQuery(Node):
         super(BaseQuery, self).__init__(**kwargs)
 
     def bind(self, database=None):
+        """
+        将查询绑定到给定的数据库以执行。
+        """
         self._database = database
         return self
 
@@ -1891,21 +2217,35 @@ class BaseQuery(Node):
 
     @Node.copy
     def dicts(self, as_dict=True):
+        """
+        将行作为字典返回。
+        """
         self._row_type = ROW.DICT if as_dict else None
         return self
 
     @Node.copy
     def tuples(self, as_tuple=True):
+        """
+        以元组形式返回行。
+        """
         self._row_type = ROW.TUPLE if as_tuple else None
         return self
 
     @Node.copy
     def namedtuples(self, as_namedtuple=True):
+        """
+        以命名元组的形式返回行。
+        """
         self._row_type = ROW.NAMED_TUPLE if as_namedtuple else None
         return self
 
     @Node.copy
     def objects(self, constructor=None):
+        """
+        使用给定的构造函数将行作为任意对象返回。
+        Args:
+            constructor -- 接受行dict并返回任意对象的函数。
+        """
         self._row_type = ROW.CONSTRUCTOR if constructor else None
         self._constructor = constructor
         return self
@@ -1924,10 +2264,13 @@ class BaseQuery(Node):
         else:
             raise ValueError('Unrecognized row type: "%s".' % row_type)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         raise NotImplementedError
 
     def sql(self):
+        """
+        由查询的 SQL 和参数组成的 2 元组。
+        """
         if self._database:
             context = self._database.get_sql_context()
         else:
@@ -1936,12 +2279,21 @@ class BaseQuery(Node):
 
     @database_required
     def execute(self, database):
+        """
+        执行查询并返回结果
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。如果查询以前绑定到数据库，则不需要。
+        """
         return self._execute(database)
 
     def _execute(self, database):
         raise NotImplementedError
 
     def iterator(self, database=None):
+        """
+        执行查询并返回结果集的迭代器。对于大型结果集，该方法更可取，因为在迭代期间行不会缓存在内存中。
+        """
         return iter(self.execute(database).iterator())
 
     def _ensure_execution(self):
@@ -1966,6 +2318,10 @@ class BaseQuery(Node):
         return self._cursor_wrapper.row_cache[value]
 
     def __len__(self):
+        """
+        返回结果集中的行数。
+        这不会发出 COUNT() 查询
+        """
         self._ensure_execution()
         return len(self._cursor_wrapper)
 
@@ -1974,12 +2330,15 @@ class BaseQuery(Node):
 
 
 class RawQuery(BaseQuery):
+    """
+    通过直接指定要执行的SQL来创建查询。
+    """
     def __init__(self, sql=None, params=None, **kwargs):
         super(RawQuery, self).__init__(**kwargs)
         self._sql = sql
         self._params = params
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         ctx.literal(self._sql)
         if self._params:
             for param in self._params:
@@ -1994,6 +2353,9 @@ class RawQuery(BaseQuery):
 
 
 class Query(BaseQuery):
+    """
+    支持方法链接 API 的查询的基类。
+    """
     def __init__(self, where=None, order_by=None, limit=None, offset=None,
                  **kwargs):
         super(Query, self).__init__(**kwargs)
@@ -2006,38 +2368,63 @@ class Query(BaseQuery):
 
     @Node.copy
     def with_cte(self, *cte_list):
+        """
+        在查询中包含给定的公用表表达式
+        """
         self._cte_list = cte_list
 
     @Node.copy
     def where(self, *expressions):
+        """
+        在查询的 WHERE 子句中包含给定表达式。
+        """
         if self._where is not None:
             expressions = (self._where,) + expressions
         self._where = reduce(operator.and_, expressions)
 
     @Node.copy
     def orwhere(self, *expressions):
+        """
+        在查询的 WHERE 子句中包含给定表达式
+        """
         if self._where is not None:
             expressions = (self._where,) + expressions
         self._where = reduce(operator.or_, expressions)
 
     @Node.copy
     def order_by(self, *values):
+        """
+        定义 ORDER BY 子句
+        """
         self._order_by = values
 
     @Node.copy
     def order_by_extend(self, *values):
+        """
+        用给定的值扩展先前指定的 ORDER BY 子句。
+        """
         self._order_by = ((self._order_by or ()) + values) or None
 
     @Node.copy
     def limit(self, value=None):
+        """
+        value (int) -- 为 LIMIT 子句指定值。
+        """
         self._limit = value
 
     @Node.copy
     def offset(self, value=None):
+        """
+        value (int) -- 指定 offset 子句的值。
+        """
         self._offset = value
 
     @Node.copy
     def paginate(self, page, paginate_by=20):
+        """
+        page (int) -- 结果的页数（从1开始）。
+        paginate_by (int) -- 每页行数。
+        """
         if page > 0:
             page -= 1
         self._limit = paginate_by
@@ -2055,7 +2442,7 @@ class Query(BaseQuery):
             ctx.literal(' OFFSET ').sql(self._offset)
         return ctx
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if self._cte_list:
             # The CTE scope is only used at the very beginning of the query,
             # when we are describing the various CTEs we will be using.
@@ -2080,6 +2467,9 @@ def __compound_select__(operation, inverted=False):
 
 
 class SelectQuery(Query):
+    """
+    选择实现用于创建复合查询的运算符重载的查询帮助器类。
+    """
     union_all = __add__ = __compound_select__('UNION ALL')
     union = __or__ = __compound_select__('UNION')
     intersect = __and__ = __compound_select__('INTERSECT')
@@ -2090,6 +2480,14 @@ class SelectQuery(Query):
     __rsub__ = __compound_select__('EXCEPT', inverted=True)
 
     def select_from(self, *columns):
+        """
+        创建包装当前（调用）查询的新查询
+
+        Args:
+            columns -- 要从内部查询中选择的一列或多列。
+        Returns:
+            包装调用查询的新查询。
+        """
         if not columns:
             raise ValueError('select_from() must specify one or more columns.')
 
@@ -2113,12 +2511,30 @@ class SelectBase(_HashableSource, Source, SelectQuery):
 
     @database_required
     def peek(self, database, n=1):
+        """
+        执行查询并从光标开始返回给定的行数。可以安全地多次调用此函数，并始终返回前n行结果。
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。
+            n (int) -- 要返回的行数。
+        Returns:
+            如果 n=1，则为一行，否则为一列行。
+        """
         rows = self.execute(database)[:n]
         if rows:
             return rows[0] if n == 1 else rows
 
     @database_required
     def first(self, database, n=1):
+        """
+        像 peek() 方法，除了 LIMIT 应用于查询以确保 n 返回行。多个相同值的调用 n 不会导致多次执行
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。
+            n (int) -- 要返回的行数。
+        Returns:
+            如果 n=1，则为一行，否则为一列行
+        """
         if self._limit != n:
             self._limit = n
             self._cursor_wrapper = None
@@ -2126,11 +2542,22 @@ class SelectBase(_HashableSource, Source, SelectQuery):
 
     @database_required
     def scalar(self, database, as_tuple=False):
+        """
+        从结果的第一行返回一个标量值。
+        如果预期有多个标量值（例如单个查询中的多个聚合），则可以指定 as_tuple=True 得到行元组。
+        """
         row = self.tuples().peek(database)
         return row[0] if row and not as_tuple else row
 
     @database_required
     def count(self, database, clear_limit=False):
+        """
+        查询结果集中的行数。通过运行 select count（1）from（<current query>）实现。
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。
+            clear_limit (bool) -- 计数时清除任何限制子句。
+        """
         clone = self.order_by().alias('_wrapped')
         if clear_limit:
             clone._limit = clone._offset = None
@@ -2145,6 +2572,14 @@ class SelectBase(_HashableSource, Source, SelectQuery):
 
     @database_required
     def exists(self, database):
+        """
+        返回一个布尔值，指示当前查询是否有任何结果。
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。
+        Returns:
+            当前查询是否存在任何结果。
+        """
         clone = self.columns(SQL('1'))
         clone._limit = 1
         clone._offset = None
@@ -2152,6 +2587,14 @@ class SelectBase(_HashableSource, Source, SelectQuery):
 
     @database_required
     def get(self, database):
+        """
+        执行查询并返回第一行（如果存在）。多个调用将导致执行多个查询。
+
+        Args:
+            database (Database) -- 要对其执行查询的数据库。
+        Returns:
+            数据库中的单行或 None
+        """
         self._cursor_wrapper = None
         try:
             return self.execute(database)[0]
@@ -2163,7 +2606,15 @@ class SelectBase(_HashableSource, Source, SelectQuery):
 
 
 class CompoundSelectQuery(SelectBase):
+    """
+    表示复合 select 查询的类。
+    """
     def __init__(self, lhs, op, rhs):
+        """
+        lhs (SelectBase) -- 选择或复合选择查询。
+        op (str) -- 操作（例如联合、交叉、除外）。
+        rhs (SelectBase) -- 选择或复合选择查询。
+        """
         super(CompoundSelectQuery, self).__init__()
         self.lhs = lhs
         self.op = op
@@ -2191,7 +2642,7 @@ class CompoundSelectQuery(SelectBase):
         elif csq_setting == CSQ_PARENTHESES_UNNESTED:
             return not isinstance(subq, CompoundSelectQuery)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_COLUMN:
             return self.apply_column(ctx)
 
@@ -2210,7 +2661,7 @@ class CompoundSelectQuery(SelectBase):
 
             # Apply ORDER BY, LIMIT, OFFSET. We use the "values" scope so that
             # entity names are not fully-qualified. This is a bit of a hack, as
-            # we're relying on the logic in Column.__sql__() to not fully
+            # we're relying on the logic in Column.__sql() to not fully
             # qualify column names.
             with ctx.scope_values():
                 self._apply_ordering(ctx)
@@ -2219,6 +2670,9 @@ class CompoundSelectQuery(SelectBase):
 
 
 class Select(SelectBase):
+    """
+    表示 select 查询的类
+    """
     def __init__(self, from_list=None, columns=None, group_by=None,
                  having=None, distinct=None, windows=None, for_update=None,
                  **kwargs):
@@ -2248,19 +2702,41 @@ class Select(SelectBase):
 
     @Node.copy
     def columns(self, *columns, **kwargs):
+        """
+        指定要选择的列或类似列的值。
+        """
         self._returning = columns
     select = columns
 
     @Node.copy
     def select_extend(self, *columns):
+        """
+        用给定的列扩展当前所选内容。
+        +-------------------------------
+        | def get_users(with_count=False):
+        |    query = User.select()
+        |    if with_count:
+        |        query = (query
+        |                 .select_extend(fn.COUNT(Tweet.id).alias('count'))
+        |                 .join(Tweet, JOIN.LEFT_OUTER)
+        |                 .group_by(User))
+        |    return query
+        +-------------------------------
+        """
         self._returning = tuple(self._returning) + columns
 
     @Node.copy
     def from_(self, *sources):
+        """
+        指定在 FROM 子句中应使用哪些与表类似的对象。
+        """
         self._from_list = list(sources)
 
     @Node.copy
     def join(self, dest, join_type='INNER', on=None):
+        """
+        联接类型
+        """
         if not self._from_list:
             raise ValueError('No sources to join on.')
         item = self._from_list.pop()
@@ -2268,6 +2744,9 @@ class Select(SelectBase):
 
     @Node.copy
     def group_by(self, *columns):
+        """
+        定义 group by 子句
+        """
         grouping = []
         for column in columns:
             if isinstance(column, Table):
@@ -2288,12 +2767,19 @@ class Select(SelectBase):
 
     @Node.copy
     def having(self, *expressions):
+        """
+        在查询的 HAVING 子句中包含给定表达式。
+        expressions -- 要包含在HAVING子句中的零个或多个表达式
+        """
         if self._having is not None:
             expressions = (self._having,) + expressions
         self._having = reduce(operator.and_, expressions)
 
     @Node.copy
     def distinct(self, *columns):
+        """
+        指示此查询是否应使用 distinct 子句
+        """
         if len(columns) == 1 and (columns[0] is True or columns[0] is False):
             self._simple_distinct = columns[0]
         else:
@@ -2302,10 +2788,16 @@ class Select(SelectBase):
 
     @Node.copy
     def window(self, *windows):
+        """
+        定义 window 子句。任何先前指定的值都将被覆盖。
+        """
         self._windows = windows if windows else None
 
     @Node.copy
     def for_update(self, for_update=True):
+        """
+        for_update -- 指示所需表达式的布尔值或字符串，例如“for update nowait”。
+        """
         self._for_update = 'FOR UPDATE' if for_update is True else for_update
 
     def _get_query_key(self):
@@ -2314,7 +2806,7 @@ class Select(SelectBase):
     def __sql_selection__(self, ctx, is_subquery=False):
         return ctx.sql(CommaNodeList(self._returning))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_COLUMN:
             return self.apply_column(ctx)
 
@@ -2332,7 +2824,7 @@ class Select(SelectBase):
             # Defer calling parent SQL until here. This ensures that any CTEs
             # for this query will be properly nested if this query is a
             # sub-select or is used in an expression. See GH#1809 for example.
-            super(Select, self).__sql__(ctx)
+            super(Select, self).__sql(ctx)
 
             ctx.literal('SELECT ')
             if self._simple_distinct or self._distinct is not None:
@@ -2384,6 +2876,9 @@ class Select(SelectBase):
 
 
 class _WriteQuery(Query):
+    """
+    用于写入查询的基类。
+    """
     def __init__(self, table, returning=None, **kwargs):
         self.table = table
         self._returning = returning
@@ -2392,6 +2887,11 @@ class _WriteQuery(Query):
 
     @Node.copy
     def returning(self, *returning):
+        """
+        指定查询的返回子句
+        Args:
+            returning -- 用于返回子句的零个或多个类似于列的对象
+        """
         self._returning = returning
         self._return_cursor = True if returning else False
 
@@ -2422,8 +2922,8 @@ class _WriteQuery(Query):
     def _set_table_alias(self, ctx):
         ctx.alias_manager[self.table] = self.table.__name__
 
-    def __sql__(self, ctx):
-        super(_WriteQuery, self).__sql__(ctx)
+    def __sql(self, ctx):
+        super(_WriteQuery, self).__sql(ctx)
         # We explicitly set the table alias to the table's name, which ensures
         # that if a sub-select references a column on the outer table, we won't
         # assign it a new alias (e.g. t2) but will refer to it as table.column.
@@ -2432,6 +2932,9 @@ class _WriteQuery(Query):
 
 
 class Update(_WriteQuery):
+    """
+    表示更新的类。
+    """
     def __init__(self, table, update=None, **kwargs):
         super(Update, self).__init__(table, **kwargs)
         self._update = update
@@ -2441,8 +2944,8 @@ class Update(_WriteQuery):
     def from_(self, *sources):
         self._from = sources
 
-    def __sql__(self, ctx):
-        super(Update, self).__sql__(ctx)
+    def __sql(self, ctx):
+        super(Update, self).__sql(ctx)
 
         with ctx.scope_values(subquery=True):
             ctx.literal('UPDATE ')
@@ -2473,6 +2976,9 @@ class Update(_WriteQuery):
 
 
 class Insert(_WriteQuery):
+    """
+    表示插入的类。
+    """
     SIMPLE = 0
     QUERY = 1
     MULTI = 2
@@ -2493,14 +2999,27 @@ class Insert(_WriteQuery):
 
     @Node.copy
     def on_conflict_ignore(self, ignore=True):
+        """
+        指定忽略冲突解决策略。
+        Args:
+            ignore (bool) -- 是否添加冲突忽略子句。
+        """
         self._on_conflict = OnConflict('IGNORE') if ignore else None
 
     @Node.copy
     def on_conflict_replace(self, replace=True):
+        """
+        指定替换冲突解决策略。
+        Args:
+            ignore (bool) -- 是否添加冲突替换子句。
+        """
         self._on_conflict = OnConflict('REPLACE') if replace else None
 
     @Node.copy
     def on_conflict(self, *args, **kwargs):
+        """
+        指定的参数 OnConflict 用于冲突解决的子句。
+        """
         self._on_conflict = (OnConflict(*args, **kwargs) if (args or kwargs)
                              else None)
 
@@ -2621,8 +3140,8 @@ class Insert(_WriteQuery):
             return ctx.literal('DEFAULT VALUES')
         return self._database.default_values_insert(ctx)
 
-    def __sql__(self, ctx):
-        super(Insert, self).__sql__(ctx)
+    def __sql(self, ctx):
+        super(Insert, self).__sql(ctx)
         with ctx.scope_values():
             stmt = None
             if self._on_conflict is not None:
@@ -2670,8 +3189,11 @@ class Insert(_WriteQuery):
 
 
 class Delete(_WriteQuery):
-    def __sql__(self, ctx):
-        super(Delete, self).__sql__(ctx)
+    """
+    表示删除的类。
+    """
+    def __sql(self, ctx):
+        super(Delete, self).__sql(ctx)
 
         with ctx.scope_values(subquery=True):
             ctx.literal('DELETE FROM ').sql(self.table)
@@ -2684,8 +3206,20 @@ class Delete(_WriteQuery):
 
 
 class Index(Node):
+    """
+    在模型上声明索引的表示方法
+    """
     def __init__(self, name, table, expressions, unique=False, safe=False,
                  where=None, using=None):
+        """
+        name (str) -- 索引名称。
+        table (Table) -- 要在其上创建索引的表。
+        expressions -- 要索引的列列表（或表达式）。
+        unique (bool) -- 索引是否唯一。
+        safe (bool) -- 是否添加if not exists子句。
+        where (Expression) -- 索引的可选WHERE子句。
+        using (str) -- 索引算法。
+        """
         self._name = name
         self._table = Entity(table) if not isinstance(table, Table) else table
         self._expressions = expressions
@@ -2696,19 +3230,28 @@ class Index(Node):
 
     @Node.copy
     def safe(self, _safe=True):
+        """
+        是否添加 if not exists 子句。
+        """
         self._safe = _safe
 
     @Node.copy
     def where(self, *expressions):
+        """
+        在索引的 WHERE 子句中包含给定表达式。表达式将与以前指定的任何 where 表达式一起进行和运算。
+        """
         if self._where is not None:
             expressions = (self._where,) + expressions
         self._where = reduce(operator.and_, expressions)
 
     @Node.copy
     def using(self, _using=None):
+        """
+        为 using 子句指定索引算法。
+        """
         self._using = _using
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         statement = 'CREATE UNIQUE INDEX ' if self._unique else 'CREATE INDEX '
         with ctx.scope_values(subquery=True):
             ctx.literal(statement)
@@ -2743,6 +3286,9 @@ class Index(Node):
 
 
 class ModelIndex(Index):
+    """
+    在模型上声明索引的表示方法。
+    """
     def __init__(self, model, fields, unique=False, safe=True, where=None,
                  using=None, name=None):
         self._model = model
@@ -4289,7 +4835,7 @@ class Field(ColumnBase):
     def get_sort_key(self, ctx):
         return self._sort_key
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.sql(self.column)
 
     def get_modifiers(self):
@@ -5218,7 +5764,7 @@ class CompositeKey(MetaField):
     def __hash__(self):
         return hash((self.model.__name__, self.field_names))
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         # If the composite PK is being selected, do not use parens. Elsewhere,
         # such as in an expression, we want to use parentheses and treat it as
         # a row value.
@@ -6319,7 +6865,7 @@ class Model(with_metaclass(ModelBase, Node)):
     def __ne__(self, other):
         return not self == other
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.sql(getattr(self, self._meta.primary_key.name))
 
     @classmethod
@@ -6408,7 +6954,7 @@ class ModelAlias(Node):
     def __call__(self, **kwargs):
         return self.model(**kwargs)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             # Return the quoted table name.
             return ctx.sql(self.model)
@@ -6451,7 +6997,7 @@ class FieldAlias(Field):
     def __getattr__(self, attr):
         return self.source if attr == 'model' else getattr(self.field, attr)
 
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return ctx.sql(Column(self.source, self.field.column_name))
 
 
@@ -6895,7 +7441,7 @@ class ModelSelect(BaseModelSelect, Select):
 
 
 class NoopModelSelect(ModelSelect):
-    def __sql__(self, ctx):
+    def __sql(self, ctx):
         return self.model._meta.database.get_noop_select(ctx)
 
     def _get_cursor_wrapper(self, cursor):
