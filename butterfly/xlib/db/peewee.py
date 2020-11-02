@@ -3471,6 +3471,9 @@ class ConnectionContext(_CallableContextManager):
 
 
 class Database(_CallableContextManager):
+    """
+    Database 基类
+    """
     context_class = Context
     field_types = {}
     operations = {}
@@ -3525,6 +3528,13 @@ class Database(_CallableContextManager):
         self.init(database, **kwargs)
 
     def init(self, database, **kwargs):
+        """
+        初始化数据库
+
+        Args:
+            database (str) -- 数据库名称或文件名。
+            kwargs -- 例如，创建连接时将传递给数据库驱动程序的任意关键字参数 password ， host 等。
+        """
         if not self.is_closed():
             self.close()
         self.database = database
@@ -3532,6 +3542,9 @@ class Database(_CallableContextManager):
         self.deferred = not bool(database)
 
     def __enter__(self):
+        """
+        这个 Database 实例可以用作上下文管理器，在这种情况下，连接将在包装块期间保持打开状态。
+        """
         if self.is_closed():
             self.connect()
         ctx = self.atomic()
@@ -3548,12 +3561,23 @@ class Database(_CallableContextManager):
                 self.close()
 
     def connection_context(self):
+        """
+        创建一个上下文管理器，该管理器将在包装块期间保持打开连接。
+        """
         return ConnectionContext(self)
 
     def _connect(self):
         raise NotImplementedError
 
     def connect(self, reuse_if_open=False):
+        """
+        打开与数据库的连接。
+
+        Args:
+            reuse_if_open (bool) -- 如果连接已打开，则不要引发异常。
+        Returns:
+            是否打开了新连接。
+        """
         with self._lock:
             if self.deferred:
                 raise InterfaceError('Error, database must be initialized '
@@ -3578,6 +3602,9 @@ class Database(_CallableContextManager):
         self.server_version = 0
 
     def close(self):
+        """
+        关闭与数据库的连接。连接是否已关闭。如果数据库已关闭，则返回 False
+        """
         with self._lock:
             if self.deferred:
                 raise InterfaceError('Error, database must be initialized '
@@ -3598,14 +3625,29 @@ class Database(_CallableContextManager):
         conn.close()
 
     def is_closed(self):
+        """
+        返回数据库连接是否关闭
+        """
         return self._state.closed
 
     def connection(self):
+        """
+        返回打开的连接。如果连接未打开，将打开一个连接。连接将是基础数据库驱动程序用来封装数据库连接的任何内容。
+        """
         if self.is_closed():
             self.connect()
         return self._state.conn
 
     def cursor(self, commit=None):
+        """
+        返回 cursor 当前连接上的对象。
+        如果连接未打开，将打开一个连接。
+
+        光标将是基础数据库驱动程序用来封装数据库光标的任何对象。
+
+        Args:
+            commit -- 供内部使用。
+        """
         if self.is_closed():
             if self.autoconnect:
                 self.connect()
@@ -3614,6 +3656,16 @@ class Database(_CallableContextManager):
         return self._state.conn.cursor()
 
     def execute_sql(self, sql, params=None, commit=SENTINEL):
+        """
+        执行一个 SQL 查询并在结果上返回一个光标。
+
+        Args;
+            sql (str) -- 要执行的SQL字符串。
+            params (tuple) -- 用于查询的参数。
+            commit -- 用于重写默认提交逻辑的布尔标志。
+        Returns:
+            游标对象。
+        """
         logger.debug((sql, params))
         if commit is SENTINEL:
             if self.in_transaction():
@@ -3637,6 +3689,16 @@ class Database(_CallableContextManager):
         return cursor
 
     def execute(self, query, commit=SENTINEL, **context_options):
+        """
+        通过编译 Query 实例并执行生成的SQL。
+
+        Args:
+            query -- A Query 实例。
+            commit -- 用于重写默认提交逻辑的布尔标志。
+            context_options -- 传递给SQL生成器的任意选项。
+        Returns:
+            游标对象。
+        """
         ctx = self.get_sql_context(**context_options)
         sql, params = ctx.sql(query).query()
         return self.execute_sql(sql, params, commit=commit)
@@ -3712,19 +3774,38 @@ class Database(_CallableContextManager):
         return NodeList(parts)
 
     def last_insert_id(self, cursor, query_type=None):
+        """
+        最后插入行的主键。
+        """
         return cursor.lastrowid
 
     def rows_affected(self, cursor):
+        """
+        查询修改的行数。
+
+        Args;
+            cursor -- 游标对象。
+        Returns:
+            修改的行数
+        """
         return cursor.rowcount
 
     def default_values_insert(self, ctx):
         return ctx.literal('DEFAULT VALUES')
 
     def session_start(self):
+        """
+        开始新事务
+
+        建议使用 Database.atomic()  进行事务管理
+        """
         with self._lock:
             return self.transaction().__enter__()
 
     def session_commit(self):
+        """
+        提交在以开始的事务期间所做的任何更改
+        """
         with self._lock:
             try:
                 txn = self.pop_transaction()
@@ -3734,6 +3815,9 @@ class Database(_CallableContextManager):
             return True
 
     def session_rollback(self):
+        """
+        回滚在以开始的事务期间所做的任何更改
+        """
         with self._lock:
             try:
                 txn = self.pop_transaction()
@@ -3743,6 +3827,10 @@ class Database(_CallableContextManager):
             return True
 
     def in_transaction(self):
+        """
+        Returns:
+            事务当前是否打开(bool)
+        """
         return bool(self._state.transactions)
 
     def push_transaction(self, transaction):
@@ -3759,66 +3847,171 @@ class Database(_CallableContextManager):
             return self._state.transactions[-1]
 
     def atomic(self):
+        """
+        创建一个上下文管理器，在事务中运行包装块中的任何查询（如果块嵌套，则保存点）。
+        """
         return _atomic(self)
 
     def manual_commit(self):
+        """
+        创建一个上下文管理器，在包装块期间禁用所有事务管理。
+        """
         return _manual(self)
 
     def transaction(self):
+        """
+        创建一个上下文管理器，用于运行事务中包装块中的所有查询。
+        """
         return _transaction(self)
 
     def savepoint(self):
+        """
+        创建一个上下文管理器，运行保存点中包装块中的所有查询。保存点可以任意嵌套。
+        """
         return _savepoint(self)
 
     def begin(self):
+        """
+        使用手动提交模式时启动事务。
+        """
         if self.is_closed():
             self.connect()
 
     def commit(self):
+        """
+        手动提交当前活动的事务。
+        """
         return self._state.conn.commit()
 
     def rollback(self):
+        """
+        手动回滚当前活动的事务。
+        """
         return self._state.conn.rollback()
 
     def batch_commit(self, it, n):
+        """
+        此方法的目的是简化批处理大型操作，如插入、更新等
+
+        Args:
+            it (iterable) -- 将生成其项的iterable。
+            n (int) -- 每一个承诺 n 项目。
+        """
         for group in chunked(it, n):
             with self.atomic():
                 for obj in group:
                     yield obj
 
     def table_exists(self, table_name, schema=None):
+        """
+        表是否存在
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        Returns:
+            bool
+        """
         return table_name in self.get_tables(schema=schema)
 
     def get_tables(self, schema=None):
+        """
+        数据库中的表名列表。
+
+        Args:
+            schema (str) -- 架构名称（可选）。
+        """
         raise NotImplementedError
 
     def get_indexes(self, table, schema=None):
+        """
+        返回的列表 IndexMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         raise NotImplementedError
 
     def get_columns(self, table, schema=None):
+        """
+        返回的列表 ColumnMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         raise NotImplementedError
 
     def get_primary_keys(self, table, schema=None):
+        """
+        返回包含主键的列名列表。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         raise NotImplementedError
 
     def get_foreign_keys(self, table, schema=None):
+        """
+        返回的列表 ForeignKeyMetadata 表中存在键的元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         raise NotImplementedError
 
     def sequence_exists(self, seq):
+        """
+        Args:
+            seq (str) -- 序列的名称。
+        Returns:
+            序列是否存在。(bool)
+        """
         raise NotImplementedError
 
     def create_tables(self, models, **options):
+        """
+        为给定的模型列表创建表、索引和关联的元数据。
+
+        Args:
+            models (list) -- 列表 Model 类。
+            options -- 调用时要指定的选项 Model.create_table() .
+        """
         for model in sort_models(models):
             model.create_table(**options)
 
     def drop_tables(self, models, **kwargs):
+        """
+        删除给定模型列表的表、索引和相关元数据。
+
+        Args:
+            models (list) -- 列表 Model 类。
+            kwargs -- 调用时要指定的选项 Model.drop_table() .
+        """
         for model in reversed(sort_models(models)):
             model.drop_table(**kwargs)
 
     def extract_date(self, date_part, date_field):
+        """
+        提供用于提取日期时间部分的兼容接口。
+
+        Args:
+            date_part (str) -- 要提取的日期部分，例如“年份”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         raise NotImplementedError
 
     def truncate_date(self, date_part, date_field):
+        """
+        提供一个兼容的接口，用于将日期时间截断为给定的部分。
+
+        Args:
+            date_part (str) -- 要截断到的日期部分，例如“day”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         raise NotImplementedError
 
     def to_timestamp(self, date_field):
@@ -3828,20 +4021,42 @@ class Database(_CallableContextManager):
         raise NotImplementedError
 
     def random(self):
+        """
+        表示返回随机值的函数调用的 SQL 节点。
+        """
         return fn.random()
 
     def bind(self, models, bind_refs=True, bind_backrefs=True):
+        """
+        将给定的模型列表和指定的关系绑定到数据库。
+
+        Args:
+            models (list) -- 一个或多个 Model 要绑定的类。
+            bind_refs (bool) -- 绑定相关模型。
+            bind_backrefs (bool) -- 绑定与引用相关的模型。
+        """
         for model in models:
             model.bind(self, bind_refs=bind_refs, bind_backrefs=bind_backrefs)
 
     def bind_ctx(self, models, bind_refs=True, bind_backrefs=True):
+        """
+        创建一个上下文管理器，在包装块期间将给定模型与当前数据库绑定（关联）
+
+        Args:
+            models (list) -- 要绑定到数据库的模型列表。
+            bind_refs (bool) -- 绑定使用外键引用的模型。
+            bind_backrefs (bool) -- 用外键绑定引用给定模型的模型。
+        """
         return _BoundModelsContext(models, self, bind_refs, bind_backrefs)
 
     def get_noop_select(self, ctx):
         return ctx.sql(Select().columns(SQL('0')).where(SQL('0')))
 
 
-def __pragma__(name):
+def __pragma(name):
+    """
+    Sqlite 使用
+    """
     def __get__(self):
         return self.pragma(name)
 
@@ -3851,6 +4066,9 @@ def __pragma__(name):
 
 
 class SqliteDatabase(Database):
+    """
+    sqlite 数据库实现
+    """
     field_types = {
         'BIGAUTO': FIELD.AUTO,
         'BIGINT': FIELD.INT,
@@ -3880,6 +4098,9 @@ class SqliteDatabase(Database):
         self.register_function(_sqlite_date_trunc, 'date_trunc', 2)
 
     def init(self, database, pragmas=None, timeout=5, **kwargs):
+        """
+        初始化数据库
+        """
         if pragmas is not None:
             self._pragmas = pragmas
         if isinstance(self._pragmas, dict):
@@ -3931,6 +4152,14 @@ class SqliteDatabase(Database):
         cursor.close()
 
     def pragma(self, key, value=SENTINEL, permanent=False, schema=None):
+        """
+        对活动连接执行一次 pragma 查询。如果未指定值，则返回当前值。
+
+        Args:
+            key -- 设置名称。
+            value -- 设置的新值（可选）。
+            permanent -- 每次打开连接时应用此pragma。
+        """
         if schema is not None:
             key = '"%s".%s' % (schema, key)
         sql = 'PRAGMA %s' % key
@@ -3946,22 +4175,37 @@ class SqliteDatabase(Database):
         if row:
             return row[0]
 
-    cache_size = __pragma__('cache_size')
-    foreign_keys = __pragma__('foreign_keys')
-    journal_mode = __pragma__('journal_mode')
-    journal_size_limit = __pragma__('journal_size_limit')
-    mmap_size = __pragma__('mmap_size')
-    page_size = __pragma__('page_size')
-    read_uncommitted = __pragma__('read_uncommitted')
-    synchronous = __pragma__('synchronous')
-    wal_autocheckpoint = __pragma__('wal_autocheckpoint')
+    # 获取或设置当前连接的缓存大小 pragma。
+    cache_size = __pragma('cache_size')
+    # 获取或设置当前连接的外键 pragma
+    foreign_keys = __pragma('foreign_keys')
+    # 获取或设置日志模式 pragma
+    journal_mode = __pragma('journal_mode')
+    # 获取或设置日志大小限制 pragma
+    journal_size_limit = __pragma('journal_size_limit')
+    # 获取或设置当前连接的 mmap-size pragma
+    mmap_size = __pragma('mmap_size')
+    # 获取或设置页面大小 pragma
+    page_size = __pragma('page_size')
+    # 获取或设置当前连接的 read_uncommitted pragma
+    read_uncommitted = __pragma('read_uncommitted')
+    # 获取或设置当前连接的同步 pragma
+    synchronous = __pragma('synchronous')
+    # 获取或设置当前连接的 wal-autocheckpoint pragma
+    wal_autocheckpoint = __pragma('wal_autocheckpoint')
 
     @property
     def timeout(self):
+        """
+        获取超时（秒）
+        """
         return self._timeout
 
     @timeout.setter
     def timeout(self, seconds):
+        """
+        设置超时
+        """
         if self._timeout == seconds:
             return
 
@@ -3988,17 +4232,41 @@ class SqliteDatabase(Database):
             conn.create_window_function(name, num_params, klass)
 
     def register_aggregate(self, klass, name=None, num_params=-1):
+        """
+        注册用户定义的聚合函数。每次打开新连接时都会注册该函数。
+        如果一个连接已经打开，那么聚合将注册到打开的连接中。
+
+        Args:
+            klass -- 实现聚合API的类。
+            name (str) -- 聚合函数名（默认为类名）。
+            num_params (int) -- 聚合接受的参数个数，或-1表示任何数字。
+        """
         self._aggregates[name or klass.__name__.lower()] = (klass, num_params)
         if not self.is_closed():
             self._load_aggregates(self.connection())
 
     def aggregate(self, name=None, num_params=-1):
+        """
+        类修饰器注册用户定义的聚合函数。
+
+        Args:
+            name (str) -- 聚合的名称（默认为类名）。
+            num_params (int) -- 聚合接受的参数个数，或-1表示任何数字。
+        """
         def decorator(klass):
             self.register_aggregate(klass, name, num_params)
             return klass
         return decorator
 
     def register_collation(self, fn, name=None):
+        """
+        注册用户定义的排序规则。每次打开新连接时都会注册排序规则。
+        如果连接已打开，则排序规则将注册到打开的连接。
+
+        Args:
+            fn -- 排序规则函数。
+            name (str) -- 排序规则名称（默认为函数名）
+        """
         name = name or fn.__name__
 
         def _collation(*args):
@@ -4010,30 +4278,77 @@ class SqliteDatabase(Database):
             self._load_collations(self.connection())
 
     def collation(self, name=None):
+        """
+        decorator 注册用户定义的排序规则。
+
+        Args:
+            name (str) -- 排序规则名称（默认为函数名）
+        """
         def decorator(fn):
             self.register_collation(fn, name)
             return fn
         return decorator
 
     def register_function(self, fn, name=None, num_params=-1):
+        """
+        注册用户定义的标量函数。每次打开新连接时都会注册该函数。
+        此外，如果连接已打开，则该函数将注册为打开的连接。
+
+        Args:
+            fn -- 用户定义的标量函数。
+            name (str) -- 函数名（默认为函数名）
+            num_params (int) -- 函数接受的参数个数，或-1表示任何数字。
+        """
         self._functions[name or fn.__name__] = (fn, num_params)
         if not self.is_closed():
             self._load_functions(self.connection())
 
     def func(self, name=None, num_params=-1):
+        """
+        decorator 注册用户定义的标量函数。
+
+        Args:
+            name (str) -- 函数名（默认为函数名）。
+            num_params (int) -- 函数接受的参数个数，或-1表示任何数字。
+        """
         def decorator(fn):
+            """
+            decorator
+            """
             self.register_function(fn, name, num_params)
             return fn
         return decorator
 
     def register_window_function(self, klass, name=None, num_params=-1):
+        """
+        注册用户定义的窗口函数。(此功能需要sqlite>=3.25.0 and pysqlite3 ＞0.2.0)
+
+        Args:
+            klass -- 实现窗口函数 API 的类。
+            name (str) -- 窗口函数名（默认为类名）。
+            num_params (int) -- 函数接受的参数个数，或 -1 表示任何数字。
+        """
         name = name or klass.__name__.lower()
         self._window_functions[name] = (klass, num_params)
         if not self.is_closed():
             self._load_window_functions(self.connection())
 
     def window_function(self, name=None, num_params=-1):
+        """
+        类decorator注册用户定义的窗口函数。窗口函数必须定义以下方法：
+        * step(<params>) -从行接收值并更新状态。
+        * inverse(<params>) -逆 step() 对于给定的值。
+        * value() -返回window函数的当前值。
+        * finalize() -返回window函数的最终值。
+
+        Args:
+            name (str) -- 窗口函数的名称（默认为类名）。
+            num_params (int) -- 函数接受的参数个数，或-1表示任何数字。
+        """
         def decorator(klass):
+            """
+            decorator
+            """
             self.register_window_function(klass, name, num_params)
             return klass
         return decorator
@@ -4046,24 +4361,45 @@ class SqliteDatabase(Database):
             klass.register(self.connection())
 
     def table_function(self, name=None):
+        """
+        用于注册的类修饰符 TableFunction . 表函数是用户定义的函数，它不是返回单个标量值，而是返回任意数量的表格数据行。
+        """
         def decorator(klass):
             self.register_table_function(klass, name)
             return klass
         return decorator
 
     def unregister_aggregate(self, name):
+        """
+        注销用户定义的聚合函数。
+
+        Args:
+            name -- 用户定义的聚合函数的名称。
+        """
         del(self._aggregates[name])
 
     def unregister_collation(self, name):
+        """
+        注销用户定义的排序规则。
+
+        Args:
+            name -- 用户定义的排序规则的名称。
+        """
         del(self._collations[name])
 
     def unregister_function(self, name):
+        """
+        注销用户定义的标量函数。
+        """
         del(self._functions[name])
 
     def unregister_window_function(self, name):
         del(self._window_functions[name])
 
     def unregister_table_function(self, name):
+        """
+        注销用户定义的标量函数。判断对错，取决于函数是否被删除。
+        """
         for idx, klass in enumerate(self._table_functions):
             if klass.name == name:
                 break
@@ -4078,6 +4414,9 @@ class SqliteDatabase(Database):
             conn.load_extension(extension)
 
     def load_extension(self, extension):
+        """
+        加载给定的 C 扩展。如果调用线程中当前打开了一个连接，那么将为该连接以及所有后续连接加载扩展。
+        """
         self._extensions.add(extension)
         if not self.is_closed():
             conn = self.connection()
@@ -4085,9 +4424,19 @@ class SqliteDatabase(Database):
             conn.load_extension(extension)
 
     def unload_extension(self, extension):
+        """
+        移除指定的 C 扩展
+        """
         self._extensions.remove(extension)
 
     def attach(self, filename, name):
+        """
+        注册另一个将附加到每个数据库连接的数据库文件。如果主数据库当前已连接，则新数据库将附加到打开的连接上。
+
+        Args:
+            filename (str) -- 要附加的数据库
+            name (str) -- 附加数据库的架构名称。
+        """
         if name in self._attached:
             if self._attached[name] == filename:
                 return False
@@ -4099,6 +4448,14 @@ class SqliteDatabase(Database):
         return True
 
     def detach(self, name):
+        """
+        注销以前通过调用附加的另一个数据库文件 attach()
+
+        Args:
+            name (str) -- 附加数据库的架构名称。
+        Returns:
+            bool
+        """
         if name not in self._attached:
             return False
 
@@ -4108,27 +4465,55 @@ class SqliteDatabase(Database):
         return True
 
     def atomic(self, lock_type=None):
+        """
+        创建一个上下文管理器，在事务中运行包装块中的任何查询（如果块嵌套，则保存点）
+        """
         return _atomic(self, lock_type=lock_type)
 
     def transaction(self, lock_type=None):
+        """
+        创建一个上下文管理器，用于运行事务中包装块中的所有查询。
+        """
         return _transaction(self, lock_type=lock_type)
 
     def begin(self, lock_type=None):
+        """
+        使用手动提交模式时启动事务。
+        """
         statement = 'BEGIN %s' % lock_type if lock_type else 'BEGIN'
         self.execute_sql(statement, commit=False)
 
     def get_tables(self, schema=None):
+        """
+        数据库中的表名列表。
+
+        Args:
+            schema (str) -- 架构名称（可选）。
+        """
         schema = schema or 'main'
         cursor = self.execute_sql('SELECT name FROM "%s".sqlite_master WHERE '
                                   'type=? ORDER BY name' % schema, ('table',))
         return [row for row, in cursor.fetchall()]
 
     def get_views(self, schema=None):
+        """
+        返回的列表 ViewMetadata 数据库中存在的视图的元组。
+
+        Args:
+            schema (str) -- 架构名称（可选）
+        """
         sql = ('SELECT name, sql FROM "%s".sqlite_master WHERE type=? '
                'ORDER BY name') % (schema or 'main')
         return [ViewMetadata(*row) for row in self.execute_sql(sql, ('view',))]
 
     def get_indexes(self, table, schema=None):
+        """
+        返回的列表 IndexMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         schema = schema or 'main'
         query = ('SELECT name, sql FROM "%s".sqlite_master '
                  'WHERE tbl_name = ? AND type = ? ORDER BY name') % schema
@@ -4162,17 +4547,38 @@ class SqliteDatabase(Database):
             for name in sorted(index_to_sql)]
 
     def get_columns(self, table, schema=None):
+        """
+        返回的列表 ColumnMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         cursor = self.execute_sql('PRAGMA "%s".table_info("%s")' %
                                   (schema or 'main', table))
         return [ColumnMetadata(r[1], r[2], not r[3], bool(r[5]), table, r[4])
                 for r in cursor.fetchall()]
 
     def get_primary_keys(self, table, schema=None):
+        """
+        返回包含主键的列名列表。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         cursor = self.execute_sql('PRAGMA "%s".table_info("%s")' %
                                   (schema or 'main', table))
         return [row[1] for row in filter(lambda r: r[-1], cursor.fetchall())]
 
     def get_foreign_keys(self, table, schema=None):
+        """
+        返回的列表 ForeignKeyMetadata 表中存在键的元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         cursor = self.execute_sql('PRAGMA "%s".foreign_key_list("%s")' %
                                   (schema or 'main', table))
         return [ForeignKeyMetadata(row[3], row[2], row[4], table)
@@ -4215,9 +4621,23 @@ class SqliteDatabase(Database):
         return self._build_on_conflict_update(oc, query)
 
     def extract_date(self, date_part, date_field):
+        """
+        提供用于提取日期时间部分的兼容接口。
+
+        Args:
+            date_part (str) -- 要提取的日期部分，例如“年份”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         return fn.date_part(date_part, date_field, python_value=int)
 
     def truncate_date(self, date_part, date_field):
+        """
+        提供一个兼容的接口，用于将日期时间截断为给定的部分
+
+        Args:
+            date_part (str) -- 要截断到的日期部分，例如“day”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         return fn.date_trunc(date_part, date_field,
                              python_value=simple_date_time)
 
@@ -4229,6 +4649,9 @@ class SqliteDatabase(Database):
 
 
 class MySQLDatabase(Database):
+    """
+    MySQL 数据库实现
+    """
     field_types = {
         'AUTO': 'INTEGER AUTO_INCREMENT',
         'BIGAUTO': 'BIGINT AUTO_INCREMENT',
@@ -4255,6 +4678,9 @@ class MySQLDatabase(Database):
     safe_drop_index = False
 
     def init(self, database, **kwargs):
+        """
+        初始化数据库
+        """
         params = {'charset': 'utf8', 'use_unicode': True}
         params.update(kwargs)
         if 'password' in params and mysql_passwd:
@@ -4290,12 +4716,24 @@ class MySQLDatabase(Database):
         return ctx.literal('() VALUES ()')
 
     def get_tables(self, schema=None):
+        """
+        数据库中的表名列表。
+
+        Args:
+            schema (str) -- 架构名称（可选）。
+        """
         query = ('SELECT table_name FROM information_schema.tables '
                  'WHERE table_schema = DATABASE() AND table_type != %s '
                  'ORDER BY table_name')
         return [table for table, in self.execute_sql(query, ('VIEW',))]
 
     def get_views(self, schema=None):
+        """
+        返回的列表 ViewMetadata 数据库中存在的视图的元组。
+
+        Args:
+            schema (str) -- 架构名称（可选）
+        """
         query = ('SELECT table_name, view_definition '
                  'FROM information_schema.views '
                  'WHERE table_schema = DATABASE() ORDER BY table_name')
@@ -4303,6 +4741,13 @@ class MySQLDatabase(Database):
         return [ViewMetadata(*row) for row in cursor.fetchall()]
 
     def get_indexes(self, table, schema=None):
+        """
+        返回的列表 IndexMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         cursor = self.execute_sql('SHOW INDEX FROM `%s`' % table)
         unique = set()
         indexes = {}
@@ -4315,6 +4760,13 @@ class MySQLDatabase(Database):
                 for name in indexes]
 
     def get_columns(self, table, schema=None):
+        """
+        返回的列表 ColumnMetadata 元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         sql = """
             SELECT column_name, is_nullable, data_type, column_default
             FROM information_schema.columns
@@ -4325,11 +4777,25 @@ class MySQLDatabase(Database):
                 for name, null, dt, df in cursor.fetchall()]
 
     def get_primary_keys(self, table, schema=None):
+        """
+        返回包含主键的列名列表。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         cursor = self.execute_sql('SHOW INDEX FROM `%s`' % table)
         return [row[4] for row in
                 filter(lambda row: row[2] == 'PRIMARY', cursor.fetchall())]
 
     def get_foreign_keys(self, table, schema=None):
+        """
+        返回的列表 ForeignKeyMetadata 表中存在键的元组。
+
+        Args:
+            table (str) -- 表名。
+            schema (str) -- 架构名称（可选）。
+        """
         query = """
             SELECT column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
@@ -4400,9 +4866,23 @@ class MySQLDatabase(Database):
                              CommaNodeList(updates)))
 
     def extract_date(self, date_part, date_field):
+        """
+        提供用于提取日期时间部分的兼容接口。
+
+        Args:
+            date_part (str) -- 要提取的日期部分，例如“年份”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         return fn.EXTRACT(NodeList((SQL(date_part), SQL('FROM'), date_field)))
 
     def truncate_date(self, date_part, date_field):
+        """
+        提供一个兼容的接口，用于将日期时间截断为给定的部分
+
+        Args:
+            date_part (str) -- 要截断到的日期部分，例如“day”。
+            date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
+        """
         return fn.DATE_FORMAT(date_field, __mysql_date_trunc[date_part],
                               python_value=simple_date_time)
 
@@ -4413,6 +4893,9 @@ class MySQLDatabase(Database):
         return fn.FROM_UNIXTIME(date_field)
 
     def random(self):
+        """
+        一个兼容的接口，用于调用数据库提供的适当的随机数生成函数。
+        """
         return fn.rand()
 
     def get_noop_select(self, ctx):
