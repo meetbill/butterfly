@@ -4,6 +4,12 @@
 # Description:
     https://github.com/coleifer/peewee
     doc: http://docs.peewee-orm.com/en/latest/genindex.html
+
+    小巧一点
+    remove Postgresql
+    remove ManyToManyField
+    remove ManyToManyQuery
+    remove DeferredThroughModel
 """
 from bisect import bisect_left
 from bisect import bisect_right
@@ -99,7 +105,6 @@ __all__ = [
     'DateTimeField',
     'DecimalField',
     'DeferredForeignKey',
-    'DeferredThroughModel',
     'DJANGO_MAP',
     'DoesNotExist',
     'DoubleField',
@@ -110,7 +115,6 @@ __all__ = [
     'FloatField',
     'fn',
     'ForeignKeyField',
-    'IdentityField',
     'ImproperlyConfigured',
     'Index',
     'IntegerField',
@@ -119,7 +123,6 @@ __all__ = [
     'InternalError',
     'IPField',
     'JOIN',
-    'ManyToManyField',
     'Model',
     'ModelIndex',
     'MySQLDatabase',
@@ -4015,6 +4018,10 @@ class Database(_CallableContextManager):
         raise NotImplementedError
 
     def to_timestamp(self, date_field):
+        """
+        返回一个特定于数据库的函数调用，该函数调用允许使用给定的日期时间值作为数字时间戳。
+        这有时可以以兼容的方式简化日期数学之类的任务。
+        """
         raise NotImplementedError
 
     def from_timestamp(self, date_field):
@@ -4642,6 +4649,10 @@ class SqliteDatabase(Database):
                              python_value=simple_date_time)
 
     def to_timestamp(self, date_field):
+        """
+        返回一个特定于数据库的函数调用，该函数调用允许使用给定的日期时间值作为数字时间戳。
+        这有时可以以兼容的方式简化日期数学之类的任务。
+        """
         return fn.strftime('%s', date_field).cast('integer')
 
     def from_timestamp(self, date_field):
@@ -4887,6 +4898,10 @@ class MySQLDatabase(Database):
                               python_value=simple_date_time)
 
     def to_timestamp(self, date_field):
+        """
+        返回一个特定于数据库的函数调用，该函数调用允许使用给定的日期时间值作为数字时间戳。
+        这有时可以以兼容的方式简化日期数学之类的任务。
+        """
         return fn.UNIX_TIMESTAMP(date_field)
 
     def from_timestamp(self, date_field):
@@ -4954,11 +4969,17 @@ class _transaction(_CallableContextManager):
             self.db.begin()
 
     def commit(self, begin=True):
+        """
+        提交
+        """
         self.db.commit()
         if begin:
             self._begin()
 
     def rollback(self, begin=True):
+        """
+        回滚
+        """
         self.db.rollback()
         if begin:
             self._begin()
@@ -4993,11 +5014,17 @@ class _savepoint(_CallableContextManager):
         self.db.execute_sql('SAVEPOINT %s;' % self.quoted_sid)
 
     def commit(self, begin=True):
+        """
+        提交
+        """
         self.db.execute_sql('RELEASE SAVEPOINT %s;' % self.quoted_sid)
         if begin:
             self._begin()
 
     def rollback(self):
+        """
+        回滚
+        """
         self.db.execute_sql('ROLLBACK TO SAVEPOINT %s;' % self.quoted_sid)
 
     def __enter__(self):
@@ -5019,6 +5046,9 @@ class _savepoint(_CallableContextManager):
 
 
 class CursorWrapper(object):
+    """
+    封装 Cursor
+    """
     def __init__(self, cursor):
         self.cursor = cursor
         self.count = 0
@@ -5246,6 +5276,10 @@ class ObjectIdAccessor(object):
 
 
 class Field(ColumnBase):
+    """
+    字段
+    Field instance ===> Column on a table
+    """
     _field_counter = 0
     _order = 0
     accessor_class = FieldAccessor
@@ -5258,6 +5292,22 @@ class Field(ColumnBase):
                  sequence=None, collation=None, unindexed=False, choices=None,
                  help_text=None, verbose_name=None, index_type=None,
                  db_column=None, _hidden=False):
+        """
+        null (bool) -- 字段允许空值。
+        index (bool) -- 在字段上创建索引。
+        unique (bool) -- 在字段上创建唯一索引。
+        column_name (str) -- 为字段指定列名。
+        default -- 默认值（在python中强制执行，而不是在服务器上）。
+        primary_key (bool) -- 字段是主键。
+        constraints (list) -- 要应用于列的约束列表，例如： [Check('price > 0')] .
+        sequence (str) -- 字段的序列名。
+        collation (str) -- 字段的排序规则名称。
+        unindexed (bool) -- 声明字段未索引（仅限于sqlite）。
+        choices (list) -- 两元组的一个表，将列值映射到显示标签。例如，仅用于元数据目的，以帮助显示字段值选项的下拉列表。
+        help_text (str) -- 字段的帮助文本，仅用于元数据。
+        verbose_name (str) -- 字段的详细名称，仅用于元数据。
+        index_type (str) -- 指定索引类型（仅限Postgres），例如“brin”。
+        """
         if db_column is not None:
             __deprecated('"db_column" has been deprecated in favor of '
                            '"column_name" for Field objects.')
@@ -5296,6 +5346,9 @@ class Field(ColumnBase):
         return '<%s: (unbound)>' % type(self).__name__
 
     def bind(self, model, name, set_attribute=True):
+        """
+        绑定 model
+        """
         self.model = model
         self.name = name
         self.column_name = self.column_name or name
@@ -5304,15 +5357,24 @@ class Field(ColumnBase):
 
     @property
     def column(self):
+        """
+        返回 Column 对象
+        """
         return Column(self.model._meta.table, self.column_name)
 
     def adapt(self, value):
         return value
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         return value if value is None else self.adapt(value)
 
     def python_value(self, value):
+        """
+        将数据库中的值强制为 python 对象。
+        """
         return value if value is None else self.adapt(value)
 
     def get_sort_key(self, ctx):
@@ -5359,19 +5421,31 @@ class Field(ColumnBase):
 
 
 class IntegerField(Field):
+    """
+    用于存储整数的字段类。
+    """
     field_type = 'INT'
     adapt = int
 
 
 class BigIntegerField(IntegerField):
+    """
+    用于存储大整数的字段类
+    """
     field_type = 'BIGINT'
 
 
 class SmallIntegerField(IntegerField):
+    """
+    用于存储小整数的字段类
+    """
     field_type = 'SMALLINT'
 
 
 class AutoField(IntegerField):
+    """
+    用于存储自动递增主键的字段类。
+    """
     auto_increment = True
     field_type = 'AUTO'
 
@@ -5383,14 +5457,16 @@ class AutoField(IntegerField):
 
 
 class BigAutoField(AutoField):
+    """
+    字段类，用于存储使用64位的自动递增主键。
+    """
     field_type = 'BIGAUTO'
 
 
-class IdentityField(AutoField):
-    field_type = 'INT GENERATED BY DEFAULT AS IDENTITY'
-
-
 class PrimaryKeyField(AutoField):
+    """
+    主键字段类
+    """
     def __init__(self, *args, **kwargs):
         __deprecated('"PrimaryKeyField" has been renamed to "AutoField". '
                        'Please update your code accordingly as this will be '
@@ -5399,19 +5475,34 @@ class PrimaryKeyField(AutoField):
 
 
 class FloatField(Field):
+    """
+    用于存储浮点数字的字段类。
+    """
     field_type = 'FLOAT'
     adapt = float
 
 
 class DoubleField(FloatField):
+    """
+    用于存储双精度浮点数字的字段类。
+    """
     field_type = 'DOUBLE'
 
 
 class DecimalField(Field):
+    """
+    数字相关字段
+    """
     field_type = 'DECIMAL'
 
     def __init__(self, max_digits=10, decimal_places=5, auto_round=False,
                  rounding=None, *args, **kwargs):
+        """
+        max_digits (int) -- 要存储的最大数字。
+        decimal_places (int) -- 最大精度。
+        auto_round (bool) -- 自动舍入值。
+        rounding -- 默认为 decimal.DefaultContext.rounding .用于存储十进制数的字段类。
+        """
         self.max_digits = max_digits
         self.decimal_places = decimal_places
         self.auto_round = auto_round
@@ -5422,6 +5513,9 @@ class DecimalField(Field):
         return [self.max_digits, self.decimal_places]
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         D = decimal.Decimal
         if not value:
             return value if value is None else D(0)
@@ -5432,6 +5526,9 @@ class DecimalField(Field):
         return value
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if value is not None:
             if isinstance(value, decimal.Decimal):
                 return value
@@ -5452,6 +5549,9 @@ class _StringField(Field):
 
 
 class CharField(_StringField):
+    """
+    用于存储字符串的字段类。超过长度的值不会自动截断。
+    """
     field_type = 'VARCHAR'
 
     def __init__(self, max_length=255, *args, **kwargs):
@@ -5463,9 +5563,15 @@ class CharField(_StringField):
 
 
 class FixedCharField(CharField):
+    """
+    用于存储固定长度字符串的字段类。超过长度的值不会自动截断。
+    """
     field_type = 'CHAR'
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         value = super(FixedCharField, self).python_value(value)
         if value:
             value = value.strip()
@@ -5473,10 +5579,16 @@ class FixedCharField(CharField):
 
 
 class TextField(_StringField):
+    """
+    用于存储文本的字段类。
+    """
     field_type = 'TEXT'
 
 
 class BlobField(Field):
+    """
+    用于存储二进制数据的字段类。
+    """
     field_type = 'BLOB'
 
     def _db_hook(self, database):
@@ -5486,6 +5598,9 @@ class BlobField(Field):
             self._constructor = database.get_binary_type()
 
     def bind(self, model, name, set_attribute=True):
+        """
+        绑定模型
+        """
         self._constructor = bytearray
         if model._meta.database:
             self._db_hook(model._meta.database)
@@ -5497,6 +5612,9 @@ class BlobField(Field):
         return super(BlobField, self).bind(model, name, set_attribute)
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, text_type):
             value = value.encode('raw_unicode_escape')
         if isinstance(value, bytes_type):
@@ -5505,12 +5623,21 @@ class BlobField(Field):
 
 
 class BitField(BitwiseMixin, BigIntegerField):
+    """
+    用于在 64 位整数列中存储选项的字段类。
+    """
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('default', 0)
         super(BitField, self).__init__(*args, **kwargs)
         self.__current_flag = 1
 
     def flag(self, value=None):
+        """
+        Args:
+            value (int) -- 与标志关联的值，通常为 2 的幂。
+        Returns:
+            返回一个描述符
+        """
         if value is None:
             value = self.__current_flag
             self.__current_flag <<= 1
@@ -5541,6 +5668,9 @@ class BitField(BitwiseMixin, BigIntegerField):
 
 
 class BigBitFieldData(object):
+    """
+    用于在 BLOB . 该字段将根据需要增加底层缓冲区，以确保有足够的数据字节来支持存储的数据位数。
+    """
     def __init__(self, instance, name):
         self.instance = instance
         self.name = name
@@ -5559,19 +5689,41 @@ class BigBitFieldData(object):
         return byte_num, byte_offset
 
     def set_bit(self, idx):
+        """
+        设置 idx
+        Args:
+            idx (int) -- 要设置的位，从零开始索引。
+        """
         byte_num, byte_offset = self._ensure_length(idx)
         self._buffer[byte_num] |= (1 << byte_offset)
 
     def clear_bit(self, idx):
+        """
+        清除 idx
+        Args:
+            idx (int) -- 要清除的位，从零开始索引。
+        """
         byte_num, byte_offset = self._ensure_length(idx)
         self._buffer[byte_num] &= ~(1 << byte_offset)
 
     def toggle_bit(self, idx):
+        """
+        Args:
+            idx (int) -- 要切换的位，从零开始索引。
+        Returns:
+            位是否设置。
+        """
         byte_num, byte_offset = self._ensure_length(idx)
         self._buffer[byte_num] ^= (1 << byte_offset)
         return bool(self._buffer[byte_num] & (1 << byte_offset))
 
     def is_set(self, idx):
+        """
+        Args:
+            idx (int) -- 位索引，从零开始索引。
+        Returns:
+            位是否设置。
+        """
         byte_num, byte_offset = self._ensure_length(idx)
         return bool(self._buffer[byte_num] & (1 << byte_offset))
 
@@ -5610,13 +5762,22 @@ class BigBitField(BlobField):
         super(BigBitField, self).__init__(*args, **kwargs)
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         return bytes_type(value) if value is not None else value
 
 
 class UUIDField(Field):
+    """
+    用于存储的字段类 uuid.UUID
+    """
     field_type = 'UUID'
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, basestring) and len(value) == 32:
             # Hex string. No transformation is necessary.
             return value
@@ -5631,15 +5792,24 @@ class UUIDField(Field):
             return value
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, uuid.UUID):
             return value
         return uuid.UUID(value) if value is not None else None
 
 
 class BinaryUUIDField(BlobField):
+    """
+    用于存储的字段类 uuid.UUID 以 16 字节为单位的有效对象。
+    """
     field_type = 'UUIDB'
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, bytes) and len(value) == 16:
             # Raw binary value. No transformation is necessary.
             return self._constructor(value)
@@ -5653,6 +5823,9 @@ class BinaryUUIDField(BlobField):
                              'a hexadecimal string, or a bytes object.')
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, uuid.UUID):
             return value
         elif isinstance(value, memoryview):
@@ -5695,6 +5868,9 @@ class _BaseFormattedField(Field):
 
 
 class DateTimeField(_BaseFormattedField):
+    """
+    datetime.datetime
+    """
     field_type = 'DATETIME'
     formats = [
         '%Y-%m-%d %H:%M:%S.%f',
@@ -5708,9 +5884,17 @@ class DateTimeField(_BaseFormattedField):
         return value
 
     def to_timestamp(self):
+        """
+        返回一个特定于数据库的函数调用，该函数调用允许使用给定的日期时间值作为数字时间戳。
+        这有时可以以兼容的方式简化日期数学之类的任务。
+        """
         return self.model._meta.database.to_timestamp(self)
 
     def truncate(self, part):
+        """
+        将列中的值截断为给定部分。
+        例如，此方法对于查找给定月份内的所有行很有用。
+        """
         return self.model._meta.database.truncate_date(part, self)
 
     year = property(_date_part('year'))
@@ -5722,6 +5906,9 @@ class DateTimeField(_BaseFormattedField):
 
 
 class DateField(_BaseFormattedField):
+    """
+    datetime.date
+    """
     field_type = 'DATE'
     formats = [
         '%Y-%m-%d',
@@ -5738,9 +5925,17 @@ class DateField(_BaseFormattedField):
         return value
 
     def to_timestamp(self):
+        """
+        返回一个特定于数据库的函数调用，该函数调用允许使用给定的日期时间值作为数字时间戳。
+        这有时可以以兼容的方式简化日期数学之类的任务。
+        """
         return self.model._meta.database.to_timestamp(self)
 
     def truncate(self, part):
+        """
+        将列中的值截断为给定部分。
+        例如，此方法对于查找给定月份内的所有行很有用。
+        """
         return self.model._meta.database.truncate_date(part, self)
 
     year = property(_date_part('year'))
@@ -5749,6 +5944,9 @@ class DateField(_BaseFormattedField):
 
 
 class TimeField(_BaseFormattedField):
+    """
+    datetime.time
+    """
     field_type = 'TIME'
     formats = [
         '%H:%M:%S.%f',
@@ -5784,10 +5982,17 @@ def _timestamp_date_part(date_part):
 
 
 class TimestampField(BigIntegerField):
+    """
+    用于将日期时间存储为整数时间戳的字段类。
+    """
     # Support second -> microsecond resolution.
     valid_resolutions = [10**i for i in range(7)]
 
     def __init__(self, *args, **kwargs):
+        """
+        resolution: 1=秒、1000=ms、1000000=us
+        utc (bool) -- 将时间戳视为 UTC。
+        """
         self.resolution = kwargs.pop('resolution', None)
         if not self.resolution:
             self.resolution = 1
@@ -5804,21 +6009,28 @@ class TimestampField(BigIntegerField):
         super(TimestampField, self).__init__(*args, **kwargs)
 
     def local_to_utc(self, dt):
+        """
         # Convert naive local datetime into naive UTC, e.g.:
         # 2019-03-01T12:00:00 (local=US/Central) -> 2019-03-01T18:00:00.
         # 2019-05-01T12:00:00 (local=US/Central) -> 2019-05-01T17:00:00.
         # 2019-03-01T12:00:00 (local=UTC)        -> 2019-03-01T12:00:00.
+        """
         return datetime.datetime(*time.gmtime(time.mktime(dt.timetuple()))[:6])
 
     def utc_to_local(self, dt):
+        """
         # Convert a naive UTC datetime into local time, e.g.:
         # 2019-03-01T18:00:00 (local=US/Central) -> 2019-03-01T12:00:00.
         # 2019-05-01T17:00:00 (local=US/Central) -> 2019-05-01T12:00:00.
         # 2019-03-01T12:00:00 (local=UTC)        -> 2019-03-01T12:00:00.
+        """
         ts = calendar.timegm(dt.utctimetuple())
         return datetime.datetime.fromtimestamp(ts)
 
     def get_timestamp(self, value):
+        """
+        获取时间戳
+        """
         if self.utc:
             # If utc-mode is on, then we assume all naive datetimes are in UTC.
             return calendar.timegm(value.utctimetuple())
@@ -5826,6 +6038,9 @@ class TimestampField(BigIntegerField):
             return time.mktime(value.timetuple())
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if value is None:
             return
 
@@ -5843,6 +6058,9 @@ class TimestampField(BigIntegerField):
         return int(round(timestamp))
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if value is not None and isinstance(value, (int, float, long)):
             if self.resolution > 1:
                 value, ticks = divmod(value, self.resolution)
@@ -5874,21 +6092,36 @@ class TimestampField(BigIntegerField):
 
 
 class IPField(BigIntegerField):
+    """
+    用于高效存储 IPv4 地址的字段类（整数）。
+    """
     def db_value(self, val):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if val is not None:
             return struct.unpack('!I', socket.inet_aton(val))[0]
 
     def python_value(self, val):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if val is not None:
             return socket.inet_ntoa(struct.pack('!I', val))
 
 
 class BooleanField(Field):
+    """
+    用于存储布尔值的字段类。
+    """
     field_type = 'BOOL'
     adapt = bool
 
 
 class BareField(Field):
+    """
+    不指定数据类型的字段类（sqlite only）。
+    """
     def __init__(self, adapt=None, *args, **kwargs):
         super(BareField, self).__init__(*args, **kwargs)
         if adapt is not None:
@@ -5899,6 +6132,9 @@ class BareField(Field):
 
 
 class ForeignKeyField(Field):
+    """
+    用于存储外键的字段类。
+    """
     accessor_class = ForeignKeyAccessor
 
     def __init__(self, model, field=None, backref=None, on_delete=None,
@@ -5940,6 +6176,9 @@ class ForeignKeyField(Field):
 
     @property
     def field_type(self):
+        """
+        自动适配 field_type 类型
+        """
         if not isinstance(self.rel_field, AutoField):
             return self.rel_field.field_type
         elif isinstance(self.rel_field, BigAutoField):
@@ -5955,16 +6194,25 @@ class ForeignKeyField(Field):
         return self.rel_field.adapt(value)
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, self.rel_model):
             value = value.get_id()
         return self.rel_field.db_value(value)
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if isinstance(value, self.rel_model):
             return value
         return self.rel_field.python_value(value)
 
     def bind(self, model, name, set_attribute=True):
+        """
+        绑定 model
+        """
         if not self.column_name:
             self.column_name = name if name.endswith('_id') else name + '_id'
         if not self.object_id_name:
@@ -6024,9 +6272,15 @@ class ForeignKeyField(Field):
 
 
 class DeferredForeignKey(Field):
+    """
+    用于表示延迟的外键的字段类。用于循环外键引用
+    """
     _unresolved = set()
 
     def __init__(self, rel_model_name, **kwargs):
+        """
+        rel_model_name (str) -- 要引用的模型名称。
+        """
         self.field_kwargs = kwargs
         self.rel_model_name = rel_model_name.lower()
         DeferredForeignKey._unresolved.add(self)
@@ -6053,141 +6307,9 @@ class DeferredForeignKey(Field):
                 DeferredForeignKey._unresolved.discard(dr)
 
 
-class DeferredThroughModel(object):
-    def __init__(self):
-        self._refs = []
-
-    def set_field(self, model, field, name):
-        self._refs.append((model, field, name))
-
-    def set_model(self, through_model):
-        for src_model, m2mfield, name in self._refs:
-            m2mfield.through_model = through_model
-            src_model._meta.add_field(name, m2mfield)
-
-
 class MetaField(Field):
     column_name = default = model = name = None
     primary_key = False
-
-
-class ManyToManyFieldAccessor(FieldAccessor):
-    def __init__(self, model, field, name):
-        super(ManyToManyFieldAccessor, self).__init__(model, field, name)
-        self.model = field.model
-        self.rel_model = field.rel_model
-        self.through_model = field.through_model
-        src_fks = self.through_model._meta.model_refs[self.model]
-        dest_fks = self.through_model._meta.model_refs[self.rel_model]
-        if not src_fks:
-            raise ValueError('Cannot find foreign-key to "%s" on "%s" model.' %
-                             (self.model, self.through_model))
-        elif not dest_fks:
-            raise ValueError('Cannot find foreign-key to "%s" on "%s" model.' %
-                             (self.rel_model, self.through_model))
-        self.src_fk = src_fks[0]
-        self.dest_fk = dest_fks[0]
-
-    def __get__(self, instance, instance_type=None, force_query=False):
-        if instance is not None:
-            if not force_query and self.src_fk.backref != '+':
-                backref = getattr(instance, self.src_fk.backref)
-                if isinstance(backref, list):
-                    return [getattr(obj, self.dest_fk.name) for obj in backref]
-
-            src_id = getattr(instance, self.src_fk.rel_field.name)
-            return (ManyToManyQuery(instance, self, self.rel_model)
-                    .join(self.through_model)
-                    .join(self.model)
-                    .where(self.src_fk == src_id))
-
-        return self.field
-
-    def __set__(self, instance, value):
-        query = self.__get__(instance, force_query=True)
-        query.add(value, clear_existing=True)
-
-
-class ManyToManyField(MetaField):
-    accessor_class = ManyToManyFieldAccessor
-
-    def __init__(self, model, backref=None, through_model=None, on_delete=None,
-                 on_update=None, _is_backref=False):
-        if through_model is not None:
-            if not (isinstance(through_model, DeferredThroughModel) or
-                    is_model(through_model)):
-                raise TypeError('Unexpected value for through_model. Expected '
-                                'Model or DeferredThroughModel.')
-            if not _is_backref and (on_delete is not None or on_update is not None):
-                raise ValueError('Cannot specify on_delete or on_update when '
-                                 'through_model is specified.')
-        self.rel_model = model
-        self.backref = backref
-        self._through_model = through_model
-        self._on_delete = on_delete
-        self._on_update = on_update
-        self._is_backref = _is_backref
-
-    def _get_descriptor(self):
-        return ManyToManyFieldAccessor(self)
-
-    def bind(self, model, name, set_attribute=True):
-        if isinstance(self._through_model, DeferredThroughModel):
-            self._through_model.set_field(model, self, name)
-            return
-
-        super(ManyToManyField, self).bind(model, name, set_attribute)
-
-        if not self._is_backref:
-            many_to_many_field = ManyToManyField(
-                self.model,
-                backref=name,
-                through_model=self.through_model,
-                on_delete=self._on_delete,
-                on_update=self._on_update,
-                _is_backref=True)
-            self.backref = self.backref or model._meta.name + 's'
-            self.rel_model._meta.add_field(self.backref, many_to_many_field)
-
-    def get_models(self):
-        return [model for _, model in sorted((
-            (self._is_backref, self.model),
-            (not self._is_backref, self.rel_model)))]
-
-    @property
-    def through_model(self):
-        if self._through_model is None:
-            self._through_model = self._create_through_model()
-        return self._through_model
-
-    @through_model.setter
-    def through_model(self, value):
-        self._through_model = value
-
-    def _create_through_model(self):
-        lhs, rhs = self.get_models()
-        tables = [model._meta.table_name for model in (lhs, rhs)]
-
-        class Meta(object):
-            database = self.model._meta.database
-            schema = self.model._meta.schema
-            table_name = '%s_%s_through' % tuple(tables)
-            indexes = (
-                ((lhs._meta.name, rhs._meta.name),
-                 True),)
-
-        params = {'on_delete': self._on_delete, 'on_update': self._on_update}
-        attrs = {
-            lhs._meta.name: ForeignKeyField(lhs, **params),
-            rhs._meta.name: ForeignKeyField(rhs, **params),
-            'Meta': Meta}
-
-        klass_name = '%s%sThrough' % (lhs.__name__, rhs.__name__)
-        return type(klass_name, (Model,), attrs)
-
-    def get_through_model(self):
-        # XXX: Deprecated. Just use the "through_model" property.
-        return self.through_model
 
 
 class VirtualField(MetaField):
@@ -6199,11 +6321,17 @@ class VirtualField(MetaField):
         super(VirtualField, self).__init__(*args, **kwargs)
 
     def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if self.field_instance is not None:
             return self.field_instance.db_value(value)
         return value
 
     def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
         if self.field_instance is not None:
             return self.field_instance.python_value(value)
         return value
@@ -6215,6 +6343,18 @@ class VirtualField(MetaField):
 
 
 class CompositeKey(MetaField):
+    """
+    由多列组成的主键。与其他字段不同，复合键是在模型的 Meta 定义字段后初始化。
+    它将用作主键的字段的字符串名称作为参数：
+    +----------------------------------------------------------
+    | class BlogTagThrough(Model):
+    |     blog = ForeignKeyField(Blog, backref='tags')
+    |     tag = ForeignKeyField(Tag, backref='blogs')
+    |
+    |     class Meta:
+    |         primary_key = CompositeKey('blog', 'tag')
+    +----------------------------------------------------------
+    """
     sequence = None
 
     def __init__(self, *field_names):
@@ -6256,6 +6396,9 @@ class CompositeKey(MetaField):
                                  for field in self.field_names], ', ', parens))
 
     def bind(self, model, name, set_attribute=True):
+        """
+        绑定 model
+        """
         self.model = model
         self.column_name = self.name = name
         setattr(model, self.name, self)
@@ -6299,6 +6442,9 @@ class _SortedFieldList(object):
 
 
 class SchemaManager(object):
+    """
+    提供用于管理为给定模型创建和删除表和索引的方法。
+    """
     def __init__(self, model, database=None, **context_options):
         self.model = model
         self._database = database
@@ -6307,6 +6453,9 @@ class SchemaManager(object):
 
     @property
     def database(self):
+        """
+        数据库
+        """
         db = self._database or self.model._meta.database
         if db is None:
             raise ImproperlyConfigured('database attribute does not appear to '
@@ -6315,6 +6464,9 @@ class SchemaManager(object):
 
     @database.setter
     def database(self, value):
+        """
+        指定数据库
+        """
         self._database = value
 
     def _create_context(self):
@@ -6375,6 +6527,9 @@ class SchemaManager(object):
         return accum
 
     def create_table(self, safe=True, **options):
+        """
+        创建表
+        """
         self.database.execute(self._create_table(safe=safe, **options))
 
     def _create_table_as(self, table_name, query, safe=True, **meta):
@@ -6403,6 +6558,9 @@ class SchemaManager(object):
         return ctx
 
     def drop_table(self, safe=True, **options):
+        """
+        drop 表
+        """
         self.database.execute(self._drop_table(safe=safe, **options))
 
     def _truncate_table(self, restart_identity=False, cascade=False):
@@ -6434,6 +6592,9 @@ class SchemaManager(object):
         return self._create_context().sql(index)
 
     def create_indexes(self, safe=True):
+        """
+        创建索引
+        """
         for query in self._create_indexes(safe=safe):
             self.database.execute(query)
 
@@ -6456,6 +6617,9 @@ class SchemaManager(object):
                 .sql(index_name))
 
     def drop_indexes(self, safe=True):
+        """
+        删除索引
+        """
         for query in self._drop_indexes(safe=safe):
             self.database.execute(query)
 
@@ -6479,6 +6643,10 @@ class SchemaManager(object):
                     .sql(self._sequence_for_field(field)))
 
     def create_sequence(self, field):
+        """
+        Args:
+            field (Field) -- 指定序列的字段实例
+        """
         seq_ctx = self._create_sequence(field)
         if seq_ctx is not None:
             self.database.execute(seq_ctx)
@@ -6510,6 +6678,10 @@ class SchemaManager(object):
                 .sql(field.foreign_key_constraint()))
 
     def create_foreign_key(self, field):
+        """
+        为给定字段添加外键约束。
+        在大多数情况下，不需要使用此方法，因为外键约束是作为表创建的一部分创建的。
+        """
         self.database.execute(self._create_foreign_key(field))
 
     def create_sequences(self):
@@ -6536,6 +6708,9 @@ class SchemaManager(object):
 
 
 class Metadata(object):
+    """
+    存储 Model 元数据
+    """
     def __init__(self, model, database=None, table_name=None, indexes=None,
                  primary_key=None, constraints=None, schema=None,
                  only_save_dirty=False, depends_on=None, options=None,
@@ -6588,7 +6763,6 @@ class Metadata(object):
         self.backrefs = {}
         self.model_refs = collections.defaultdict(list)
         self.model_backrefs = collections.defaultdict(list)
-        self.manytomany = {}
 
         self.options = options or {}
         for key, value in kwargs.items():
@@ -6647,12 +6821,6 @@ class Metadata(object):
         del rel._meta.backrefs[field]
         rel._meta.model_backrefs[self.model].remove(field)
 
-    def add_manytomany(self, field):
-        self.manytomany[field.name] = field
-
-    def remove_manytomany(self, field):
-        del self.manytomany[field.name]
-
     @property
     def table(self):
         if self._table is None:
@@ -6702,8 +6870,6 @@ class Metadata(object):
     def add_field(self, field_name, field, set_attribute=True):
         if field_name in self.fields:
             self.remove_field(field_name)
-        elif field_name in self.manytomany:
-            self.remove_manytomany(self.manytomany[field_name])
 
         if not isinstance(field, MetaField):
             del self.table
@@ -6731,8 +6897,6 @@ class Metadata(object):
 
         if isinstance(field, ForeignKeyField):
             self.add_ref(field)
-        elif isinstance(field, ManyToManyField) and field.name:
-            self.add_manytomany(field)
 
     def remove_field(self, field_name):
         if field_name not in self.fields:
@@ -7473,9 +7637,17 @@ class FieldAlias(Field):
 
     def adapt(self, value): return self.field.adapt(value)
 
-    def python_value(self, value): return self.field.python_value(value)
+    def python_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
+        return self.field.python_value(value)
 
-    def db_value(self, value): return self.field.db_value(value)
+    def db_value(self, value):
+        """
+        将 python 值强制为适合存储在数据库中的值。
+        """
+        return self.field.db_value(value)
 
     def __getattr__(self, attr):
         return self.source if attr == 'model' else getattr(self.field, attr)
@@ -7982,73 +8154,6 @@ class ModelInsert(_ModelWriteQueryHelper, Insert):
 
 class ModelDelete(_ModelWriteQueryHelper, Delete):
     pass
-
-
-class ManyToManyQuery(ModelSelect):
-    def __init__(self, instance, accessor, rel, *args, **kwargs):
-        self._instance = instance
-        self._accessor = accessor
-        self._src_attr = accessor.src_fk.rel_field.name
-        self._dest_attr = accessor.dest_fk.rel_field.name
-        super(ManyToManyQuery, self).__init__(rel, (rel,), *args, **kwargs)
-
-    def _id_list(self, model_or_id_list):
-        if isinstance(model_or_id_list[0], Model):
-            return [getattr(obj, self._dest_attr) for obj in model_or_id_list]
-        return model_or_id_list
-
-    def add(self, value, clear_existing=False):
-        if clear_existing:
-            self.clear()
-
-        accessor = self._accessor
-        src_id = getattr(self._instance, self._src_attr)
-        if isinstance(value, SelectQuery):
-            query = value.columns(
-                Value(src_id),
-                accessor.dest_fk.rel_field)
-            accessor.through_model.insert_from(
-                fields=[accessor.src_fk, accessor.dest_fk],
-                query=query).execute()
-        else:
-            value = ensure_tuple(value)
-            if not value:
-                return
-
-            inserts = [{
-                accessor.src_fk.name: src_id,
-                accessor.dest_fk.name: rel_id}
-                for rel_id in self._id_list(value)]
-            accessor.through_model.insert_many(inserts).execute()
-
-    def remove(self, value):
-        src_id = getattr(self._instance, self._src_attr)
-        if isinstance(value, SelectQuery):
-            column = getattr(value.model, self._dest_attr)
-            subquery = value.columns(column)
-            return (self._accessor.through_model
-                    .delete()
-                    .where(
-                        (self._accessor.dest_fk << subquery) &
-                        (self._accessor.src_fk == src_id))
-                    .execute())
-        else:
-            value = ensure_tuple(value)
-            if not value:
-                return
-            return (self._accessor.through_model
-                    .delete()
-                    .where(
-                        (self._accessor.dest_fk << self._id_list(value)) &
-                        (self._accessor.src_fk == src_id))
-                    .execute())
-
-    def clear(self):
-        src_id = getattr(self._instance, self._src_attr)
-        return (self._accessor.through_model
-                .delete()
-                .where(self._accessor.src_fk == src_id)
-                .execute())
 
 
 def safe_python_value(conv_func):
