@@ -31,14 +31,14 @@ else:
         """Abstract base class for implementing the file system path protocol."""
 
         @abc.abstractmethod
-        def __fspath__(self):
+        def __fspath(self):
             """Return the file system path representation of the object."""
             raise NotImplementedError
 
         @classmethod
         def __subclasshook__(cls, subclass):
             return (
-                hasattr(subclass, '__fspath__') or
+                hasattr(subclass, '__fspath') or
                 # Make a concession for older `pathlib` versions:g
                 (hasattr(subclass, 'open') and
                  'path' in subclass.__name__.lower())
@@ -85,6 +85,7 @@ else:
 def timedelta_format(timedelta):
     time = (datetime_module.datetime.min + timedelta).time()
     return time_isoformat(time, timespec='microseconds')
+
 
 def timedelta_parse(s):
     hours, minutes, seconds, microseconds = map(

@@ -53,14 +53,14 @@ class _ObjectProxyMethods(object):
     def __dict__(self):
         return self.__wrapped__.__dict__
 
-    # Need to also propagate the special __weakref__ attribute for case
+    # Need to also propagate the special __weakref attribute for case
     # where decorating classes which will define this. If do not define
     # it and use a function like inspect.getmembers() on a decorator
     # class it will fail. This can't be in the derived classes.
 
     @property
-    def __weakref__(self):
-        return self.__wrapped__.__weakref__
+    def __weakref(self):
+        return self.__wrapped__.__weakref
 
 
 class _ObjectProxyMetaType(type):
@@ -108,12 +108,12 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
         self.__wrapped__.__class__ = value
 
     @property
-    def __annotations__(self):
-        return self.__wrapped__.__annotations__
+    def __annotations(self):
+        return self.__wrapped__.__annotations
 
-    @__annotations__.setter
-    def __annotations__(self, value):
-        self.__wrapped__.__annotations__ = value
+    @__annotations.setter
+    def __annotations(self, value):
+        self.__wrapped__.__annotations = value
 
     def __dir__(self):
         return dir(self.__wrapped__)
@@ -135,7 +135,7 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
         return reversed(self.__wrapped__)
 
     if PY3:
-        def __round__(self):
+        def __round(self):
             return round(self.__wrapped__)
 
     def __lt__(self, other):
@@ -510,7 +510,7 @@ class _FunctionWrapperBase(ObjectProxy):
             if not inspect.isclass(self.__wrapped__):
                 descriptor = self.__wrapped__.__get__(instance, owner)
 
-                return self.__bound_function_wrapper__(descriptor, instance,
+                return self.__bound_function_wrapper(descriptor, instance,
                                                        self._self_wrapper, self._self_enabled,
                                                        self._self_binding, self)
 
@@ -529,7 +529,7 @@ class _FunctionWrapperBase(ObjectProxy):
             descriptor = self._self_parent.__wrapped__.__get__(
                 instance, owner)
 
-            return self._self_parent.__bound_function_wrapper__(
+            return self._self_parent.__bound_function_wrapper(
                 descriptor, instance, self._self_wrapper,
                 self._self_enabled, self._self_binding,
                 self._self_parent)
@@ -632,7 +632,7 @@ class BoundFunctionWrapper(_FunctionWrapperBase):
 
 class FunctionWrapper(_FunctionWrapperBase):
 
-    __bound_function_wrapper__ = BoundFunctionWrapper
+    __bound_function_wrapper = BoundFunctionWrapper
 
     def __init__(self, wrapped, wrapper, enabled=None):
         # What it is we are wrapping here could be anything. We need to

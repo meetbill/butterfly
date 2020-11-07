@@ -1810,10 +1810,10 @@ class Cache(object):
         >>> print(fibonacci(100))
         354224848179261915075
 
-        An additional `__cache_key__` attribute can be used to generate the
+        An additional `__cache_key` attribute can be used to generate the
         cache key used for the given arguments.
 
-        >>> key = fibonacci.__cache_key__(100)
+        >>> key = fibonacci.__cache_key(100)
         >>> print(cache[key])
         354224848179261915075
 
@@ -1848,7 +1848,7 @@ class Cache(object):
             @ft.wraps(func)
             def wrapper(*args, **kwargs):
                 "Wrapper for callable to cache arguments and return values."
-                key = wrapper.__cache_key__(*args, **kwargs)
+                key = wrapper.__cache_key(*args, **kwargs)
                 result = self.get(key, default=ENOVAL, retry=True)
 
                 if result is ENOVAL:
@@ -1858,11 +1858,11 @@ class Cache(object):
 
                 return result
 
-            def __cache_key__(*args, **kwargs):
+            def __cache_key(*args, **kwargs):
                 "Make key for cache given function arguments."
                 return args_to_key(base, args, kwargs, typed)
 
-            wrapper.__cache_key__ = __cache_key__
+            wrapper.__cache_key = __cache_key
             return wrapper
 
         return decorator
