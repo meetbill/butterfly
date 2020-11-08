@@ -7962,18 +7962,18 @@ class Model(with_metaclass(ModelBase, Node)):
         return normalized
 
     @classmethod
-    def update(cls, _data_=None, **update):
+    def update(cls, __data=None, **update):
         """
         update 方法
         """
-        return ModelUpdate(cls, cls._normalize_data(_data_, update))
+        return ModelUpdate(cls, cls._normalize_data(__data, update))
 
     @classmethod
-    def insert(cls, _data_=None, **insert):
+    def insert(cls, __data=None, **insert):
         """
         insert 方法
         """
-        return ModelInsert(cls, cls._normalize_data(_data_, insert))
+        return ModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
     def insert_many(cls, rows, fields=None):
@@ -7995,15 +7995,15 @@ class Model(with_metaclass(ModelBase, Node)):
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
-    def replace(cls, _data_=None, **insert):
+    def replace(cls, __data=None, **insert):
         """
         创建使用 replace 解决冲突的插入查询
 
         Args:
-            _data_ (dict) -- dict 字段到要插入的值。
+            __data (dict) -- dict 字段到要插入的值。
             insert -- 字段名到值的映射。
         """
-        return cls.insert(_data_, **insert).on_conflict('REPLACE')
+        return cls.insert(__data, **insert).on_conflict('REPLACE')
 
     @classmethod
     def replace_many(cls, rows, fields=None):
