@@ -1278,10 +1278,10 @@ class Index(MutableMapping):
         >>> print(fibonacci(100))
         354224848179261915075
 
-        An additional `__cache_key` attribute can be used to generate the
+        An additional `_cache_key_` attribute can be used to generate the
         cache key used for the given arguments.
 
-        >>> key = fibonacci.__cache_key(100)
+        >>> key = fibonacci._cache_key_(100)
         >>> print(mapping[key])
         354224848179261915075
 

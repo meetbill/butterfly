@@ -380,10 +380,10 @@ def memoize_stampede(cache, expire, name=None, typed=False, tag=None, beta=1):
     >>> print(fib(100))
     354224848179261915075
 
-    An additional `__cache_key` attribute can be used to generate the cache
+    An additional `_cache_key_` attribute can be used to generate the cache
     key used for the given arguments.
 
-    >>> key = fib.__cache_key(100)
+    >>> key = fib._cache_key_(100)
     >>> del cache[key]
 
     Remember to call memoize when decorating a callable. If you forget, then a
@@ -412,7 +412,7 @@ def memoize_stampede(cache, expire, name=None, typed=False, tag=None, beta=1):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             "Wrapper for callable to cache arguments and return values."
-            key = wrapper.__cache_key(*args, **kwargs)
+            key = wrapper._cache_key_(*args, **kwargs)
             pair, expire_time = cache.get(
                 key, default=ENOVAL, expire_time=True, retry=True,
             )
@@ -452,11 +452,11 @@ def memoize_stampede(cache, expire, name=None, typed=False, tag=None, beta=1):
             cache.set(key, pair, expire=expire, tag=tag, retry=True)
             return pair[0]
 
-        def __cache_key(*args, **kwargs):
+        def _cache_key_(*args, **kwargs):
             "Make key for cache given function arguments."
             return args_to_key(base, args, kwargs, typed)
 
-        wrapper.__cache_key = __cache_key
+        wrapper._cache_key_ = _cache_key_
         return wrapper
 
     return decorator

@@ -3126,7 +3126,7 @@ class Select(SelectBase):
     def _get_query_key(self):
         return self._alias
 
-    def __sql_selection(self, ctx, is_subquery=False):
+    def _sql_selection_(self, ctx, is_subquery=False):
         return ctx.sql(CommaNodeList(self._returning))
 
     def __sql(self, ctx):
@@ -3159,7 +3159,7 @@ class Select(SelectBase):
                      .literal(' '))
 
             with ctx.scope_source():
-                ctx = self.__sql_selection(ctx, is_subquery)
+                ctx = self._sql_selection_(ctx, is_subquery)
 
             if self._from_list:
                 with ctx.scope_source(parentheses=False):
@@ -5712,11 +5712,11 @@ class FieldAccessor(object):
 
     def __get__(self, instance, instance_type=None):
         if instance is not None:
-            return instance.__data.get(self.name)
+            return instance._data_.get(self.name)
         return self.field
 
     def __set__(self, instance, value):
-        instance.__data[self.name] = value
+        instance._data_[self.name] = value
         instance._dirty.add(self.name)
 
 
@@ -5732,12 +5732,12 @@ class ForeignKeyAccessor(FieldAccessor):
         """
         返回 rel 实例
         """
-        value = instance.__data.get(self.name)
-        if value is not None or self.name in instance.__rel:
-            if self.name not in instance.__rel:
+        value = instance._data_.get(self.name)
+        if value is not None or self.name in instance._rel_:
+            if self.name not in instance._rel_:
                 obj = self.rel_model.get(self.field.rel_field == value)
-                instance.__rel[self.name] = obj
-            return instance.__rel[self.name]
+                instance._rel_[self.name] = obj
+            return instance._rel_[self.name]
         elif not self.field.null:
             raise self.rel_model.DoesNotExist
         return value
@@ -5749,13 +5749,13 @@ class ForeignKeyAccessor(FieldAccessor):
 
     def __set__(self, instance, obj):
         if isinstance(obj, self.rel_model):
-            instance.__data[self.name] = getattr(obj, self.field.rel_field.name)
-            instance.__rel[self.name] = obj
+            instance._data_[self.name] = getattr(obj, self.field.rel_field.name)
+            instance._rel_[self.name] = obj
         else:
-            fk_value = instance.__data.get(self.name)
-            instance.__data[self.name] = obj
-            if obj != fk_value and self.name in instance.__rel:
-                del instance.__rel[self.name]
+            fk_value = instance._data_.get(self.name)
+            instance._data_[self.name] = obj
+            if obj != fk_value and self.name in instance._rel_:
+                del instance._rel_[self.name]
         instance._dirty.add(self.name)
 
 
@@ -5767,9 +5767,9 @@ class NoQueryForeignKeyAccessor(ForeignKeyAccessor):
         """
         返回 rel 实例
         """
-        value = instance.__data.get(self.name)
+        value = instance._data_.get(self.name)
         if value is not None:
-            return instance.__rel.get(self.name, value)
+            return instance._rel_.get(self.name, value)
         elif not self.field.null:
             raise self.rel_model.DoesNotExist
 
@@ -5800,7 +5800,7 @@ class ObjectIdAccessor(object):
 
     def __get__(self, instance, instance_type=None):
         if instance is not None:
-            return instance.__data.get(self.field.name)
+            return instance._data_.get(self.field.name)
         return self.field
 
     def __set__(self, instance, value):
@@ -6233,12 +6233,12 @@ class BigBitFieldData(object):
     def __init__(self, instance, name):
         self.instance = instance
         self.name = name
-        value = self.instance.__data.get(self.name)
+        value = self.instance._data_.get(self.name)
         if not value:
             value = bytearray()
         elif not isinstance(value, bytearray):
             value = bytearray(value)
-        self._buffer = self.instance.__data[self.name] = value
+        self._buffer = self.instance._data_[self.name] = value
 
     def _ensure_length(self, idx):
         byte_num, byte_offset = divmod(idx, 8)
@@ -7790,7 +7790,7 @@ class ModelBase(type):
 
         # Construct the new class.
         cls = super(ModelBase, cls).__new__(cls, name, bases, attrs)
-        cls.__data = cls.__rel = None
+        cls._data_ = cls._rel_ = None
 
         cls._meta = Meta(cls, **meta_options)
         cls._schema = Schema(cls, **sopts)
@@ -7898,11 +7898,11 @@ class Model(with_metaclass(ModelBase, Node)):
     """
     def __init__(self, *args, **kwargs):
         if kwargs.pop('__no_default__', None):
-            self.__data = {}
+            self._data_ = {}
         else:
-            self.__data = self._meta.get_default_dict()
-        self._dirty = set(self.__data)
-        self.__rel = {}
+            self._data_ = self._meta.get_default_dict()
+        self._dirty = set(self._data_)
+        self._rel_ = {}
 
         for k in kwargs:
             setattr(self, k, kwargs[k])
@@ -7962,18 +7962,18 @@ class Model(with_metaclass(ModelBase, Node)):
         return normalized
 
     @classmethod
-    def update(cls, __data=None, **update):
+    def update(cls, _data_=None, **update):
         """
         update 方法
         """
-        return ModelUpdate(cls, cls._normalize_data(__data, update))
+        return ModelUpdate(cls, cls._normalize_data(_data_, update))
 
     @classmethod
-    def insert(cls, __data=None, **insert):
+    def insert(cls, _data_=None, **insert):
         """
         insert 方法
         """
-        return ModelInsert(cls, cls._normalize_data(__data, insert))
+        return ModelInsert(cls, cls._normalize_data(_data_, insert))
 
     @classmethod
     def insert_many(cls, rows, fields=None):
@@ -7995,15 +7995,15 @@ class Model(with_metaclass(ModelBase, Node)):
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
-    def replace(cls, __data=None, **insert):
+    def replace(cls, _data_=None, **insert):
         """
         创建使用 replace 解决冲突的插入查询
 
         Args:
-            __data (dict) -- dict 字段到要插入的值。
+            _data_ (dict) -- dict 字段到要插入的值。
             insert -- 字段名到值的映射。
         """
-        return cls.insert(__data, **insert).on_conflict('REPLACE')
+        return cls.insert(_data_, **insert).on_conflict('REPLACE')
 
     @classmethod
     def replace_many(cls, rows, fields=None):
@@ -8277,16 +8277,16 @@ class Model(with_metaclass(ModelBase, Node)):
             conditions = (
                 foreign_key in field_dict and
                 field_dict[foreign_key] is None and
-                self.__rel.get(foreign_key) is not None)
+                self._rel_.get(foreign_key) is not None)
             if conditions:
                 setattr(self, foreign_key, getattr(self, foreign_key))
-                field_dict[foreign_key] = self.__data[foreign_key]
+                field_dict[foreign_key] = self._data_[foreign_key]
 
     def save(self, force_insert=False, only=None):
         """
         在模型实例中保存数据。
         """
-        field_dict = self.__data.copy()
+        field_dict = self._data_.copy()
         if self._meta.primary_key is not False:
             pk_field = self._meta.primary_key
             pk_value = self._pk
@@ -8354,7 +8354,7 @@ class Model(with_metaclass(ModelBase, Node)):
             seen.add(klass)
             for fk, rel_model in klass._meta.backrefs.items():
                 if rel_model is model_class or query is None:
-                    node = (fk == self.__data[fk.rel_field.name])
+                    node = (fk == self._data_[fk.rel_field.name])
                 else:
                     node = fk << query
                 subquery = (rel_model.select(rel_model._meta.primary_key)
@@ -9098,7 +9098,7 @@ class ModelSelect(BaseModelSelect, Select):
         """
         return self.model._schema.create_table_as(name, self, safe, **meta)
 
-    def __sql_selection(self, ctx, is_subquery=False):
+    def _sql_selection_(self, ctx, is_subquery=False):
         if self._is_default and is_subquery and len(self._returning) > 1 and \
            self.model._meta.primary_key is not False:
             return ctx.sql(self.model._meta.primary_key)
@@ -9512,13 +9512,13 @@ class PrefetchQuery(collections.namedtuple('_PrefetchQuery', (
         """
         if self.is_backref:
             for field in self.fields:
-                identifier = instance.__data[field.name]
+                identifier = instance._data_[field.name]
                 key = (field, identifier)
                 if key in id_map:
                     setattr(instance, field.name, id_map[key])
         else:
             for field, attname in self.field_to_name:
-                identifier = instance.__data[field.rel_field.name]
+                identifier = instance._data_[field.rel_field.name]
                 key = (field, identifier)
                 rel_instances = id_map.get(key, [])
                 for inst in rel_instances:
@@ -9530,7 +9530,7 @@ class PrefetchQuery(collections.namedtuple('_PrefetchQuery', (
         存储实例
         """
         for field, attname in self.field_to_name:
-            identity = field.rel_field.python_value(instance.__data[attname])
+            identity = field.rel_field.python_value(instance._data_[attname])
             key = (field, identity)
             if self.is_backref:
                 id_map[key] = instance

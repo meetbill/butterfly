@@ -32,14 +32,14 @@ else:
         """Abstract base class for implementing the file system path protocol."""
 
         @abc.abstractmethod
-        def __fspath(self):
+        def _fspath_(self):
             """Return the file system path representation of the object."""
             raise NotImplementedError
 
         @classmethod
         def __subclasshook__(cls, subclass):
             return (
-                hasattr(subclass, '__fspath') or
+                hasattr(subclass, '_fspath_') or
                 # Make a concession for older `pathlib` versions:g
                 (hasattr(subclass, 'open') and
                  'path' in subclass.__name__.lower())
