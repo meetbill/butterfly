@@ -1,4 +1,9 @@
+# coding=utf8
+"""
+# File Name: COMMAND.py
+# Description:
 
+"""
 COM_SLEEP = 0x00
 COM_QUIT = 0x01
 COM_INIT_DB = 0x02

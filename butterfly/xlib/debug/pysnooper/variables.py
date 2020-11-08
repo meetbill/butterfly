@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: variables.py
+# Description:
+
+"""
 import itertools
 import abc
 try:
@@ -11,14 +17,25 @@ from . import pycompat
 
 
 def needs_parentheses(source):
+    """
+    添加圆括号
+    """
     def code(s):
+        """
+        inner function
+        """
         return compile(s, '<variable>', 'eval').co_code
 
     return code('{}.x'.format(source)) != code('({}).x'.format(source))
 
 
 class BaseVariable(pycompat.ABC):
-    def __init__(self, source, exclude=()):
+    """
+    BaseVariable
+    """
+    def __init__(self, source, exclude=None):
+        if exclude is None:
+            exclude = ()
         self.source = source
         self.exclude = utils.ensure_tuple(exclude)
         self.code = compile(source, '<variable>', 'eval')
@@ -28,6 +45,9 @@ class BaseVariable(pycompat.ABC):
             self.unambiguous_source = source
 
     def items(self, frame, normalize=False):
+        """
+        返回 items
+        """
         try:
             main_value = eval(self.code, frame.f_globals or {}, frame.f_locals)
         except Exception:
@@ -51,6 +71,9 @@ class BaseVariable(pycompat.ABC):
 
 
 class CommonVariable(BaseVariable):
+    """
+    CommonVariable
+    """
     def _items(self, main_value, normalize=False):
         result = [(self.source, utils.get_shortish_repr(main_value, normalize=normalize))]
         for key in self._safe_keys(main_value):
@@ -84,6 +107,9 @@ class CommonVariable(BaseVariable):
 
 
 class Attrs(CommonVariable):
+    """
+    Attrs
+    """
     def _keys(self, main_value):
         return itertools.chain(
             getattr(main_value, '__dict__', ()),
@@ -98,6 +124,9 @@ class Attrs(CommonVariable):
 
 
 class Keys(CommonVariable):
+    """
+    Keys
+    """
     def _keys(self, main_value):
         return main_value.keys()
 
@@ -109,6 +138,9 @@ class Keys(CommonVariable):
 
 
 class Indices(Keys):
+    """
+    Indices
+    """
     _slice = slice(None)
 
     def _keys(self, main_value):
@@ -122,6 +154,9 @@ class Indices(Keys):
 
 
 class Exploding(BaseVariable):
+    """
+    Exploding
+    """
     def _items(self, main_value, normalize=False):
         if isinstance(main_value, Mapping):
             cls = Keys

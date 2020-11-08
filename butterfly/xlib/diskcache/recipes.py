@@ -1,3 +1,4 @@
+# coding=utf8
 """Disk Cache Recipes
 
 """
@@ -235,7 +236,7 @@ class BoundedSemaphore(object):
 
 
 def throttle(cache, count, seconds, name=None, expire=None, tag=None,
-             time_func=time.time, sleep_func=time.sleep):
+             time_func=None, sleep_func=None):
     """Decorator to throttle calls to function.
 
     >>> import diskcache, time
@@ -252,7 +253,16 @@ def throttle(cache, count, seconds, name=None, expire=None, tag=None,
     True
 
     """
+    if time_func is None:
+        time_func=time.time
+
+    if sleep_func is None:
+        sleep_func=time.sleep
+
     def decorator(func):
+        """
+        装饰器
+        """
         rate = count / float(seconds)
         key = full_name(func) if name is None else name
         now = time_func()
@@ -260,6 +270,9 @@ def throttle(cache, count, seconds, name=None, expire=None, tag=None,
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """
+            wrapper
+            """
             while True:
                 with cache.transact(retry=True):
                     last, tally = cache.get(key)
@@ -309,11 +322,17 @@ def barrier(cache, lock_factory, name=None, expire=None, tag=None):
 
     """
     def decorator(func):
+        """
+        decorator
+        """
         key = full_name(func) if name is None else name
         lock = lock_factory(cache, key, expire=expire, tag=tag)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """
+            wrapper
+            """
             with lock:
                 return func(*args, **kwargs)
 
@@ -414,8 +433,10 @@ def memoize_stampede(cache, expire, name=None, typed=False, tag=None, beta=1):
                 )
 
                 if thread_added:
-                    # Start thread for early recomputation.
                     def recompute():
+                        """
+                        # Start thread for early recomputation.
+                        """
                         with cache:
                             pair = timer(*args, **kwargs)
                             cache.set(

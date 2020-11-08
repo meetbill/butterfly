@@ -231,9 +231,9 @@ if sqlite3:
     sqlite3.register_adapter(decimal.Decimal, str)
     sqlite3.register_adapter(datetime.date, str)
     sqlite3.register_adapter(datetime.time, str)
-    __sqlite_version = sqlite3.sqlite_version_info
+    _sqlite_version_ = sqlite3.sqlite_version_info
 else:
-    __sqlite_version = (0, 0, 0)
+    _sqlite_version_ = (0, 0, 0)
 
 
 __date_parts = set(('year', 'month', 'day', 'hour', 'minute', 'second'))
@@ -277,7 +277,7 @@ def _sqlite_date_trunc(lookup_type, datetime_string):
     return dt.strftime(__sqlite_date_trunc[lookup_type])
 
 
-def __deprecated(s):
+def _deprecated_(s):
     warnings.warn(s, DeprecationWarning)
 
 
@@ -416,16 +416,18 @@ SNAKE_CASE_STEP2 = re.compile('([a-z0-9])_*([A-Z])')
 MODEL_BASE = '_metaclass_helper_'
 
 
-def with_metaclass(meta, base=object):
+def with_metaclass(meta, base=None):
     """
     用基类 base 和 metaclass 元类创建一个新类
 
     Args:
         meta: 元类
-        base: 基类
+        base: 基类(object)
     Returns:
         新类
     """
+    if base is None:
+        base = object
     return meta(MODEL_BASE, (base,), {})
 
 
@@ -612,7 +614,7 @@ class State(collections.namedtuple('_State', ('scope', 'parentheses', 'settings'
         return self.settings.get(attr_name)
 
 
-def __scope_context(scope):
+def _scope_context_(scope):
     @contextmanager
     def inner(self, **kwargs):
         """
@@ -682,11 +684,11 @@ class Context(object):
         self.state = self.state(**overrides)
         return self
 
-    scope_normal = __scope_context(SCOPE_NORMAL)
-    scope_source = __scope_context(SCOPE_SOURCE)
-    scope_values = __scope_context(SCOPE_VALUES)
-    scope_cte = __scope_context(SCOPE_CTE)
-    scope_column = __scope_context(SCOPE_COLUMN)
+    scope_normal = _scope_context_(SCOPE_NORMAL)
+    scope_source = _scope_context_(SCOPE_SOURCE)
+    scope_values = _scope_context_(SCOPE_VALUES)
+    scope_cte = _scope_context_(SCOPE_CTE)
+    scope_column = _scope_context_(SCOPE_COLUMN)
 
     def __enter__(self):
         if self.parentheses:
@@ -833,6 +835,9 @@ class Node(object):
     _coerce = True
 
     def clone(self):
+        """
+        clone
+        """
         obj = self.__class__.__new__(self.__class__)
         obj.__dict__ = self.__dict__.copy()
         return obj
@@ -1044,7 +1049,7 @@ class _HashableSource(object):
         return not (self == other)
 
 
-def __bind_database(meth):
+def _bind_database_(meth):
     @wraps(meth)
     def inner(self, *args, **kwargs):
         """
@@ -1057,10 +1062,11 @@ def __bind_database(meth):
     return inner
 
 
-def __join(join_type='INNER', inverted=False):
+def _join_(join_type='INNER', inverted=False):
     def method(self, other):
         """
-
+        Args:
+            other: 右侧(rhs)
         """
         if inverted:
             self, other = other, self
@@ -1072,16 +1078,16 @@ class BaseTable(Source):
     """
     表对象的基类，它支持通过运算符重载进行联接。
     """
-    __and__ = __join(JOIN.INNER)
-    __add__ = __join(JOIN.LEFT_OUTER)
-    __sub__ = __join(JOIN.RIGHT_OUTER)
-    __or__ = __join(JOIN.FULL_OUTER)
-    __mul__ = __join(JOIN.CROSS)
-    __rand__ = __join(JOIN.INNER, inverted=True)
-    __radd__ = __join(JOIN.LEFT_OUTER, inverted=True)
-    __rsub__ = __join(JOIN.RIGHT_OUTER, inverted=True)
-    __ror__ = __join(JOIN.FULL_OUTER, inverted=True)
-    __rmul__ = __join(JOIN.CROSS, inverted=True)
+    __and__ = _join_(JOIN.INNER)
+    __add__ = _join_(JOIN.LEFT_OUTER)
+    __sub__ = _join_(JOIN.RIGHT_OUTER)
+    __or__ = _join_(JOIN.FULL_OUTER)
+    __mul__ = _join_(JOIN.CROSS)
+    __rand__ = _join_(JOIN.INNER, inverted=True)
+    __radd__ = _join_(JOIN.LEFT_OUTER, inverted=True)
+    __rsub__ = _join_(JOIN.RIGHT_OUTER, inverted=True)
+    __ror__ = _join_(JOIN.FULL_OUTER, inverted=True)
+    __rmul__ = _join_(JOIN.CROSS, inverted=True)
 
 
 class _BoundTableContext(_CallableContextManager):
@@ -1165,7 +1171,7 @@ class Table(_HashableSource, BaseTable):
     def _get_hash(self):
         return hash((self.__class__, self._path, self._alias, self._model))
 
-    @__bind_database
+    @_bind_database_
     def select(self, *columns):
         """
         创建一个 Select 查询表。如果表显式声明列，但未提供任何列，则默认情况下，将选择表的所有已定义列。
@@ -1176,7 +1182,7 @@ class Table(_HashableSource, BaseTable):
             columns = [Column(self, column) for column in self._columns]
         return Select((self,), columns)
 
-    @__bind_database
+    @_bind_database_
     def insert(self, insert=None, columns=None, **kwargs):
         """
         创建一个 Insert 到表中
@@ -1195,7 +1201,7 @@ class Table(_HashableSource, BaseTable):
                 insert[getattr(src, key)] = value
         return Insert(self, insert=insert, columns=columns)
 
-    @__bind_database
+    @_bind_database_
     def replace(self, insert=None, columns=None, **kwargs):
         """
         创建一个 Insert 查询要替换其冲突解决方法的表。
@@ -1209,7 +1215,7 @@ class Table(_HashableSource, BaseTable):
                 .insert(insert=insert, columns=columns)
                 .on_conflict('REPLACE'))
 
-    @__bind_database
+    @_bind_database_
     def update(self, update=None, **kwargs):
         """
         创建一个 Update 查询表
@@ -1225,7 +1231,7 @@ class Table(_HashableSource, BaseTable):
                 update[getattr(src, key)] = value
         return Update(self, update=update)
 
-    @__bind_database
+    @_bind_database_
     def delete(self):
         """
         创建一个 Delete 查询表。
@@ -1252,7 +1258,7 @@ class Join(BaseTable):
     """
     表示到表对象之间的联接。
     """
-    def __init__(self, lhs, rhs, join_type=JOIN.INNER, on=None, alias=None):
+    def __init__(self, lhs, rhs, join_type=None, on=None, alias=None):
         """
         lhs -- 接头的左侧。
         rhs -- 接头的右侧。
@@ -1261,6 +1267,9 @@ class Join(BaseTable):
         alias (str) -- 应用于联接数据的别名。
         """
         super(Join, self).__init__(alias=alias)
+        if join_type is None:
+            join_type=JOIN.INNER
+
         self.lhs = lhs
         self.rhs = rhs
         self.join_type = join_type
@@ -2001,6 +2010,9 @@ class Function(ColumnBase):
 
     def __getattr__(self, attr):
         def decorator(*args, **kwargs):
+            """
+            decorator
+            """
             return Function(attr, args, **kwargs)
         return decorator
 
@@ -2051,10 +2063,8 @@ class Function(ColumnBase):
             ctx.literal('()')
         else:
             with ctx(in_function=True, function_arg_count=len(self.arguments)):
-                ctx.sql(EnclosedNodeList([
-                    (argument if isinstance(argument, Node)
-                     else Value(argument, False))
-                    for argument in self.arguments]))
+                nodes = [(arg if isinstance(arg, Node) else Value(arg, False)) for arg in self.arguments]
+                ctx.sql(EnclosedNodeList(nodes))
 
         if self._filter:
             ctx.literal(' FILTER (WHERE ').sql(self._filter).literal(')')
@@ -2759,7 +2769,7 @@ class Query(BaseQuery):
         return ctx
 
 
-def __compound_select(operation, inverted=False):
+def _compound_select_(operation, inverted=False):
     def method(self, other):
         """
         inner function
@@ -2774,14 +2784,14 @@ class SelectQuery(Query):
     """
     选择实现用于创建复合查询的运算符重载的查询帮助器类。
     """
-    union_all = __add__ = __compound_select('UNION ALL')
-    union = __or__ = __compound_select('UNION')
-    intersect = __and__ = __compound_select('INTERSECT')
-    except_ = __sub__ = __compound_select('EXCEPT')
-    __radd__ = __compound_select('UNION ALL', inverted=True)
-    __ror__ = __compound_select('UNION', inverted=True)
-    __rand__ = __compound_select('INTERSECT', inverted=True)
-    __rsub__ = __compound_select('EXCEPT', inverted=True)
+    union_all = __add__ = _compound_select_('UNION ALL')
+    union = __or__ = _compound_select_('UNION')
+    intersect = __and__ = _compound_select_('INTERSECT')
+    except_ = __sub__ = _compound_select_('EXCEPT')
+    __radd__ = _compound_select_('UNION ALL', inverted=True)
+    __ror__ = _compound_select_('UNION', inverted=True)
+    __rand__ = _compound_select_('INTERSECT', inverted=True)
+    __rsub__ = _compound_select_('EXCEPT', inverted=True)
 
     def select_from(self, *columns):
         """
@@ -3371,8 +3381,7 @@ class Insert(_WriteQuery):
         返回默认列
         """
         if self.table._columns:
-            return [getattr(self.table, col) for col in self.table._columns
-                    if col != self.table._primary_key]
+            return [getattr(self.table, col) for col in self.table._columns if col != self.table._primary_key]
 
     def _generate_insert(self, insert, ctx):
         rows_iter = iter(insert)
@@ -3919,7 +3928,7 @@ class Database(_CallableContextManager):
             self._lock = _NoopLock()
 
         if autocommit is not None:
-            __deprecated('Peewee no longer uses the "autocommit" option, as '
+            _deprecated_('Peewee no longer uses the "autocommit" option, as '
                            'the semantics now require it to always be True. '
                            'Because some database-drivers also use the '
                            '"autocommit" parameter, you are receiving a '
@@ -4059,7 +4068,7 @@ class Database(_CallableContextManager):
                 raise InterfaceError('Error, database connection not opened.')
         return self._state.conn.cursor()
 
-    def execute_sql(self, sql, params=None, commit=SENTINEL):
+    def execute_sql(self, sql, params=None, commit=None):
         """
         执行一个 SQL 查询并在结果上返回一个光标。
 
@@ -4071,6 +4080,9 @@ class Database(_CallableContextManager):
             游标对象。
         """
         logger.debug((sql, params))
+        if commit is None:
+            commit = SENTINEL
+
         if commit is SENTINEL:
             if self.in_transaction():
                 commit = False
@@ -4092,7 +4104,7 @@ class Database(_CallableContextManager):
                     self.commit()
         return cursor
 
-    def execute(self, query, commit=SENTINEL, **context_options):
+    def execute(self, query, commit=None, **context_options):
         """
         通过编译 Query 实例并执行生成的SQL。
 
@@ -4103,11 +4115,17 @@ class Database(_CallableContextManager):
         Returns:
             游标对象。
         """
+        if commit is None:
+            commit = SENTINEL
+
         ctx = self.get_sql_context(**context_options)
         sql, params = ctx.sql(query).query()
         return self.execute_sql(sql, params, commit=commit)
 
     def get_context_options(self):
+        """
+        获取 context 参数
+        """
         return {
             'field_types': self._field_types,
             'operations': self._operations,
@@ -4491,7 +4509,7 @@ class Database(_CallableContextManager):
         return ctx.sql(Select().columns(SQL('0')).where(SQL('0')))
 
 
-def __pragma(name):
+def _pragma_(name):
     """
     Sqlite 使用
     """
@@ -4519,7 +4537,7 @@ class SqliteDatabase(Database):
         'ILIKE': 'LIKE'}
     index_schema_prefix = True
     limit_max = -1
-    server_version = __sqlite_version
+    server_version = _sqlite_version_
     truncate_table = False
 
     def __init__(self, database, *args, **kwargs):
@@ -4589,7 +4607,7 @@ class SqliteDatabase(Database):
             cursor.execute('ATTACH DATABASE "%s" AS "%s"' % (db, name))
         cursor.close()
 
-    def pragma(self, key, value=SENTINEL, permanent=False, schema=None):
+    def pragma(self, key, value=None, permanent=False, schema=None):
         """
         对活动连接执行一次 pragma 查询。如果未指定值，则返回当前值。
 
@@ -4598,6 +4616,9 @@ class SqliteDatabase(Database):
             value -- 设置的新值（可选）。
             permanent -- 每次打开连接时应用此pragma。
         """
+        if value is None:
+            value = SENTINEL
+
         if schema is not None:
             key = '"%s".%s' % (schema, key)
         sql = 'PRAGMA %s' % key
@@ -4614,23 +4635,23 @@ class SqliteDatabase(Database):
             return row[0]
 
     # 获取或设置当前连接的缓存大小 pragma。
-    cache_size = __pragma('cache_size')
+    cache_size = _pragma_('cache_size')
     # 获取或设置当前连接的外键 pragma
-    foreign_keys = __pragma('foreign_keys')
+    foreign_keys = _pragma_('foreign_keys')
     # 获取或设置日志模式 pragma
-    journal_mode = __pragma('journal_mode')
+    journal_mode = _pragma_('journal_mode')
     # 获取或设置日志大小限制 pragma
-    journal_size_limit = __pragma('journal_size_limit')
+    journal_size_limit = _pragma_('journal_size_limit')
     # 获取或设置当前连接的 mmap-size pragma
-    mmap_size = __pragma('mmap_size')
+    mmap_size = _pragma_('mmap_size')
     # 获取或设置页面大小 pragma
-    page_size = __pragma('page_size')
+    page_size = _pragma_('page_size')
     # 获取或设置当前连接的 read_uncommitted pragma
-    read_uncommitted = __pragma('read_uncommitted')
+    read_uncommitted = _pragma_('read_uncommitted')
     # 获取或设置当前连接的同步 pragma
-    synchronous = __pragma('synchronous')
+    synchronous = _pragma_('synchronous')
     # 获取或设置当前连接的 wal-autocheckpoint pragma
-    wal_autocheckpoint = __pragma('wal_autocheckpoint')
+    wal_autocheckpoint = _pragma_('wal_autocheckpoint')
 
     @property
     def timeout(self):
@@ -4692,6 +4713,9 @@ class SqliteDatabase(Database):
             num_params (int) -- 聚合接受的参数个数，或-1表示任何数字。
         """
         def decorator(klass):
+            """
+            decorator
+            """
             self.register_aggregate(klass, name, num_params)
             return klass
         return decorator
@@ -4723,6 +4747,9 @@ class SqliteDatabase(Database):
             name (str) -- 排序规则名称（默认为函数名）
         """
         def decorator(fn):
+            """
+            decorator
+            """
             self.register_collation(fn, name)
             return fn
         return decorator
@@ -4792,6 +4819,9 @@ class SqliteDatabase(Database):
         return decorator
 
     def register_table_function(self, klass, name=None):
+        """
+        注册 table function
+        """
         if name is not None:
             klass.name = name
         self._table_functions.append(klass)
@@ -4803,6 +4833,9 @@ class SqliteDatabase(Database):
         用于注册的类修饰符 TableFunction . 表函数是用户定义的函数，它不是返回单个标量值，而是返回任意数量的表格数据行。
         """
         def decorator(klass):
+            """
+            decorator
+            """
             self.register_table_function(klass, name)
             return klass
         return decorator
@@ -4832,6 +4865,9 @@ class SqliteDatabase(Database):
         del(self._functions[name])
 
     def unregister_window_function(self, name):
+        """
+        注销 window 函数
+        """
         del(self._window_functions[name])
 
     def unregister_table_function(self, name):
@@ -4975,13 +5011,7 @@ class SqliteDatabase(Database):
                                       (schema, index_name))
             index_columns[index_name] = [row[2] for row in cursor.fetchall()]
 
-        return [
-            IndexMetadata(
-                name,
-                index_to_sql[name],
-                index_columns[name],
-                name in unique_indexes,
-                table)
+        return [IndexMetadata(name, index_to_sql[name], index_columns[name], name in unique_indexes, table)
             for name in sorted(index_to_sql)]
 
     def get_columns(self, table, schema=None):
@@ -5023,15 +5053,23 @@ class SqliteDatabase(Database):
                 for row in cursor.fetchall()]
 
     def get_binary_type(self):
+        """
+        获取 binary 类型
+        """
         return sqlite3.Binary
 
     def conflict_statement(self, on_conflict, query):
+        """
+        冲突状态
+        """
         action = on_conflict._action.lower() if on_conflict._action else ''
         if action and action not in ('nothing', 'update'):
             return SQL('INSERT OR %s' % on_conflict._action.upper())
 
     def conflict_update(self, oc, query):
+        """
         # Sqlite prior to 3.24.0 does not support Postgres-style upsert.
+        """
         if self.server_version < (3, 24, 0) and \
            any((oc._preserve, oc._update, oc._where, oc._conflict_target,
                 oc._conflict_constraint)):
@@ -5803,7 +5841,7 @@ class Field(ColumnBase):
         index_type (str) -- 指定索引类型（仅限Postgres），例如“brin”。
         """
         if db_column is not None:
-            __deprecated('"db_column" has been deprecated in favor of '
+            _deprecated_('"db_column" has been deprecated in favor of '
                            '"column_name" for Field objects.')
             column_name = db_column
 
@@ -5977,7 +6015,7 @@ class PrimaryKeyField(AutoField):
     主键字段类
     """
     def __init__(self, *args, **kwargs):
-        __deprecated('"PrimaryKeyField" has been renamed to "AutoField". '
+        _deprecated_('"PrimaryKeyField" has been renamed to "AutoField". '
                        'Please update your code accordingly as this will be '
                        'completely removed in a subsequent release.')
         super(PrimaryKeyField, self).__init__(*args, **kwargs)
@@ -6253,6 +6291,9 @@ class BigBitFieldData(object):
 
 
 class BigBitFieldAccessor(FieldAccessor):
+    """
+    位存储
+    """
     def __get__(self, instance, instance_type=None):
         if instance is None:
             return self.field
@@ -6457,7 +6498,11 @@ class DateField(_BaseFormattedField):
         格式化 value
         """
         if value and isinstance(value, basestring):
-            def pp(x): return x.date()
+            def pp(x):
+                """
+                返回日期
+                """
+                return x.date()
             return format_date_time(value, self.formats, pp)
         elif value and isinstance(value, datetime.datetime):
             return value.date()
@@ -6501,7 +6546,11 @@ class TimeField(_BaseFormattedField):
         """
         if value:
             if isinstance(value, basestring):
-                def pp(x): return x.time()
+                def pp(x):
+                    """
+                    返回时间
+                    """
+                    return x.time()
                 return format_date_time(value, self.formats, pp)
             elif isinstance(value, datetime.datetime):
                 return value.time()
@@ -6516,6 +6565,9 @@ class TimeField(_BaseFormattedField):
 
 def _timestamp_date_part(date_part):
     def dec(self):
+        """
+        inner function
+        """
         db = self.model._meta.database
         expr = ((self / Value(self.resolution, converter=False))
                 if self.resolution > 1 else self)
@@ -6699,15 +6751,15 @@ class ForeignKeyField(Field):
         super(ForeignKeyField, self).__init__(*args, **kwargs)
 
         if rel_model is not None:
-            __deprecated('"rel_model" has been deprecated in favor of '
+            _deprecated_('"rel_model" has been deprecated in favor of '
                            '"model" for ForeignKeyField objects.')
             model = rel_model
         if to_field is not None:
-            __deprecated('"to_field" has been deprecated in favor of '
+            _deprecated_('"to_field" has been deprecated in favor of '
                            '"field" for ForeignKeyField objects.')
             field = to_field
         if related_name is not None:
-            __deprecated('"related_name" has been deprecated in favor of '
+            _deprecated_('"related_name" has been deprecated in favor of '
                            '"backref" for Field objects.')
             backref = related_name
 
@@ -7336,7 +7388,7 @@ class Metadata(object):
         kwargs -- 任意设置属性和值。
         """
         if db_table is not None:
-            __deprecated('"db_table" has been deprecated in favor of '
+            _deprecated_('"db_table" has been deprecated in favor of '
                            '"table_name" for Models.')
             table_name = db_table
         self.model = model
@@ -7776,8 +7828,7 @@ class ModelBase(type):
 
         # Create a repr and error class before finalizing.
         if hasattr(cls, '__str__') and '__repr__' not in attrs:
-            setattr(cls, '__repr__', lambda self: '<%s: %s>' % (
-                cls.__name__, self.__str__()))
+            setattr(cls, '__repr__', lambda self: '<%s: %s>' % (cls.__name__, self.__str__()))
 
         # 错误信息
         exc_name = '%sDoesNotExist' % cls.__name__
@@ -7940,8 +7991,7 @@ class Model(with_metaclass(ModelBase, Node)):
         | UserTweetDenorm.insert_from(source, [UserTweetDenorm.username, UserTweetDenorm.num_tweets]).execute()
         +------------------------------------------------------
         """
-        columns = [getattr(cls, field) if isinstance(field, basestring)
-                   else field for field in fields]
+        columns = [getattr(cls, field) if isinstance(field, basestring) else field for field in fields]
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
@@ -8054,8 +8104,7 @@ class Model(with_metaclass(ModelBase, Node)):
         fields = [cls._meta.fields[f] if isinstance(f, basestring) else f
                   for f in fields]
         # Now collect list of attribute names to use for values.
-        attrs = [field.object_id_name if isinstance(field, ForeignKeyField)
-                 else field.name for field in fields]
+        attrs = [field.object_id_name if isinstance(field, ForeignKeyField) else field.name for field in fields]
 
         if batch_size is not None:
             batches = chunked(model_list, batch_size)
@@ -8384,7 +8433,7 @@ class Model(with_metaclass(ModelBase, Node)):
         创建模型表、索引、约束和序列。
         """
         if 'fail_silently' in options:
-            __deprecated('"fail_silently" has been deprecated in favor of '
+            _deprecated_('"fail_silently" has been deprecated in favor of '
                            '"safe" for the create_table() method.')
             safe = options.pop('fail_silently')
 
@@ -8871,9 +8920,7 @@ class ModelSelect(BaseModelSelect, Select):
             # other foreign-key fields from the list.
             target = (to_field.field if isinstance(to_field, FieldAlias)
                       else to_field)
-            fk_fields = [f for f in fk_fields if (
-                         (f is target) or
-                         (is_backref and f.rel_field is to_field))]
+            fk_fields = [f for f in fk_fields if ((f is target) or (is_backref and f.rel_field is to_field))]
 
         if len(fk_fields) == 1:
             return fk_fields[0], is_backref
@@ -9440,6 +9487,9 @@ class ModelCursorWrapper(BaseModelCursorWrapper):
 
 class PrefetchQuery(collections.namedtuple('_PrefetchQuery', (
         'query', 'fields', 'is_backref', 'rel_models', 'field_to_name', 'model'))):
+    """
+    预查询
+    """
     def __new__(cls, query, fields=None, is_backref=None, rel_models=None,
                 field_to_name=None, model=None):
         if fields:

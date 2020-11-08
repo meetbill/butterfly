@@ -235,7 +235,13 @@ class ReconnectMixin(object):
             self._reconnect_errors.setdefault(exc_class, [])
             self._reconnect_errors[exc_class].append(err_fragment.lower())
 
-    def execute_sql(self, sql, params=None, commit=SENTINEL):
+    def execute_sql(self, sql, params=None, commit=None):
+        """
+        exe sql
+        """
+        if commit is None:
+            commit = SENTINEL
+
         try:
             return super(ReconnectMixin, self).execute_sql(sql, params, commit)
         except Exception as exc:

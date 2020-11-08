@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding=utf8
 """
 国际化处理

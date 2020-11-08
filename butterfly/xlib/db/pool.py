@@ -1,3 +1,4 @@
+# coding=utf8
 """
 Lightweight connection pooling for peewee.
 
@@ -36,18 +37,25 @@ import logging
 import time
 from collections import namedtuple
 
-from peewee import MySQLDatabase
+from xlib.db.peewee import MySQLDatabase
 
 logger = logging.getLogger('peewee.pool')
 
 
 def make_int(val):
+    """
+    返回 int 数据
+    """
     if val is not None and not isinstance(val, (int, float)):
         return int(val)
     return val
 
 
-class MaxConnectionsExceeded(ValueError): pass
+class MaxConnectionsExceeded(ValueError):
+    """
+    超过最大连接数
+    """
+    pass
 
 
 PoolConnection = namedtuple('PoolConnection', ('timestamp', 'connection', 'checked_out'))
@@ -81,6 +89,9 @@ class PooledDatabase(object):
         super(PooledDatabase, self).__init__(database, **kwargs)
 
     def init(self, database, max_connections=None, stale_timeout=None, timeout=None, **connect_kwargs):
+        """
+        初始化
+        """
         super(PooledDatabase, self).init(database, **connect_kwargs)
         if max_connections is not None:
             self._max_connections = make_int(max_connections)
@@ -92,6 +103,9 @@ class PooledDatabase(object):
                 self._wait_timeout = float('inf')
 
     def connect(self, reuse_if_open=False):
+        """
+        连接数据库
+        """
         if not self._wait_timeout:
             return super(PooledDatabase, self).connect(reuse_if_open)
 
@@ -194,15 +208,19 @@ class PooledDatabase(object):
         self._close(conn, close_conn=True)
 
     def close_idle(self):
+        """
         # Close any open connections that are not currently in-use.
+        """
         with self._lock:
             for _, conn in self._connections:
                 self._close(conn, close_conn=True)
             self._connections = []
 
     def close_stale(self, age=600):
+        """
         # Close any connections that are in-use but were checked out quite some
         # time ago and can be considered stale.
+        """
         with self._lock:
             in_use = {}
             cutoff = time.time() - age
@@ -217,8 +235,10 @@ class PooledDatabase(object):
         return n
 
     def close_all(self):
+        """
         # Close all connections -- available and in-use. Warning: may break any
         # active connections used by other threads.
+        """
         self.close()
         with self._lock:
             for _, conn in self._connections:
@@ -230,6 +250,9 @@ class PooledDatabase(object):
 
 
 class PooledMySQLDatabase(PooledDatabase, MySQLDatabase):
+    """
+    连接池
+    """
     def _is_closed(self, conn):
         try:
             conn.ping(False)

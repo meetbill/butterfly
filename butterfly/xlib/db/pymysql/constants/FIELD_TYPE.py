@@ -1,4 +1,9 @@
+# coding=utf8
+"""
+# File Name: FIELD_TYPE.py
+# Description:
 
+"""
 
 DECIMAL = 0
 TINY = 1

@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: charset.py
+# Description:
+
+"""
 MBLENGTH = {
         8:1,
         33:3,
@@ -7,6 +13,9 @@ MBLENGTH = {
 
 
 class Charset(object):
+    """
+    编码
+    """
     def __init__(self, id, name, collation, is_default):
         self.id, self.name, self.collation = id, name, collation
         self.is_default = is_default == 'Yes'
@@ -17,6 +26,9 @@ class Charset(object):
 
     @property
     def encoding(self):
+        """
+        返回对应编码
+        """
         name = self.name
         if name in ('utf8mb4', 'utf8mb3'):
             return 'utf8'
@@ -24,23 +36,38 @@ class Charset(object):
 
     @property
     def is_binary(self):
+        """
+        bool
+        """
         return self.id == 63
 
 
 class Charsets(object):
+    """
+    编码集
+    """
     def __init__(self):
         self._by_id = {}
         self._by_name = {}
 
     def add(self, c):
+        """
+        添加编码
+        """
         self._by_id[c.id] = c
         if c.is_default:
             self._by_name[c.name] = c
 
     def by_id(self, id):
+        """
+        通过 id 返回对应编码
+        """
         return self._by_id[id]
 
     def by_name(self, name):
+        """
+        通过 name 返回编码
+        """
         return self._by_name.get(name.lower())
 
 _charsets = Charsets()

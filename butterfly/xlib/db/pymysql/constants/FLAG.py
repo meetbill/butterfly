@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: FLAG.py
+# Description:
+
+"""
 NOT_NULL = 1
 PRI_KEY = 2
 UNIQUE_KEY = 4

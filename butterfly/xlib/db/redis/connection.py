@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: connection.py
+# Description:
+
+"""
 from __future__ import unicode_literals
 from distutils.version import StrictVersion
 from itertools import chain
@@ -133,6 +139,9 @@ class Encoder(object):
 
 
 class BaseParser(object):
+    """
+    Parser 基类
+    """
     EXCEPTION_CLASSES = {
         'ERR': {
             'max number of clients reached': ConnectionError,
@@ -156,7 +165,9 @@ class BaseParser(object):
     }
 
     def parse_error(self, response):
-        "Parse an error response"
+        """
+        Parse an error response
+        """
         error_code = response.split(' ')[0]
         if error_code in self.EXCEPTION_CLASSES:
             response = response[len(error_code) + 1:]
@@ -168,6 +179,9 @@ class BaseParser(object):
 
 
 class SocketBuffer(object):
+    """
+    SocketBuffer
+    """
     def __init__(self, socket, socket_read_size, socket_timeout):
         self._sock = socket
         self.socket_read_size = socket_read_size
@@ -180,10 +194,15 @@ class SocketBuffer(object):
 
     @property
     def length(self):
+        """
+        返回 length
+        """
         return self.bytes_written - self.bytes_read
 
-    def _read_from_socket(self, length=None, timeout=SENTINEL,
-                          raise_on_timeout=True):
+    def _read_from_socket(self, length=None, timeout=None, raise_on_timeout=True):
+        if timeout is None:
+            timeout = SENTINEL
+
         sock = self._sock
         socket_read_size = self.socket_read_size
         buf = self._buffer
@@ -226,11 +245,17 @@ class SocketBuffer(object):
                 sock.settimeout(self.socket_timeout)
 
     def can_read(self, timeout):
+        """
+        buffer 中是否有数据
+        """
         return bool(self.length) or \
             self._read_from_socket(timeout=timeout,
                                    raise_on_timeout=False)
 
     def read(self, length):
+        """
+        读取数据
+        """
         length = length + 2  # make sure to read the \r\n terminator
         # make sure we've read enough data from the socket
         if length > self.length:
@@ -248,6 +273,9 @@ class SocketBuffer(object):
         return data[:-2]
 
     def readline(self):
+        """
+        读取一行
+        """
         buf = self._buffer
         buf.seek(self.bytes_read)
         data = buf.readline()
@@ -267,12 +295,18 @@ class SocketBuffer(object):
         return data[:-2]
 
     def purge(self):
+        """
+        清空 buffer
+        """
         self._buffer.seek(0)
         self._buffer.truncate()
         self.bytes_written = 0
         self.bytes_read = 0
 
     def close(self):
+        """
+        关闭
+        """
         try:
             self.purge()
             self._buffer.close()
@@ -288,7 +322,9 @@ class SocketBuffer(object):
 
 
 class PythonParser(BaseParser):
-    "Plain Python parsing class"
+    """
+    Plain Python parsing class
+    """
     def __init__(self, socket_read_size):
         self.socket_read_size = socket_read_size
         self.encoder = None
@@ -302,7 +338,9 @@ class PythonParser(BaseParser):
             pass
 
     def on_connect(self, connection):
-        "Called when the socket connects"
+        """
+        Called when the socket connects
+        """
         self._sock = connection._sock
         self._buffer = SocketBuffer(self._sock,
                                     self.socket_read_size,
@@ -310,7 +348,9 @@ class PythonParser(BaseParser):
         self.encoder = connection.encoder
 
     def on_disconnect(self):
-        "Called when the socket disconnects"
+        """
+        Called when the socket disconnects
+        """
         self._sock = None
         if self._buffer is not None:
             self._buffer.close()
@@ -318,9 +358,15 @@ class PythonParser(BaseParser):
         self.encoder = None
 
     def can_read(self, timeout):
+        """
+        Buffer 中是否有数据
+        """
         return self._buffer and self._buffer.can_read(timeout)
 
     def read_response(self):
+        """
+        read response
+        """
         raw = self._buffer.readline()
         if not raw:
             raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
@@ -383,6 +429,9 @@ class HiredisParser(BaseParser):
             pass
 
     def on_connect(self, connection):
+        """
+        建立连接
+        """
         self._sock = connection._sock
         self._socket_timeout = connection.socket_timeout
         kwargs = {
@@ -402,11 +451,17 @@ class HiredisParser(BaseParser):
         self._next_response = False
 
     def on_disconnect(self):
+        """
+        断开连接
+        """
         self._sock = None
         self._reader = None
         self._next_response = False
 
     def can_read(self, timeout):
+        """
+        是否有可读数据
+        """
         if not self._reader:
             raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
 
@@ -417,7 +472,13 @@ class HiredisParser(BaseParser):
                                              raise_on_timeout=False)
         return True
 
-    def read_from_socket(self, timeout=SENTINEL, raise_on_timeout=True):
+    def read_from_socket(self, timeout=None, raise_on_timeout=True):
+        """
+        从 cocket 中读取数据
+        """
+        if timeout is None:
+            timeout = SENTINEL
+
         sock = self._sock
         custom_timeout = timeout is not SENTINEL
         try:
@@ -456,6 +517,9 @@ class HiredisParser(BaseParser):
                 sock.settimeout(self._socket_timeout)
 
     def read_response(self):
+        """
+        读响应数据
+        """
         if not self._reader:
             raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
 
@@ -495,15 +559,20 @@ else:
 
 
 class Connection(object):
-    "Manages TCP communication to and from a Redis server"
+    """
+    Manages TCP communication to and from a Redis server
+    """
 
     def __init__(self, host='localhost', port=6379, db=0, password=None,
                  socket_timeout=None, socket_connect_timeout=None,
                  socket_keepalive=False, socket_keepalive_options=None,
                  socket_type=0, retry_on_timeout=False, encoding='utf-8',
                  encoding_errors='strict', decode_responses=False,
-                 parser_class=DefaultParser, socket_read_size=65536,
+                 parser_class=None, socket_read_size=65536,
                  health_check_interval=0, client_name=None, username=None):
+        if parser_class is None:
+            parser_class = DefaultParser
+
         self.pid = os.getpid()
         self.host = host
         self.port = int(port)
@@ -530,6 +599,9 @@ class Connection(object):
         return '%s<%s>' % (self.__class__.__name__, repr_args)
 
     def repr_pieces(self):
+        """
+        repr_pieces
+        """
         pieces = [
             ('host', self.host),
             ('port', self.port),
@@ -546,9 +618,15 @@ class Connection(object):
             pass
 
     def register_connect_callback(self, callback):
+        """
+        注册回调函数
+        """
         self._connect_callbacks.append(callback)
 
     def clear_connect_callbacks(self):
+        """
+        清理回调函数
+        """
         self._connect_callbacks = []
 
     def connect(self):
@@ -818,6 +896,9 @@ class Connection(object):
 
 
 class SSLConnection(Connection):
+    """
+    SSL Connection
+    """
 
     def __init__(self, ssl_keyfile=None, ssl_certfile=None,
                  ssl_cert_reqs='required', ssl_ca_certs=None,
@@ -872,6 +953,9 @@ class SSLConnection(Connection):
 
 
 class UnixDomainSocketConnection(Connection):
+    """
+    UnixDomainSocketConnection
+    """
 
     def __init__(self, path='', db=0, username=None, password=None,
                  socket_timeout=None, encoding='utf-8',
@@ -896,6 +980,9 @@ class UnixDomainSocketConnection(Connection):
         self._buffer_cutoff = 6000
 
     def repr_pieces(self):
+        """
+        repr_pieces
+        """
         pieces = [
             ('path', self.path),
             ('db', self.db),
@@ -926,6 +1013,9 @@ FALSE_STRINGS = ('0', 'F', 'FALSE', 'N', 'NO')
 
 
 def to_bool(value):
+    """
+    bool
+    """
     if value is None or value == '':
         return None
     if isinstance(value, basestring) and value.upper() in FALSE_STRINGS:
@@ -945,7 +1035,9 @@ URL_QUERY_ARGUMENT_PARSERS = {
 
 
 class ConnectionPool(object):
-    "Generic connection pool"
+    """
+    Generic connection pool
+    """
     @classmethod
     def from_url(cls, url, db=None, decode_components=False, **kwargs):
         """
@@ -1069,7 +1161,7 @@ class ConnectionPool(object):
 
         return cls(**kwargs)
 
-    def __init__(self, connection_class=Connection, max_connections=None,
+    def __init__(self, connection_class=None, max_connections=None,
                  **connection_kwargs):
         """
         Create a connection pool. If max_connections is set, then this
@@ -1081,6 +1173,9 @@ class ConnectionPool(object):
         Any additional keyword arguments are passed to the constructor of
         connection_class.
         """
+        if connection_class is None:
+            connection_class=Connection
+
         max_connections = max_connections or 2 ** 31
         if not isinstance(max_connections, (int, long)) or max_connections < 0:
             raise ValueError('"max_connections" must be a positive integer')
@@ -1107,6 +1202,9 @@ class ConnectionPool(object):
         )
 
     def reset(self):
+        """
+        重置连接
+        """
         self._lock = threading.Lock()
         self._created_connections = 0
         self._available_connections = []
@@ -1248,6 +1346,9 @@ class ConnectionPool(object):
                 return
 
     def owns_connection(self, connection):
+        """
+        bool
+        """
         return connection.pid == self.pid
 
     def disconnect(self, inuse_connections=True):
@@ -1304,8 +1405,13 @@ class BlockingConnectionPool(ConnectionPool):
         >>> pool = BlockingConnectionPool(timeout=5)
     """
     def __init__(self, max_connections=50, timeout=20,
-                 connection_class=Connection, queue_class=LifoQueue,
+                 connection_class=None, queue_class=None,
                  **connection_kwargs):
+        if connection_class is None:
+            connection_class=Connection
+
+        if queue_class is None:
+            queue_class=LifoQueue
 
         self.queue_class = queue_class
         self.timeout = timeout

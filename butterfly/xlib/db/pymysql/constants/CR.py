@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: CR.py
+# Description:
+
+"""
 # flake8: noqa
 # errmsg.h
 CR_ERROR_FIRST  	= 2000

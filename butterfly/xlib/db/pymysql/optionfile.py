@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: optionfile.py
+# Description:
+
+"""
 from ._compat import PY2
 
 if PY2:
@@ -7,6 +13,9 @@ else:
 
 
 class Parser(configparser.RawConfigParser):
+    """
+    解析配置
+    """
     def __init__(self, **kwargs):
         kwargs['allow_no_value'] = True
         configparser.RawConfigParser.__init__(self, **kwargs)
@@ -19,5 +28,8 @@ class Parser(configparser.RawConfigParser):
         return value
 
     def get(self, section, option):
+        """
+        获取配置
+        """
         value = configparser.RawConfigParser.get(self, section, option)
         return self.__remove_quotes(value)

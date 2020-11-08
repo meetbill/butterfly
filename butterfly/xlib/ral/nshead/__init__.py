@@ -18,7 +18,10 @@ class Nshead(object):
     format = "HHI16sIII"
     magic_num = 0xfb709394
 
-    def __init__(self, head={}):
+    def __init__(self, head=None):
+        if head is None:
+            head = {}
+
         self.head = {}
         self.head["id"] = head.get("id", 0)
         self.head["version"] = head.get("version", 0)

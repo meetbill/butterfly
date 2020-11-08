@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: _compat.py
+# Description:
+    Py2/Py2 兼容函数
+"""
 import sys
 
 PY2 = sys.version_info[0] == 2

@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: statemachine.py
+# Description:
+
+"""
 # coding: utf-8
 
 #from typing import Any, List, Dict, Optional, TypeVar, Text, Generic
@@ -79,6 +85,9 @@ class Transition(object):
 
     def __get__(self, machine, owner):
         def transition_callback(*args, **kwargs):
+            """
+            callback 函数
+            """
             return self._run(machine, *args, **kwargs)
 
         return CallableInstance(self, func=transition_callback)
@@ -164,6 +173,9 @@ class Transition(object):
 
 
 class CombinedTransition(Transition):
+    """
+    CombinedTransition
+    """
 
     @property
     def _left(self):
@@ -194,6 +206,9 @@ class CombinedTransition(Transition):
 
 
 class State(object):
+    """
+    State 类
+    """
 
     def __init__(self, name, value=None, initial=False):
         # type: (Text, Optional[V], bool) -> None
@@ -235,9 +250,15 @@ class State(object):
 
     def _get_proxy_method_to_itself(self, method):
         def proxy(*states):
+            """
+            proxy
+            """
             return method(*states)
 
         def proxy_to_itself():
+            """
+            proxy_to_itself
+            """
             return proxy(self)
 
         proxy.itself = proxy_to_itself
@@ -245,14 +266,23 @@ class State(object):
 
     @property
     def to(self):
+        """
+        状态转变
+        """
         return self._get_proxy_method_to_itself(self._to_)
 
     @property
     def from_(self):
+        """
+        from_
+        """
         return self._get_proxy_method_to_itself(self._from_)
 
     @property
     def initial(self):
+        """
+        初始化
+        """
         return self._initial
 
 
@@ -260,12 +290,17 @@ def check_state_factory(state):
     "Return a property that checks if the current state is the desired state"
     @property
     def is_in_state(self):
+        """
         # type: (BaseStateMachine) -> bool
+        """
         return bool(self.current_state == state)
     return is_in_state
 
 
 class StateMachineMetaclass(type):
+    """
+    状态机器 meta
+    """
 
     def __init__(cls, name, bases, attrs):
         super(StateMachineMetaclass, cls).__init__(name, bases, attrs)
@@ -279,6 +314,9 @@ class StateMachineMetaclass(type):
             setattr(cls, 'is_{}'.format(state.identifier), check_state_factory(state))
 
     def add_inherited(cls, bases):
+        """
+        add inherited
+        """
         for base in bases:
             for state in getattr(base, 'states', []):
                 cls.add_state(state.identifier, state)
@@ -286,6 +324,9 @@ class StateMachineMetaclass(type):
                 cls.add_transition(transition.identifier, transition)
 
     def add_from_attributes(cls, attrs):
+        """
+        从 attributes 中添加 state/transition
+        """
         for key, value in sorted(attrs.items(), key=lambda pair: pair[0]):
             if isinstance(value, State):
                 cls.add_state(key, value)
@@ -293,16 +334,25 @@ class StateMachineMetaclass(type):
                 cls.add_transition(key, value)
 
     def add_state(cls, identifier, state):
+        """
+        添加 state
+        """
         state._set_identifier(identifier)
         cls.states.append(state)
         cls.states_map[state.value] = state
 
     def add_transition(cls, identifier, transition):
+        """
+        添加 transition
+        """
         transition._set_identifier(identifier)
         cls.transitions.append(transition)
 
 
 class Model(object):
+    """
+    Model 类
+    """
 
     def __init__(self):
         self.state = None  # type: Optional[V]
@@ -312,6 +362,9 @@ class Model(object):
 
 
 class BaseStateMachine(object):
+    """
+    状态机基类
+    """
 
     transitions = []  # type: List[Transition]
     states = []  # type: List[State]
@@ -352,6 +405,9 @@ class BaseStateMachine(object):
         return set(self.states) - set(visitable_states)
 
     def check(self):
+        """
+        check
+        """
         if not self.states:
             raise InvalidDefinition(_('There are no states.'))
 
@@ -378,33 +434,39 @@ class BaseStateMachine(object):
 
     @property
     def current_state_value(self):
+        """
         # type: () -> V
+        """
         value = getattr(self.model, self.state_field, None)  # type: V
         return value
 
     @current_state_value.setter
     def current_state_value(self, value):
+        """
         # type: (V) -> None
+        """
         if value not in self.states_map:
             raise InvalidStateValue(value)
         setattr(self.model, self.state_field, value)
 
     @property
     def current_state(self):
+        """
         # type: () -> State
+        """
         return self.states_map[self.current_state_value]
 
     @current_state.setter
     def current_state(self, value):
+        """
+        当前状态
+        """
         self.current_state_value = value.value
 
     @property
     def allowed_transitions(self):
         "get the callable proxy of the current allowed transitions"
-        return [
-            getattr(self, t.identifier)
-            for t in self.current_state.transitions if t._can_run(self)
-        ]
+        return [getattr(self, t.identifier) for t in self.current_state.transitions if t._can_run(self)]
 
     def _activate(self, transition, *args, **kwargs):
         """
@@ -453,7 +515,9 @@ class BaseStateMachine(object):
         return result
 
     def get_transition(self, transition_identifier):
+        """
         # type: (Text) -> CallableInstance
+        """
         transition = getattr(self, transition_identifier, None)  # type: CallableInstance
         if not hasattr(transition, 'source') or not callable(transition):
             raise InvalidTransitionIdentifier(transition_identifier)

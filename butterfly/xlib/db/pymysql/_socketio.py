@@ -1,10 +1,12 @@
+# coding=utf8
 """
 SocketIO imported from socket module in Python 3.
 
 Copyright (c) 2001-2013 Python Software Foundation; All Rights Reserved.
 """
 
-from socket import *
+from socket import timeout
+from socket import error
 import io
 import errno
 
@@ -113,6 +115,9 @@ class SocketIO(io.RawIOBase):
 
     @property
     def name(self):
+        """
+        name 属性, 返回文件行号
+        """
         if not self.closed:
             return self.fileno()
         else:
@@ -120,6 +125,9 @@ class SocketIO(io.RawIOBase):
 
     @property
     def mode(self):
+        """
+        mode 属性
+        """
         return self._mode
 
     def close(self):

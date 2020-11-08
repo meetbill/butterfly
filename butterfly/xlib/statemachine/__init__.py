@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: statemachine
+# Description:
+
+"""
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 from .statemachine import StateMachine, State, Transition

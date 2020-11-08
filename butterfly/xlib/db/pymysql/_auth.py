@@ -1,3 +1,4 @@
+# coding=utf8
 """
 Implements auth methods
 """
@@ -62,7 +63,10 @@ def _my_crypt(message1, message2):
 SCRAMBLE_LENGTH_323 = 8
 
 
-class RandStruct_323(object):
+class RandStruct323(object):
+    """
+    RandStruct323
+    """
 
     def __init__(self, seed1, seed2):
         self.max_value = 0x3FFFFFFF
@@ -70,6 +74,9 @@ class RandStruct_323(object):
         self.seed2 = seed2 % self.max_value
 
     def my_rnd(self):
+        """
+        随机数
+        """
         self.seed1 = (self.seed1 * 3 + self.seed2) % self.max_value
         self.seed2 = (self.seed1 + self.seed2 + 33) % self.max_value
         return float(self.seed1) / float(self.max_value)
@@ -84,7 +91,7 @@ def scramble_old_password(password, message):
     hash_pass_n = struct.unpack(">LL", hash_pass)
     hash_message_n = struct.unpack(">LL", hash_message)
 
-    rand_st = RandStruct_323(
+    rand_st = RandStruct323(
         hash_pass_n[0] ^ hash_message_n[0], hash_pass_n[1] ^ hash_message_n[1]
     )
     outbuf = io.BytesIO()
@@ -153,6 +160,9 @@ def sha2_rsa_encrypt(password, salt, public_key):
 
 
 def sha256_password_auth(conn, pkt):
+    """
+    password auth
+    """
     if conn._secure:
         if DEBUG:
             print("sha256: Sending plain password")
@@ -206,7 +216,9 @@ def scramble_caching_sha2(password, nonce):
 
 
 def caching_sha2_password_auth(conn, pkt):
+    """
     # No password fast path
+    """
     if not conn.password:
         return _roundtrip(conn, b'')
 

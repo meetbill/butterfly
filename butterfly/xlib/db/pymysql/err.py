@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: err.py
+# Description:
+
+"""
 import struct
 
 from .constants import ER
@@ -98,6 +104,9 @@ del _map_error, ER
 
 
 def raise_mysql_exception(data):
+    """
+    输出 mysql exception
+    """
     errno = struct.unpack('<h', data[1:3])[0]
     is_41 = data[3:4] == b"#"
     if is_41:

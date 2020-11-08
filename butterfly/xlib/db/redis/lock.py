@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: lock.py
+# Description:
+
+"""
 import threading
 import time as mod_time
 import uuid
@@ -134,6 +140,9 @@ class Lock(object):
         self.register_scripts()
 
     def register_scripts(self):
+        """
+        注册 scripts
+        """
         cls = self.__class__
         client = self.redis
         if cls.lua_release is None:
@@ -195,6 +204,9 @@ class Lock(object):
             mod_time.sleep(sleep)
 
     def do_acquire(self, token):
+        """
+        取锁
+        """
         if self.timeout:
             # convert to milliseconds
             timeout = int(self.timeout * 1000)
@@ -232,6 +244,9 @@ class Lock(object):
         self.do_release(expected_token)
 
     def do_release(self, expected_token):
+        """
+        release
+        """
         if not bool(self.lua_release(keys=[self.name],
                                      args=[expected_token],
                                      client=self.redis)):
@@ -256,6 +271,9 @@ class Lock(object):
         return self.do_extend(additional_time, replace_ttl)
 
     def do_extend(self, additional_time, replace_ttl):
+        """
+        续期
+        """
         additional_time = int(additional_time * 1000)
         if not bool(
             self.lua_extend(
@@ -284,6 +302,9 @@ class Lock(object):
         return self.do_reacquire()
 
     def do_reacquire(self):
+        """
+        取锁
+        """
         timeout = int(self.timeout * 1000)
         if not bool(self.lua_reacquire(keys=[self.name],
                                        args=[self.local.token, timeout],

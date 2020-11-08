@@ -42,6 +42,9 @@ import traceback
 
 
 def colored(text, color=None, on_color=None, attrs=None):
+    """
+    颜色输出
+    """
     fmt_str = '\x1B[;%dm%s\x1B[0m'
     if color is not None:
         text = fmt_str % (color, text)
@@ -64,14 +67,22 @@ if pycompat.PY2:
 ipython_filename_pattern = re.compile('^<ipython-input-([0-9]+)-.*>$')
 
 
-def get_local_reprs(frame, watch=(), custom_repr=(), max_length=None, normalize=False):
+def get_local_reprs(frame, watch=None, custom_repr=None, max_length=None, normalize=False):
+    """
+    get local reprs
+    """
+    if watch is None:
+        watch = ()
+
+    if custom_repr is None:
+        custom_repr = ()
+
     code = frame.f_code
     vars_order = (code.co_varnames + code.co_cellvars + code.co_freevars +
                   tuple(frame.f_locals.keys()))
 
-    result_items = [(key, utils.get_shortish_repr(value, custom_repr,
-                                                  max_length, normalize))
-                    for key, value in frame.f_locals.items()]
+    result_items = [(key, utils.get_shortish_repr(value, custom_repr, max_length, normalize))
+            for key, value in frame.f_locals.items()]
     result_items.sort(key=lambda key_value: vars_order.index(key_value[0]))
     result = collections.OrderedDict(result_items)
 
@@ -81,6 +92,9 @@ def get_local_reprs(frame, watch=(), custom_repr=(), max_length=None, normalize=
 
 
 class UnavailableSource(object):
+    """
+    无效源类
+    """
     def __getitem__(self, i):
         return u'SOURCE IS UNAVAILABLE'
 
@@ -89,6 +103,9 @@ source_and_path_cache = {}
 
 
 def get_path_and_source_from_frame(frame):
+    """
+    获取 path 和 source
+    """
     globs = frame.f_globals or {}
     module_name = globs.get('__name__')
     file_name = frame.f_code.co_filename
@@ -142,8 +159,7 @@ def get_path_and_source_from_frame(frame):
             if match:
                 encoding = match.group(1).decode('ascii')
                 break
-        source = [pycompat.text_type(sline, encoding, 'replace') for sline in
-                  source]
+        source = [pycompat.text_type(sline, encoding, 'replace') for sline in source]
 
     result = (file_name, source)
     source_and_path_cache[cache_key] = result
@@ -151,12 +167,18 @@ def get_path_and_source_from_frame(frame):
 
 
 def get_write_function(output, overwrite):
+    """
+    标准输出函数
+    """
     is_path = isinstance(output, (pycompat.PathLike, str))
     if overwrite and not is_path:
         raise Exception('`overwrite=True` can only be used when writing '
                         'content to file.')
     if output is None:
         def write(s):
+            """
+            标准输出
+            """
             stderr = sys.stderr
             try:
                 stderr.write(s)
@@ -171,16 +193,25 @@ def get_write_function(output, overwrite):
         assert isinstance(output, utils.WritableStream)
 
         def write(s):
+            """
+            标准输出
+            """
             output.write(s)
     return write
 
 
 class FileWriter(object):
+    """
+    FileWriter 类，将 debug 信息输出到日志
+    """
     def __init__(self, path, overwrite):
         self.path = pycompat.text_type(path)
         self.overwrite = overwrite
 
     def write(self, s):
+        """
+        写 debug 日志
+        """
         with open(self.path, 'w' if self.overwrite else 'a',
                   encoding='utf-8') as output_file:
             output_file.write(s)
@@ -191,7 +222,7 @@ thread_global = threading.local()
 DISABLED = bool(os.getenv('PYSNOOPER_DISABLED', ''))
 
 class Tracer(object):
-    '''
+    """
     Snoop on the function, writing everything it's doing to stderr.
 
     This is useful for debugging.
@@ -243,11 +274,20 @@ class Tracer(object):
     Show timestamps relative to start time rather than wall time::
 
         @pysnooper.snoop(relative_time=True)
-
-    '''
-    def __init__(self, output=None, watch=(), watch_explode=(), depth=1,
-                 prefix='', overwrite=False, thread_info=False, custom_repr=(),
+    """
+    def __init__(self, output=None, watch=None, watch_explode=None, depth=1,
+                 prefix='', overwrite=False, thread_info=False, custom_repr=None,
                  max_variable_length=100, normalize=False, relative_time=False):
+
+        if watch is None:
+            watch = ()
+
+        if watch_explode is None:
+            watch_explode=()
+
+        if custom_repr is None:
+            custom_repr=()
+
         self._write = get_write_function(output, overwrite)
 
         self.watch = [
@@ -267,8 +307,7 @@ class Tracer(object):
         self.target_codes = set()
         self.target_frames = set()
         self.thread_local = threading.local()
-        if len(custom_repr) == 2 and not all(isinstance(x,
-                      pycompat.collections_abc.Iterable) for x in custom_repr):
+        if len(custom_repr) == 2 and not all(isinstance(x, pycompat.collections_abc.Iterable) for x in custom_repr):
             custom_repr = (custom_repr,)
         self.custom_repr = custom_repr
         self.last_source_path = None
@@ -301,11 +340,17 @@ class Tracer(object):
 
         @functools.wraps(function)
         def simple_wrapper(*args, **kwargs):
+            """
+            wrapper
+            """
             with self:
                 return function(*args, **kwargs)
 
         @functools.wraps(function)
         def generator_wrapper(*args, **kwargs):
+            """
+            wrapper
+            """
             gen = function(*args, **kwargs)
             method, incoming = gen.send, None
             while True:
@@ -329,6 +374,9 @@ class Tracer(object):
             return simple_wrapper
 
     def write(self, s):
+        """
+        输出信息
+        """
         s = u'{self.prefix}{s}\n'.format(**locals())
         self._write(s)
 
@@ -372,18 +420,23 @@ class Tracer(object):
         return frame.f_code.co_filename == Tracer.__enter__.__code__.co_filename
 
     def set_thread_info_padding(self, thread_info):
+        """
+        设置线程信息
+        """
         current_thread_len = len(thread_info)
         self.thread_info_padding = max(self.thread_info_padding,
                                        current_thread_len)
         return thread_info.ljust(self.thread_info_padding)
 
     def trace(self, frame, event, arg):
-
+        """
         ### Checking whether we should trace this line: #######################
         #                                                                     #
         # We should trace this line either if it's in the decorated function,
         # or the user asked to go a few levels deeper and we're within that
         # number of levels deeper.
+        """
+
 
         if not (frame.f_code in self.target_codes or frame in self.target_frames):
             if self.depth == 1:

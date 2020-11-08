@@ -1,3 +1,4 @@
+# coding=utf8
 """Internal module for Python 2 backwards compatibility."""
 # flake8: noqa
 import errno
@@ -6,14 +7,23 @@ import sys
 
 
 def sendall(sock, *args, **kwargs):
+    """
+    发送数据
+    """
     return sock.sendall(*args, **kwargs)
 
 
 def shutdown(sock, *args, **kwargs):
+    """
+    关闭 socket
+    """
     return sock.shutdown(*args, **kwargs)
 
 
 def ssl_wrap_socket(context, sock, *args, **kwargs):
+    """
+    返回认证 socket
+    """
     return context.wrap_socket(sock, *args, **kwargs)
 
 
@@ -62,16 +72,28 @@ if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and
                 s.settimeout(timeout)
 
     def recv(sock, *args, **kwargs):
+        """
+        接收数据
+        """
         return _retryable_call(sock, sock.recv, *args, **kwargs)
 
     def recv_into(sock, *args, **kwargs):
+        """
+        接受数据
+        """
         return _retryable_call(sock, sock.recv_into, *args, **kwargs)
 
 else:  # Python 3.5 and above automatically retry EINTR
     def recv(sock, *args, **kwargs):
+        """
+        接收数据
+        """
         return sock.recv(*args, **kwargs)
 
     def recv_into(sock, *args, **kwargs):
+        """
+        接收数据
+        """
         return sock.recv_into(*args, **kwargs)
 
 if sys.version_info[0] < 3:
@@ -96,6 +118,9 @@ if sys.version_info[0] < 3:
     def _handle_ssl_timeout(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            """
+            inner function
+            """
             try:
                 return func(*args, **kwargs)
             except _SSLError as e:
@@ -130,18 +155,33 @@ if sys.version_info[0] < 3:
             return unicode(ascii_text)
 
     def iteritems(x):
+        """
+        返回 item 迭代器
+        """
         return x.iteritems()
 
     def iterkeys(x):
+        """
+        返回 keys 迭代器
+        """
         return x.iterkeys()
 
     def itervalues(x):
+        """
+        返回 values 迭代器
+        """
         return x.itervalues()
 
     def nativestr(x):
+        """
+        nativestr
+        """
         return x if isinstance(x, str) else x.encode('utf-8', 'replace')
 
     def next(x):
+        """
+        迭代器 next
+        """
         return x.next()
 
     unichr = unichr
@@ -156,18 +196,33 @@ else:
     from queue import Queue
 
     def iteritems(x):
+        """
+        返回 item 迭代器
+        """
         return iter(x.items())
 
     def iterkeys(x):
+        """
+        返回 keys 迭代器
+        """
         return iter(x.keys())
 
     def itervalues(x):
+        """
+        返回 values 迭代器
+        """
         return iter(x.values())
 
     def nativestr(x):
+        """
+        nativestr
+        """
         return x if isinstance(x, str) else x.decode('utf-8', 'replace')
 
     def safe_unicode(value):
+        """
+        unicode
+        """
         if isinstance(value, bytes):
             value = value.decode('utf-8', 'replace')
         return str(value)

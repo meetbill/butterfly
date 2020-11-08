@@ -1,3 +1,8 @@
+# coding=utf8
+"""
+# File Name: util.py
+# Description:
+"""
 # Copyright 2019 Ram Rachum and collaborators.
 # This program is distributed under the MIT license.
 
@@ -21,8 +26,14 @@ def _check_methods(C, *methods):
 
 
 class WritableStream(ABC):
+    """
+    输出日志类
+    """
     @abc.abstractmethod
     def write(self, s):
+        """
+        写记录
+        """
         pass
 
     @classmethod
@@ -42,12 +53,18 @@ file_reading_errors = (
 
 
 def shitcode(s):
+    """
+    将不可见字符输出位 ?
+    """
     return ''.join(
         (c if (0 < ord(c) < 256) else '?') for c in s
     )
 
 
 def get_repr_function(item, custom_repr):
+    """
+    获取 function
+    """
     for condition, action in custom_repr:
         if isinstance(condition, type):
             condition = lambda x, y=condition: isinstance(x, y)
@@ -64,7 +81,13 @@ def normalize_repr(item_repr):
     return DEFAULT_REPR_RE.sub('', item_repr)
 
 
-def get_shortish_repr(item, custom_repr=(), max_length=None, normalize=False):
+def get_shortish_repr(item, custom_repr=None, max_length=None, normalize=False):
+    """
+    处理 item
+    """
+    if custom_repr is None:
+        custom_repr = ()
+
     repr_function = get_repr_function(item, custom_repr)
     try:
         r = repr_function(item)
@@ -79,6 +102,9 @@ def get_shortish_repr(item, custom_repr=(), max_length=None, normalize=False):
 
 
 def truncate(string, max_length):
+    """
+    截断字符串
+    """
     if (max_length is None) or (len(string) <= max_length):
         return string
     else:
@@ -88,6 +114,9 @@ def truncate(string, max_length):
 
 
 def ensure_tuple(x):
+    """
+    返回元组
+    """
     if isinstance(x, collections_abc.Iterable) and \
                                                not isinstance(x, string_types):
         return tuple(x)

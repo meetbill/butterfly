@@ -43,6 +43,9 @@ paramstyle = "pyformat"
 
 
 class DBAPISet(frozenset):
+    """
+    DBAPISet
+    """
 
     def __ne__(self, other):
         if isinstance(other, set):
@@ -97,7 +100,10 @@ if _orig_conn.Connection.__init__.__doc__ is not None:
 del _orig_conn
 
 
-def get_client_info():  # for MySQLdb compatibility
+def get_client_info():
+    """
+    for MySQLdb compatibility
+    """
     version = VERSION
     if VERSION[3] is None:
         version = VERSION[:3]
@@ -115,7 +121,10 @@ __version__ = get_client_info()
 
 
 def thread_safe():
-    return True  # match MySQLdb.thread_safe()
+    """
+    match MySQLdb.thread_safe()
+    """
+    return True
 
 
 def install_as_MySQLdb():

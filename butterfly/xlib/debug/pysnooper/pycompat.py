@@ -1,7 +1,8 @@
-# Copyright 2019 Ram Rachum and collaborators.
-# This program is distributed under the MIT license.
+# coding=utf8
 """
 Python 2/3 compatibility
+# Copyright 2019 Ram Rachum and collaborators.
+# This program is distributed under the MIT license.
 """
 
 import abc
@@ -72,6 +73,9 @@ if sys.version_info[:2] >= (3, 6):
     time_isoformat = datetime_module.time.isoformat
 else:
     def time_isoformat(time, timespec='microseconds'):
+        """
+        返回表示 ISO 8601 格式的时间的字符串
+        """
         assert isinstance(time, datetime_module.time)
         if timespec != 'microseconds':
             raise NotImplementedError
@@ -83,11 +87,17 @@ else:
 
 
 def timedelta_format(timedelta):
+    """
+    返回 iso 时间格式
+    """
     time = (datetime_module.datetime.min + timedelta).time()
     return time_isoformat(time, timespec='microseconds')
 
 
 def timedelta_parse(s):
+    """
+    返回时间差, timedelta 格式
+    """
     hours, minutes, seconds, microseconds = map(
         int,
         s.replace('.', ':').split(':')

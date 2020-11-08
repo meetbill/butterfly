@@ -212,7 +212,7 @@ class Disk(object):
         else:
             return pickle.load(BytesIO(key))
 
-    def store(self, value, read, key=UNKNOWN):
+    def store(self, value, read, key=None):
         """Convert `value` to fields size, mode, filename, and value for Cache
         table.
 
@@ -222,6 +222,8 @@ class Disk(object):
         :return: (size, mode, filename, value) tuple for Cache table
 
         """
+        if key is None:
+            key = UNKNOWN
         # pylint: disable=unidiomatic-typecheck
         type_value = type(value)
         min_file_size = self.min_file_size
@@ -304,7 +306,7 @@ class Disk(object):
             else:
                 return pickle.load(BytesIO(value))
 
-    def filename(self, key=UNKNOWN, value=UNKNOWN):
+    def filename(self, key=None, value=None):
         """Return filename and full-path tuple for file storage.
 
         Filename will be a randomly generated 28 character hexadecimal string
@@ -322,6 +324,12 @@ class Disk(object):
         :param value: value for item (default UNKNOWN)
 
         """
+        if key is None:
+            key = UNKNOWN
+
+        if value is None:
+            value = UNKNOWN
+
         # pylint: disable=unused-argument
         hex_name = codecs.encode(os.urandom(16), 'hex').decode('utf-8')
         sub_dir = op.join(hex_name[:2], hex_name[2:4])
@@ -388,7 +396,9 @@ class JSONDisk(Disk):
         data = super(JSONDisk, self).get(key, raw)
         return json.loads(zlib.decompress(data).decode('utf-8'))
 
-    def store(self, value, read, key=UNKNOWN):
+    def store(self, value, read, key=None):
+        if key is None:
+            key = UNKNOWN
         if not read:
             json_bytes = json.dumps(value).encode('utf-8')
             value = zlib.compress(json_bytes, self.compress_level)
@@ -445,7 +455,7 @@ class Cache(object):
     "Disk and file backed cache."
     # pylint: disable=bad-continuation
 
-    def __init__(self, directory=None, timeout=60, disk=Disk, **settings):
+    def __init__(self, directory=None, timeout=60, disk=None, **settings):
         """Initialize cache instance.
 
         :param str directory: cache directory
@@ -454,6 +464,9 @@ class Cache(object):
         :param settings: any of DEFAULT_SETTINGS
 
         """
+        if disk is None:
+            disk = Disk
+
         try:
             assert issubclass(disk, Disk)
         except (TypeError, AssertionError):
@@ -1481,7 +1494,7 @@ class Cache(object):
 
             return db_key
 
-    def pull(self, prefix=None, default=(None, None), side='front',
+    def pull(self, prefix=None, default=None, side='front',
              expire_time=False, tag=False, retry=False):
         """Pull key and value item pair from `side` of queue in cache.
 
@@ -1535,6 +1548,8 @@ class Cache(object):
         :raises Timeout: if database timeout occurs
 
         """
+        if default is None:
+            default=(None, None)
         # Caution: Nearly identical code exists in Cache.peek
         if prefix is None:
             min_key = 0
@@ -1595,7 +1610,7 @@ class Cache(object):
         else:
             return key, value
 
-    def peek(self, prefix=None, default=(None, None), side='front',
+    def peek(self, prefix=None, default=None, side='front',
              expire_time=False, tag=False, retry=False):
         """Peek at key and value item pair from `side` of queue in cache.
 
@@ -1645,6 +1660,9 @@ class Cache(object):
         :raises Timeout: if database timeout occurs
 
         """
+        if default is None:
+            default=(None, None)
+
         # Caution: Nearly identical code exists in Cache.pull
         if prefix is None:
             min_key = 0
@@ -2344,7 +2362,7 @@ class Cache(object):
     def __setstate__(self, state):
         self.__init__(*state)
 
-    def reset(self, key, value=ENOVAL, update=True):
+    def reset(self, key, value=None, update=True):
         """Reset `key` and `value` item from Settings table.
 
         Use `reset` to update the value of Cache settings correctly. Cache
@@ -2372,6 +2390,8 @@ class Cache(object):
         :raises Timeout: if database timeout occurs
 
         """
+        if value is None:
+            value=ENOVAL
         sql = self._sql
         sql_retry = self._sql_retry
 

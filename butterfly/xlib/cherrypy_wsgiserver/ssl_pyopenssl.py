@@ -256,6 +256,10 @@ class PyOpenSSLAdapter(wsgiserver.SSLAdapter):
         return ssl_environ
 
     def makefile(self, sock, mode='r', bufsize=-1):
+        """
+        makefile
+        返回一个与套接字相关联的文件对象
+        """
         if SSL and isinstance(sock, SSL.ConnectionType):
             timeout = sock.gettimeout()
             f = SSLfileobject(sock, mode, bufsize)

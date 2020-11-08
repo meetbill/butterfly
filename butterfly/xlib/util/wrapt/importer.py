@@ -1,3 +1,4 @@
+# coding=utf8
 """This module implements a post import hook mechanism styled after what is
 described in PEP-369. Note that it doesn't cope with modules being reloaded.
 
@@ -37,6 +38,9 @@ _post_import_hooks_lock = threading.RLock()
 
 def _create_import_hook_from_string(name):
     def import_hook(module):
+        """
+        import
+        """
         module_name, function = name.split(':')
         attrs = function.split('.')
         __import__(module_name)
@@ -49,8 +53,10 @@ def _create_import_hook_from_string(name):
 
 @synchronized(_post_import_hooks_lock)
 def register_post_import_hook(hook, name):
+    """
     # Create a deferred import hook if hook is a string name rather than
     # a callable function.
+    """
 
     if isinstance(hook, string_types):
         hook = _create_import_hook_from_string(hook)
@@ -105,6 +111,9 @@ def register_post_import_hook(hook, name):
 
 def _create_import_hook_from_entrypoint(entrypoint):
     def import_hook(module):
+        """
+        import
+        """
         __import__(entrypoint.module_name)
         callback = sys.modules[entrypoint.module_name]
         for attr in entrypoint.attrs:
@@ -114,6 +123,9 @@ def _create_import_hook_from_entrypoint(entrypoint):
 
 
 def discover_post_import_hooks(group):
+    """
+    discover_post_import_hooks
+    """
     try:
         import pkg_resources
     except ImportError:
@@ -131,6 +143,9 @@ def discover_post_import_hooks(group):
 
 @synchronized(_post_import_hooks_lock)
 def notify_module_loaded(module):
+    """
+    load module
+    """
     name = getattr(module, '__name__', None)
     hooks = _post_import_hooks.get(name, None)
 
@@ -149,6 +164,9 @@ def notify_module_loaded(module):
 class _ImportHookLoader(object):
 
     def load_module(self, fullname):
+        """
+        load module
+        """
         module = sys.modules[fullname]
         notify_module_loaded(module)
 
@@ -161,6 +179,9 @@ class _ImportHookChainedLoader(object):
         self.loader = loader
 
     def load_module(self, fullname):
+        """
+        load module
+        """
         module = self.loader.load_module(fullname)
         notify_module_loaded(module)
 
@@ -168,15 +189,20 @@ class _ImportHookChainedLoader(object):
 
 
 class ImportHookFinder(object):
+    """
+    ImportHookFinder
+    """
 
     def __init__(self):
         self.in_progress = {}
 
     @synchronized(_post_import_hooks_lock)
     def find_module(self, fullname, path=None):
+        """
         # If the module being imported is not one we have registered
         # post import hooks for, we can return immediately. We will
         # take no further part in the importing of this module.
+        """
 
         if not fullname in _post_import_hooks:
             return None
@@ -233,7 +259,13 @@ class ImportHookFinder(object):
 
 
 def when_imported(name):
+    """
+    import
+    """
     def register(hook):
+        """
+        inner function
+        """
         register_post_import_hook(hook, name)
         return hook
     return register
