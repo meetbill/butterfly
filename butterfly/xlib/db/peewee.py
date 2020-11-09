@@ -236,11 +236,11 @@ else:
     _sqlite_version_ = (0, 0, 0)
 
 
-__date_parts = set(('year', 'month', 'day', 'hour', 'minute', 'second'))
+_date_parts_ = set(('year', 'month', 'day', 'hour', 'minute', 'second'))
 
 # Sqlite does not support the `date_part` SQL function, so we will define an
 # implementation in python.
-__sqlite_datetime_formats = (
+_sqlite_datetime_formats_ = (
     '%Y-%m-%d %H:%M:%S',
     '%Y-%m-%d %H:%M:%S.%f',
     '%Y-%m-%d',
@@ -248,7 +248,7 @@ __sqlite_datetime_formats = (
     '%H:%M:%S.%f',
     '%H:%M')
 
-__sqlite_date_trunc = {
+_sqlite_date_trunc_ = {
     'year': '%Y-01-01 00:00:00',
     'month': '%Y-%m-01 00:00:00',
     'day': '%Y-%m-%d 00:00:00',
@@ -256,25 +256,25 @@ __sqlite_date_trunc = {
     'minute': '%Y-%m-%d %H:%M:00',
     'second': '%Y-%m-%d %H:%M:%S'}
 
-__mysql_date_trunc = __sqlite_date_trunc.copy()
-__mysql_date_trunc['minute'] = '%Y-%m-%d %H:%i:00'
-__mysql_date_trunc['second'] = '%Y-%m-%d %H:%i:%S'
+_mysql_date_trunc_ = _sqlite_date_trunc_.copy()
+_mysql_date_trunc_['minute'] = '%Y-%m-%d %H:%i:00'
+_mysql_date_trunc_['second'] = '%Y-%m-%d %H:%i:%S'
 
 
 def _sqlite_date_part(lookup_type, datetime_string):
-    assert lookup_type in __date_parts
+    assert lookup_type in _date_parts_
     if not datetime_string:
         return
-    dt = format_date_time(datetime_string, __sqlite_datetime_formats)
+    dt = format_date_time(datetime_string, _sqlite_datetime_formats_)
     return getattr(dt, lookup_type)
 
 
 def _sqlite_date_trunc(lookup_type, datetime_string):
-    assert lookup_type in __sqlite_date_trunc
+    assert lookup_type in _sqlite_date_trunc_
     if not datetime_string:
         return
-    dt = format_date_time(datetime_string, __sqlite_datetime_formats)
-    return dt.strftime(__sqlite_date_trunc[lookup_type])
+    dt = format_date_time(datetime_string, _sqlite_datetime_formats_)
+    return dt.strftime(_sqlite_date_trunc_[lookup_type])
 
 
 def _deprecated_(s):
@@ -629,7 +629,7 @@ class Context(object):
     """
     Converts Peewee structures into parameterized SQL queries.
 
-    Peewee 结构应全部实现 __sql 方法，将由 Context 在 SQL 生成期间初始化。
+    Peewee 结构应全部实现 _sql_ 方法，将由 Context 在 SQL 生成期间初始化。
     """
     __slots__ = ('stack', '_sql', '_values', 'alias_manager', 'state')
 
@@ -714,9 +714,9 @@ class Context(object):
         将可组合节点对象、子上下文或其他对象追加到查询 AST
         """
         if isinstance(obj, (Node, Context)):
-            return obj.__sql(self)
+            return obj._sql_(self)
         elif is_model(obj):
-            return obj._meta.table.__sql(self)
+            return obj._meta.table._sql_(self)
         else:
             return self.sql(Value(obj))
 
@@ -756,7 +756,7 @@ class Context(object):
         self._values.append(value)
         return self.literal(self.state.param or '?') if add_param else self
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         ctx._sql.extend(self._sql)
         ctx._values.extend(self._values)
         return ctx
@@ -842,7 +842,7 @@ class Node(object):
         obj.__dict__ = self.__dict__.copy()
         return obj
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         raise NotImplementedError
 
     @staticmethod
@@ -1238,7 +1238,7 @@ class Table(_HashableSource, BaseTable):
         """
         return Delete(self)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             # Return the quoted table name.
             return ctx.sql(Entity(*self._path))
@@ -1285,7 +1285,7 @@ class Join(BaseTable):
         self._on = predicate
         return self
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         (ctx
          .sql(self.lhs)
          .literal(' %s JOIN ' % self.join_type)
@@ -1320,7 +1320,7 @@ class ValuesList(_HashableSource, BaseTable):
         """
         self._columns = names
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if self._alias:
             ctx.alias_manager[self] = self._alias
 
@@ -1401,7 +1401,7 @@ class CTE(_HashableSource, Source):
         return CTE(self._alias, clone + rhs, self._recursive, self._columns)
     __add__ = union_all
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope != SCOPE_CTE:
             return ctx.sql(Entity(self._alias))
 
@@ -1634,7 +1634,7 @@ class Column(ColumnBase):
     def __hash__(self):
         return hash((self.source, self.name))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             return ctx.sql(Entity(self.name))
         else:
@@ -1716,7 +1716,7 @@ class Alias(WrappedNode):
         """
         return True
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_SOURCE:
             return (ctx
                     .sql(self.node)
@@ -1733,7 +1733,7 @@ class Negated(WrappedNode):
     def __invert__(self):
         return self.node
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.literal('NOT ').sql(self.node)
 
 
@@ -1761,7 +1761,7 @@ class BitwiseNegated(BitwiseMixin, WrappedNode):
     def __invert__(self):
         return self.node
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.state.operations:
             op_sql = ctx.state.operations.get(self.op, self.op)
         else:
@@ -1792,7 +1792,7 @@ class Value(ColumnBase):
                 else:
                     self.values.append(Value(item, self.converter))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if self.multi:
             # For multi-part values (e.g. lists of IDs).
             return ctx.sql(EnclosedNodeList(self.values))
@@ -1816,7 +1816,7 @@ class Cast(WrappedNode):
         self._cast = cast
         self._coerce = False
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return (ctx
                 .literal('CAST(')
                 .sql(self.node)
@@ -1851,7 +1851,7 @@ class Ordering(WrappedNode):
             raise ValueError('unsupported value for nulls= ordering.')
         return Case(None, ((self.node.is_null(), ifnull),), notnull)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if self.nulls and not ctx.state.nulls_ordering:
             ctx.sql(self._null_ordering_case(self.nulls)).literal(', ')
 
@@ -1893,7 +1893,7 @@ class Expression(ColumnBase):
         self.rhs = rhs
         self.flat = flat
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         overrides = {'parentheses': not self.flat, 'in_expr': True}
 
         # First attempt to unwrap the node on the left-hand-side, so that we
@@ -1958,7 +1958,7 @@ class Entity(ColumnBase):
     def __hash__(self):
         return hash((self.__class__.__name__, tuple(self._path)))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.literal(quote(self._path, ctx.state.quote or '""'))
 
 
@@ -1970,7 +1970,7 @@ class SQL(ColumnBase):
         self.sql = sql
         self.params = params
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         ctx.literal(self.sql)
         if self.params:
             for param in self.params:
@@ -2057,7 +2057,7 @@ class Function(ColumnBase):
                           exclude=exclude, _inline=True)
         return NodeList((self, SQL('OVER'), node))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         ctx.literal(self.name)
         if not len(self.arguments):
             ctx.literal('()')
@@ -2180,7 +2180,7 @@ class Window(Node):
             return SQL('UNBOUNDED PRECEDING')
         return SQL('%d PRECEDING' % value)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope != SCOPE_SOURCE and not self._inline:
             ctx.literal(self._alias)
             ctx.literal(' AS ')
@@ -2233,7 +2233,7 @@ class WindowAlias(Node):
         self.window._alias = window_alias
         return self
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.literal(self.window._alias or 'w')
 
 
@@ -2273,7 +2273,7 @@ class NodeList(ColumnBase):
                 # Hack to avoid double-parentheses.
                 self.nodes[0].flat = True
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         n_nodes = len(self.nodes)
         if n_nodes == 0:
             return ctx.literal('()') if self.parens else ctx
@@ -2318,7 +2318,7 @@ class NamespaceAttribute(ColumnBase):
         self._namespace = namespace
         self._attribute = attribute
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return (ctx
                 .literal(self._namespace._name + '.')
                 .sql(Entity(self._attribute)))
@@ -2360,7 +2360,7 @@ class QualifiedNames(WrappedNode):
     """
     限定名称
     """
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         with ctx.scope_column():
             return ctx.sql(self.node)
 
@@ -2575,7 +2575,7 @@ class BaseQuery(Node):
         else:
             raise ValueError('Unrecognized row type: "%s".' % row_type)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         raise NotImplementedError
 
     def sql(self):
@@ -2649,7 +2649,7 @@ class RawQuery(BaseQuery):
         self._sql = sql
         self._params = params
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         ctx.literal(self._sql)
         if self._params:
             for param in self._params:
@@ -2753,7 +2753,7 @@ class Query(BaseQuery):
             ctx.literal(' OFFSET ').sql(self._offset)
         return ctx
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if self._cte_list:
             # The CTE scope is only used at the very beginning of the query,
             # when we are describing the various CTEs we will be using.
@@ -2962,7 +2962,7 @@ class CompoundSelectQuery(SelectBase):
         elif csq_setting == CSQ_PARENTHESES_UNNESTED:
             return not isinstance(subq, CompoundSelectQuery)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_COLUMN:
             return self.apply_column(ctx)
 
@@ -2981,7 +2981,7 @@ class CompoundSelectQuery(SelectBase):
 
             # Apply ORDER BY, LIMIT, OFFSET. We use the "values" scope so that
             # entity names are not fully-qualified. This is a bit of a hack, as
-            # we're relying on the logic in Column.__sql() to not fully
+            # we're relying on the logic in Column._sql_() to not fully
             # qualify column names.
             with ctx.scope_values():
                 self._apply_ordering(ctx)
@@ -3129,7 +3129,7 @@ class Select(SelectBase):
     def _sql_selection_(self, ctx, is_subquery=False):
         return ctx.sql(CommaNodeList(self._returning))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_COLUMN:
             return self.apply_column(ctx)
 
@@ -3147,7 +3147,7 @@ class Select(SelectBase):
             # Defer calling parent SQL until here. This ensures that any CTEs
             # for this query will be properly nested if this query is a
             # sub-select or is used in an expression. See GH#1809 for example.
-            super(Select, self).__sql(ctx)
+            super(Select, self)._sql_(ctx)
 
             ctx.literal('SELECT ')
             if self._simple_distinct or self._distinct is not None:
@@ -3254,8 +3254,8 @@ class _WriteQuery(Query):
     def _set_table_alias(self, ctx):
         ctx.alias_manager[self.table] = self.table.__name__
 
-    def __sql(self, ctx):
-        super(_WriteQuery, self).__sql(ctx)
+    def _sql_(self, ctx):
+        super(_WriteQuery, self)._sql_(ctx)
         # We explicitly set the table alias to the table's name, which ensures
         # that if a sub-select references a column on the outer table, we won't
         # assign it a new alias (e.g. t2) but will refer to it as table.column.
@@ -3279,8 +3279,8 @@ class Update(_WriteQuery):
         """
         self._from = sources
 
-    def __sql(self, ctx):
-        super(Update, self).__sql(ctx)
+    def _sql_(self, ctx):
+        super(Update, self)._sql_(ctx)
 
         with ctx.scope_values(subquery=True):
             ctx.literal('UPDATE ')
@@ -3487,8 +3487,8 @@ class Insert(_WriteQuery):
             return ctx.literal('DEFAULT VALUES')
         return self._database.default_values_insert(ctx)
 
-    def __sql(self, ctx):
-        super(Insert, self).__sql(ctx)
+    def _sql_(self, ctx):
+        super(Insert, self)._sql_(ctx)
         with ctx.scope_values():
             stmt = None
             if self._on_conflict is not None:
@@ -3542,8 +3542,8 @@ class Delete(_WriteQuery):
     """
     表示删除的类。
     """
-    def __sql(self, ctx):
-        super(Delete, self).__sql(ctx)
+    def _sql_(self, ctx):
+        super(Delete, self)._sql_(ctx)
 
         with ctx.scope_values(subquery=True):
             ctx.literal('DELETE FROM ').sql(self.table)
@@ -3601,7 +3601,7 @@ class Index(Node):
         """
         self._using = _using
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         statement = 'CREATE UNIQUE INDEX ' if self._unique else 'CREATE INDEX '
         with ctx.scope_values(subquery=True):
             ctx.literal(statement)
@@ -3793,7 +3793,7 @@ EXCEPTIONS = {
     'OperationalError': OperationalError,
     'ProgrammingError': ProgrammingError}
 
-__exception_wrapper = ExceptionWrapper(EXCEPTIONS)
+_exception_wrapper_ = ExceptionWrapper(EXCEPTIONS)
 
 
 # DATABASE INTERFACE AND CONNECTION MANAGEMENT.
@@ -4001,7 +4001,7 @@ class Database(_CallableContextManager):
                 raise OperationalError('Connection already opened.')
 
             self._state.reset()
-            with __exception_wrapper:
+            with _exception_wrapper_:
                 self._state.set_connection(self._connect())
                 if self.server_version is None:
                     self._set_server_version(self._state.conn)
@@ -4028,7 +4028,7 @@ class Database(_CallableContextManager):
             is_open = not self._state.closed
             try:
                 if is_open:
-                    with __exception_wrapper:
+                    with _exception_wrapper_:
                         self._close(self._state.conn)
             finally:
                 self._state.reset()
@@ -4091,7 +4091,7 @@ class Database(_CallableContextManager):
             else:
                 commit = not sql[:6].lower().startswith('select')
 
-        with __exception_wrapper:
+        with _exception_wrapper_:
             cursor = self.cursor(commit)
             try:
                 cursor.execute(sql, params or ())
@@ -5918,7 +5918,7 @@ class Field(ColumnBase):
         """
         return self._sort_key
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.sql(self.column)
 
     def get_modifiers(self):
@@ -7014,7 +7014,7 @@ class CompositeKey(MetaField):
     def __hash__(self):
         return hash((self.model.__name__, self.field_names))
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         # If the composite PK is being selected, do not use parens. Elsewhere,
         # such as in an expression, we want to use parentheses and treat it as
         # a row value.
@@ -8393,7 +8393,7 @@ class Model(with_metaclass(ModelBase, Node)):
     def __ne__(self, other):
         return not self == other
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.sql(getattr(self, self._meta.primary_key.name))
 
     @classmethod
@@ -8516,7 +8516,7 @@ class ModelAlias(Node):
     def __call__(self, **kwargs):
         return self.model(**kwargs)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         if ctx.scope == SCOPE_VALUES:
             # Return the quoted table name.
             return ctx.sql(self.model)
@@ -8580,7 +8580,7 @@ class FieldAlias(Field):
     def __getattr__(self, attr):
         return self.source if attr == 'model' else getattr(self.field, attr)
 
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return ctx.sql(Column(self.source, self.field.column_name))
 
 
@@ -9110,7 +9110,7 @@ class NoopModelSelect(ModelSelect):
     """
     NoopModelSelect
     """
-    def __sql(self, ctx):
+    def _sql_(self, ctx):
         return self.model._meta.database.get_noop_select(ctx)
 
     def _get_cursor_wrapper(self, cursor):
