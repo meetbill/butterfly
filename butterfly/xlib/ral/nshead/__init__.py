@@ -59,6 +59,7 @@ def nshead_write(sock, info, custom=None):
     """
     body_len = len(info)
     if custom and isinstance(custom, dict):
+        custom["body_len"] = body_len
         send_nshead = Nshead(custom)
     else:
         send_nshead = Nshead({'provider': 'pynshead', 'log_id': 1234, 'body_len': body_len})
