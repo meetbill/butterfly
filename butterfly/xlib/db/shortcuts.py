@@ -80,7 +80,7 @@ def model_to_dict(model, recurse=True, backrefs=False, only=None,
         if should_skip(field):
             continue
 
-        field_data = model.__data__.get(field.name)
+        field_data = model._data_.get(field.name)
         if isinstance(field, ForeignKeyField) and recurse:
             if field_data is not None:
                 seen.add(field)
@@ -165,7 +165,7 @@ def update_model_from_dict(instance, data, ignore_unknown=False):
 
         if not is_backref and is_foreign_key and isinstance(value, dict):
             try:
-                rel_instance = instance.__rel__[field.name]
+                rel_instance = instance._rel_[field.name]
             except KeyError:
                 rel_instance = field.rel_model()
             setattr(
