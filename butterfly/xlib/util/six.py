@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# coding=utf8
 # Copyright (c) 2010-2020 Benjamin Peterson
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
