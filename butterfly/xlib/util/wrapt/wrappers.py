@@ -1,3 +1,4 @@
+# coding=utf8
 import os
 import sys
 import functools
@@ -53,14 +54,14 @@ class _ObjectProxyMethods(object):
     def __dict__(self):
         return self.__wrapped__.__dict__
 
-    # Need to also propagate the special __weakref__ attribute for case
+    # Need to also propagate the special _weakref_ attribute for case
     # where decorating classes which will define this. If do not define
     # it and use a function like inspect.getmembers() on a decorator
     # class it will fail. This can't be in the derived classes.
 
     @property
-    def __weakref__(self):
-        return self.__wrapped__.__weakref__
+    def _weakref_(self):
+        return self.__wrapped__._weakref_
 
 
 class _ObjectProxyMetaType(type):
@@ -76,6 +77,9 @@ class _ObjectProxyMetaType(type):
 
 
 class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
+    """
+    ObjectProxy
+    """
 
     __slots__ = '__wrapped__'
 
@@ -108,12 +112,12 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
         self.__wrapped__.__class__ = value
 
     @property
-    def __annotations__(self):
-        return self.__wrapped__.__annotations__
+    def _annotations_(self):
+        return self.__wrapped__._annotations_
 
-    @__annotations__.setter
-    def __annotations__(self, value):
-        self.__wrapped__.__annotations__ = value
+    @_annotations_.setter
+    def _annotations_(self, value):
+        self.__wrapped__._annotations_ = value
 
     def __dir__(self):
         return dir(self.__wrapped__)
@@ -135,7 +139,7 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
         return reversed(self.__wrapped__)
 
     if PY3:
-        def __round__(self):
+        def _round_(self):
             return round(self.__wrapped__)
 
     def __lt__(self, other):

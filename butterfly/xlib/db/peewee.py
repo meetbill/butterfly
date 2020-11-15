@@ -5268,8 +5268,7 @@ class MySQLDatabase(Database):
             schema (str) -- 架构名称（可选）。
         """
         cursor = self.execute_sql('SHOW INDEX FROM `%s`' % table)
-        return [row[4] for row in
-                filter(lambda row: row[2] == 'PRIMARY', cursor.fetchall())]
+        return [row[4] for row in filter(lambda row: row[2] == 'PRIMARY', cursor.fetchall())]
 
     def get_foreign_keys(self, table, schema=None):
         """
@@ -5292,9 +5291,15 @@ class MySQLDatabase(Database):
             for column, dest_table, dest_column in cursor.fetchall()]
 
     def get_binary_type(self):
+        """
+        获取 binary 类型
+        """
         return mysql.Binary
 
     def conflict_statement(self, on_conflict, query):
+        """
+        冲突状态
+        """
         if not on_conflict._action:
             return
 
@@ -5308,6 +5313,9 @@ class MySQLDatabase(Database):
                              'MySQL supports REPLACE, IGNORE and UPDATE.')
 
     def conflict_update(self, on_conflict, query):
+        """
+        conflict_update
+        """
         if on_conflict._where or on_conflict._conflict_target or \
            on_conflict._conflict_constraint:
             raise ValueError('MySQL does not support the specification of '

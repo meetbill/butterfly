@@ -23,7 +23,7 @@ class UUID64(object):
         # 先取 pid 与低四位按位与(值范围为 0-15)，然后左移动 4 位到高四位
         self._pid_factor = (self._pid & 0x0f) << 4
         self.counter = 0
-        self._cipher = pyDes.des(self.ENC_KEY)
+        self._cipher = pyDes.Des(self.ENC_KEY)
 
         if uuid._uuid_generate_time:
             buf = ctypes.create_string_buffer(16)

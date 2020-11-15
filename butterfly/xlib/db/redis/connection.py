@@ -961,8 +961,10 @@ class UnixDomainSocketConnection(Connection):
                  socket_timeout=None, encoding='utf-8',
                  encoding_errors='strict', decode_responses=False,
                  retry_on_timeout=False,
-                 parser_class=DefaultParser, socket_read_size=65536,
+                 parser_class=None, socket_read_size=65536,
                  health_check_interval=0, client_name=None):
+        if parser_class is None:
+            parser_class=DefaultParser
         self.pid = os.getpid()
         self.path = path
         self.db = db

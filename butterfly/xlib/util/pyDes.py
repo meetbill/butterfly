@@ -28,8 +28,8 @@
 
 Class initialization
 --------------------
-pyDes.des(key, [mode], [IV], [pad], [padmode])
-pyDes.triple_des(key, [mode], [IV], [pad], [padmode])
+pyDes.Des(key, [mode], [IV], [pad], [padmode])
+pyDes.TripleDes(key, [mode], [IV], [pad], [padmode])
 
 key     -> Bytes containing the encryption key. 8 bytes for DES, 16 or 24 bytes
 	   for Triple DES
@@ -66,10 +66,10 @@ Example
 from pyDes import *
 
 data = "Please encrypt my data"
-k = des("DESCRYPT", CBC, "\0\0\0\0\0\0\0\0", pad=None, padmode=PAD_PKCS5)
+k = Des("DESCRYPT", CBC, "\0\0\0\0\0\0\0\0", pad=None, padmode=PAD_PKCS5)
 # For Python3, you'll need to use bytes, i.e.:
 #   data = b"Please encrypt my data"
-#   k = des(b"DESCRYPT", CBC, b"\0\0\0\0\0\0\0\0", pad=None, padmode=PAD_PKCS5)
+#   k = Des(b"DESCRYPT", CBC, b"\0\0\0\0\0\0\0\0", pad=None, padmode=PAD_PKCS5)
 d = k.encrypt(data)
 print "Encrypted: %r" % d
 print "Decrypted: %r" % k.decrypt(d)
@@ -253,12 +253,12 @@ class _baseDes(object):
 #############################################################################
 
 
-class des(_baseDes):
+class Des(_baseDes):
     """DES encryption/decrytpion class
 
     Supports ECB (Electronic Code Book) and CBC (Cypher Block Chaining) modes.
 
-    pyDes.des(key,[mode], [IV])
+    pyDes.Des(key,[mode], [IV])
 
     key  -> Bytes containing the encryption key, must be exactly 8 bytes
     mode -> Optional argument for encryption type, can be either pyDes.ECB
@@ -468,7 +468,7 @@ class des(_baseDes):
     def __create_sub_keys(self):
         """Create the 16 subkeys K[1] to K[16] from the given key"""
         key = self.__permutate(
-            des.__pc1, self.__String_to_BitList(
+            Des.__pc1, self.__String_to_BitList(
                 self.getKey()))
         i = 0
         # Split into Left and Right sections
@@ -477,7 +477,7 @@ class des(_baseDes):
         while i < 16:
             j = 0
             # Perform circular left shifts
-            while j < des.__left_rotations[i]:
+            while j < Des.__left_rotations[i]:
                 self.L.append(self.L[0])
                 del self.L[0]
 
@@ -487,19 +487,19 @@ class des(_baseDes):
                 j += 1
 
             # Create one of the 16 subkeys through pc2 permutation
-            self.Kn[i] = self.__permutate(des.__pc2, self.L + self.R)
+            self.Kn[i] = self.__permutate(Des.__pc2, self.L + self.R)
 
             i += 1
 
     # Main part of the encryption algorithm, the number cruncher :)
     def __des_crypt(self, block, crypt_type):
         """Crypt the block of data through DES bit-manipulation"""
-        block = self.__permutate(des.__ip, block)
+        block = self.__permutate(Des.__ip, block)
         self.L = block[:32]
         self.R = block[32:]
 
         # Encryption starts from Kn[1] through to Kn[16]
-        if crypt_type == des.ENCRYPT:
+        if crypt_type == Des.ENCRYPT:
             iteration = 0
             iteration_adjustment = 1
         # Decryption starts from Kn[16] down to Kn[1]
@@ -513,7 +513,7 @@ class des(_baseDes):
             tempR = self.R[:]
 
             # Permutate R[i - 1] to start creating R[i]
-            self.R = self.__permutate(des.__expansion_table, self.R)
+            self.R = self.__permutate(Des.__expansion_table, self.R)
 
             # Exclusive or R[i - 1] with K[i], create B[1] to B[8] whilst here
             self.R = list(map(lambda x, y: x ^ y, self.R, self.Kn[iteration]))
@@ -538,7 +538,7 @@ class des(_baseDes):
                 n = (B[j][1] << 3) + (B[j][2] << 2) + (B[j][3] << 1) + B[j][4]
 
                 # Find the permutation value
-                v = des.__sbox[j][(m << 4) + n]
+                v = Des.__sbox[j][(m << 4) + n]
 
                 # Turn value into bits, add it to result: Bn
                 Bn[pos] = (v & 8) >> 3
@@ -550,7 +550,7 @@ class des(_baseDes):
                 j += 1
 
             # Permutate the concatination of B[1] to B[8] (Bn)
-            self.R = self.__permutate(des.__p, Bn)
+            self.R = self.__permutate(Des.__p, Bn)
 
             # Xor with L[i - 1]
             self.R = list(map(lambda x, y: x ^ y, self.R, self.L))
@@ -567,7 +567,7 @@ class des(_baseDes):
             iteration += iteration_adjustment
 
         # Final permutation of R[16]L[16]
-        self.final = self.__permutate(des.__fp, self.R + self.L)
+        self.final = self.__permutate(Des.__fp, self.R + self.L)
         return self.final
 
     # Data to be encrypted/decrypted
@@ -579,7 +579,7 @@ class des(_baseDes):
         if not data:
             return ''
         if len(data) % self.block_size != 0:
-            if crypt_type == des.DECRYPT:  # Decryption must work on 8 byte blocks
+            if crypt_type == Des.DECRYPT:  # Decryption must work on 8 byte blocks
                 raise ValueError(
                     "Invalid data length, data must be a multiple of " + str(self.block_size) + " bytes\n.")
             if not self.getPadding():
@@ -617,7 +617,7 @@ class des(_baseDes):
 
             # Xor with IV if using CBC mode
             if self.getMode() == CBC:
-                if crypt_type == des.ENCRYPT:
+                if crypt_type == Des.ENCRYPT:
                     block = list(map(lambda x, y: x ^ y, block, iv))
                     #j = 0
                     # while j < len(block):
@@ -626,7 +626,7 @@ class des(_baseDes):
 
                 processed_block = self.__des_crypt(block, crypt_type)
 
-                if crypt_type == des.DECRYPT:
+                if crypt_type == Des.DECRYPT:
                     processed_block = list(
                         map(lambda x, y: x ^ y, processed_block, iv))
                     #j = 0
@@ -671,7 +671,7 @@ class des(_baseDes):
         if pad is not None:
             pad = self._guardAgainstUnicode(pad)
         data = self._padData(data, pad, padmode)
-        return self.crypt(data, des.ENCRYPT)
+        return self.crypt(data, Des.ENCRYPT)
 
     def decrypt(self, data, pad=None, padmode=None):
         """decrypt(data, [pad], [padmode]) -> bytes
@@ -691,21 +691,21 @@ class des(_baseDes):
         data = self._guardAgainstUnicode(data)
         if pad is not None:
             pad = self._guardAgainstUnicode(pad)
-        data = self.crypt(data, des.DECRYPT)
+        data = self.crypt(data, Des.DECRYPT)
         return self._unpadData(data, pad, padmode)
 
 
 #############################################################################
 # 				Triple DES				    #
 #############################################################################
-class triple_des(_baseDes):
+class TripleDes(_baseDes):
     """Triple DES encryption/decrytpion class
 
     This algorithm uses the DES-EDE3 (when a 24 byte key is supplied) or
     the DES-EDE2 (when a 16 byte key is supplied) encryption methods.
     Supports ECB (Electronic Code Book) and CBC (Cypher Block Chaining) modes.
 
-    pyDes.des(key, [mode], [IV])
+    pyDes.Des(key, [mode], [IV])
 
     key  -> Bytes containing the encryption key, must be either 16 or
             24 bytes long
@@ -739,14 +739,14 @@ class triple_des(_baseDes):
                 self._iv = key[:self.block_size]
             if len(self.getIV()) != self.block_size:
                 raise ValueError("Invalid IV, must be 8 bytes in length")
-        self.__key1 = des(key[:8], self._mode, self._iv,
+        self.__key1 = Des(key[:8], self._mode, self._iv,
                           self._padding, self._padmode)
-        self.__key2 = des(key[8:16], self._mode, self._iv,
+        self.__key2 = Des(key[8:16], self._mode, self._iv,
                           self._padding, self._padmode)
         if self.key_size == 16:
             self.__key3 = self.__key1
         else:
-            self.__key3 = des(key[16:], self._mode, self._iv,
+            self.__key3 = Des(key[16:], self._mode, self._iv,
                               self._padding, self._padmode)
         _baseDes.setKey(self, key)
 
@@ -789,8 +789,8 @@ class triple_des(_baseDes):
         the padmode is set to PAD_PKCS5, as bytes will then added to
         ensure the be padded data is a multiple of 8 bytes.
         """
-        ENCRYPT = des.ENCRYPT
-        DECRYPT = des.DECRYPT
+        ENCRYPT = Des.ENCRYPT
+        DECRYPT = Des.DECRYPT
         data = self._guardAgainstUnicode(data)
         if pad is not None:
             pad = self._guardAgainstUnicode(pad)
@@ -836,8 +836,8 @@ class triple_des(_baseDes):
         padding end markers will be removed from the data after
         decrypting, no pad character is required for PAD_PKCS5.
         """
-        ENCRYPT = des.ENCRYPT
-        DECRYPT = des.DECRYPT
+        ENCRYPT = Des.ENCRYPT
+        DECRYPT = Des.DECRYPT
         data = self._guardAgainstUnicode(data)
         if pad is not None:
             pad = self._guardAgainstUnicode(pad)
