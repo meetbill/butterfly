@@ -85,7 +85,7 @@ class _AdapterFunctionSurrogate(CallableObjectProxy):
 
     @property
     def __code__(self):
-        return _AdapterFunctionCode(self.__wrapped__.__code__,
+        return _AdapterFunctionCode(self._wrapped_.__code__,
                                     self._self_adapter.__code__)
 
     @property
@@ -102,7 +102,7 @@ class _AdapterFunctionSurrogate(CallableObjectProxy):
             return self._self_adapter.__signature__
         else:
             # Can't allow this to fail on Python 3 else it falls
-            # through to using __wrapped__, but that will be the
+            # through to using _wrapped_, but that will be the
             # wrong function we want to derive the signature
             # from. Thus generate the signature ourselves.
 
@@ -117,7 +117,7 @@ class _BoundAdapterWrapper(BoundFunctionWrapper):
 
     @property
     def __func__(self):
-        return _AdapterFunctionSurrogate(self.__wrapped__.__func__,
+        return _AdapterFunctionSurrogate(self._wrapped_.__func__,
                                          self._self_parent._self_adapter)
 
     if PY2:
@@ -126,13 +126,13 @@ class _BoundAdapterWrapper(BoundFunctionWrapper):
 
 class AdapterWrapper(FunctionWrapper):
 
-    __bound_function_wrapper__ = _BoundAdapterWrapper
+    _bound_function_wrapper_ = _BoundAdapterWrapper
 
     def __init__(self, *args, **kwargs):
         adapter = kwargs.pop('adapter')
         super(AdapterWrapper, self).__init__(*args, **kwargs)
         self._self_surrogate = _AdapterFunctionSurrogate(
-            self.__wrapped__, adapter)
+            self._wrapped_, adapter)
         self._self_adapter = adapter
 
     @property
@@ -512,7 +512,7 @@ def synchronized(wrapped):
     class _FinalDecorator(FunctionWrapper):
 
         def __enter__(self):
-            self._self_lock = _synchronized_lock(self.__wrapped__)
+            self._self_lock = _synchronized_lock(self._wrapped_)
             self._self_lock.acquire()
             return self._self_lock
 

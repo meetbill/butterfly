@@ -17,9 +17,9 @@
         'http://127.0.0.1:8585',
         data = {},
         type = 'GET',                   # (str) GET POST default: POST
-        is_decode_response = False,     # (bool) 是否将 json 转为 dict
-        check_key = None,               # (str) 检查 key
-        check_value = None,             # (str, int, list) 检查 value, 可以使用 list 提供多个预期 value
+        is_decode_response = False,     # (bool) If True, json ==> dict
+        check_key = None,               # (str) Check key
+        check_value = None,             # (str, int, list) Check value, May be a list
         referer = '',
         user_agent = '',
         cookie = None,                  # CookieJar, Cookie.S*Cookie, dict, string

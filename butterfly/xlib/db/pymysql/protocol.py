@@ -231,8 +231,6 @@ class MysqlPacket(object):
     def is_eof_packet(self):
         """
         # http://dev.mysql.com/doc/internals/en/generic-response-packets.html#packet-EOF_Packet
-        # Caution: \xFE may be LengthEncodedInteger.
-        # If \xFE is LengthEncodedInteger header, 8bytes followed.
         """
         return self._data[0:1] == b'\xfe' and len(self._data) < 9
 

@@ -1,4 +1,8 @@
 # coding=utf8
+"""
+# File Name: wrappers.py
+# Description:
+"""
 import os
 import sys
 import functools
@@ -33,26 +37,26 @@ class _ObjectProxyMethods(object):
 
     @property
     def __module__(self):
-        return self.__wrapped__.__module__
+        return self._wrapped_.__module__
 
     @__module__.setter
     def __module__(self, value):
-        self.__wrapped__.__module__ = value
+        self._wrapped_.__module__ = value
 
     @property
     def __doc__(self):
-        return self.__wrapped__.__doc__
+        return self._wrapped_.__doc__
 
     @__doc__.setter
     def __doc__(self, value):
-        self.__wrapped__.__doc__ = value
+        self._wrapped_.__doc__ = value
 
     # We similar use a property for __dict__. We need __dict__ to be
     # explicit to ensure that vars() works as expected.
 
     @property
     def __dict__(self):
-        return self.__wrapped__.__dict__
+        return self._wrapped_.__dict__
 
     # Need to also propagate the special _weakref_ attribute for case
     # where decorating classes which will define this. If do not define
@@ -61,7 +65,7 @@ class _ObjectProxyMethods(object):
 
     @property
     def _weakref_(self):
-        return self.__wrapped__._weakref_
+        return self._wrapped_._weakref_
 
 
 class _ObjectProxyMetaType(type):
@@ -81,10 +85,10 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
     ObjectProxy
     """
 
-    __slots__ = '__wrapped__'
+    __slots__ = '_wrapped_'
 
     def __init__(self, wrapped):
-        object.__setattr__(self, '__wrapped__', wrapped)
+        object.__setattr__(self, '_wrapped_', wrapped)
 
         # Python 3.2+ has the __qualname__ attribute, but it does not
         # allow it to be overridden using a property and it must instead
@@ -97,83 +101,83 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
 
     @property
     def __name__(self):
-        return self.__wrapped__.__name__
+        return self._wrapped_.__name__
 
     @__name__.setter
     def __name__(self, value):
-        self.__wrapped__.__name__ = value
+        self._wrapped_.__name__ = value
 
     @property
     def __class__(self):
-        return self.__wrapped__.__class__
+        return self._wrapped_.__class__
 
     @__class__.setter
     def __class__(self, value):
-        self.__wrapped__.__class__ = value
+        self._wrapped_.__class__ = value
 
     @property
     def _annotations_(self):
-        return self.__wrapped__._annotations_
+        return self._wrapped_._annotations_
 
     @_annotations_.setter
     def _annotations_(self, value):
-        self.__wrapped__._annotations_ = value
+        self._wrapped_._annotations_ = value
 
     def __dir__(self):
-        return dir(self.__wrapped__)
+        return dir(self._wrapped_)
 
     def __str__(self):
-        return str(self.__wrapped__)
+        return str(self._wrapped_)
 
     if PY3:
         def __bytes__(self):
-            return bytes(self.__wrapped__)
+            return bytes(self._wrapped_)
 
     def __repr__(self):
         return '<{} at 0x{:x} for {} at 0x{:x}>'.format(
             type(self).__name__, id(self),
-            type(self.__wrapped__).__name__,
-            id(self.__wrapped__))
+            type(self._wrapped_).__name__,
+            id(self._wrapped_))
 
     def __reversed__(self):
-        return reversed(self.__wrapped__)
+        return reversed(self._wrapped_)
 
     if PY3:
         def _round_(self):
-            return round(self.__wrapped__)
+            return round(self._wrapped_)
 
     def __lt__(self, other):
-        return self.__wrapped__ < other
+        return self._wrapped_ < other
 
     def __le__(self, other):
-        return self.__wrapped__ <= other
+        return self._wrapped_ <= other
 
     def __eq__(self, other):
-        return self.__wrapped__ == other
+        return self._wrapped_ == other
 
     def __ne__(self, other):
-        return self.__wrapped__ != other
+        return self._wrapped_ != other
 
     def __gt__(self, other):
-        return self.__wrapped__ > other
+        return self._wrapped_ > other
 
     def __ge__(self, other):
-        return self.__wrapped__ >= other
+        return self._wrapped_ >= other
 
     def __hash__(self):
-        return hash(self.__wrapped__)
+        return hash(self._wrapped_)
 
     def __nonzero__(self):
-        return bool(self.__wrapped__)
+        return bool(self._wrapped_)
 
     def __bool__(self):
-        return bool(self.__wrapped__)
+        return bool(self._wrapped_)
 
     def __setattr__(self, name, value):
         if name.startswith('_self_'):
             object.__setattr__(self, name, value)
 
-        elif name == '__wrapped__':
+        elif name == '_wrapped_':
             object.__setattr__(self, name, value)
             try:
                 object.__delattr__(self, '__qualname__')
@@ -185,242 +189,242 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
                 pass
 
         elif name == '__qualname__':
-            setattr(self.__wrapped__, name, value)
+            setattr(self._wrapped_, name, value)
             object.__setattr__(self, name, value)
 
         elif hasattr(type(self), name):
             object.__setattr__(self, name, value)
 
         else:
-            setattr(self.__wrapped__, name, value)
+            setattr(self._wrapped_, name, value)
 
     def __getattr__(self, name):
-        # If we are being to lookup '__wrapped__' then the
+        # If we are being to lookup '_wrapped_' then the
         # '__init__()' method cannot have been called.
 
-        if name == '__wrapped__':
+        if name == '_wrapped_':
             raise ValueError('wrapper has not been initialised')
 
-        return getattr(self.__wrapped__, name)
+        return getattr(self._wrapped_, name)
 
     def __delattr__(self, name):
         if name.startswith('_self_'):
             object.__delattr__(self, name)
 
-        elif name == '__wrapped__':
-            raise TypeError('__wrapped__ must be an object')
+        elif name == '_wrapped_':
+            raise TypeError('_wrapped_ must be an object')
 
         elif name == '__qualname__':
             object.__delattr__(self, name)
-            delattr(self.__wrapped__, name)
+            delattr(self._wrapped_, name)
 
         elif hasattr(type(self), name):
             object.__delattr__(self, name)
 
         else:
-            delattr(self.__wrapped__, name)
+            delattr(self._wrapped_, name)
 
     def __add__(self, other):
-        return self.__wrapped__ + other
+        return self._wrapped_ + other
 
     def __sub__(self, other):
-        return self.__wrapped__ - other
+        return self._wrapped_ - other
 
     def __mul__(self, other):
-        return self.__wrapped__ * other
+        return self._wrapped_ * other
 
     def __div__(self, other):
-        return operator.div(self.__wrapped__, other)
+        return operator.div(self._wrapped_, other)
 
     def __truediv__(self, other):
-        return operator.truediv(self.__wrapped__, other)
+        return operator.truediv(self._wrapped_, other)
 
     def __floordiv__(self, other):
-        return self.__wrapped__ // other
+        return self._wrapped_ // other
 
     def __mod__(self, other):
-        return self.__wrapped__ % other
+        return self._wrapped_ % other
 
     def __divmod__(self, other):
-        return divmod(self.__wrapped__, other)
+        return divmod(self._wrapped_, other)
 
     def __pow__(self, other, *args):
-        return pow(self.__wrapped__, other, *args)
+        return pow(self._wrapped_, other, *args)
 
     def __lshift__(self, other):
-        return self.__wrapped__ << other
+        return self._wrapped_ << other
 
     def __rshift__(self, other):
-        return self.__wrapped__ >> other
+        return self._wrapped_ >> other
 
     def __and__(self, other):
-        return self.__wrapped__ & other
+        return self._wrapped_ & other
 
     def __xor__(self, other):
-        return self.__wrapped__ ^ other
+        return self._wrapped_ ^ other
 
     def __or__(self, other):
-        return self.__wrapped__ | other
+        return self._wrapped_ | other
 
     def __radd__(self, other):
-        return other + self.__wrapped__
+        return other + self._wrapped_
 
     def __rsub__(self, other):
-        return other - self.__wrapped__
+        return other - self._wrapped_
 
     def __rmul__(self, other):
-        return other * self.__wrapped__
+        return other * self._wrapped_
 
     def __rdiv__(self, other):
-        return operator.div(other, self.__wrapped__)
+        return operator.div(other, self._wrapped_)
 
     def __rtruediv__(self, other):
-        return operator.truediv(other, self.__wrapped__)
+        return operator.truediv(other, self._wrapped_)
 
     def __rfloordiv__(self, other):
-        return other // self.__wrapped__
+        return other // self._wrapped_
 
     def __rmod__(self, other):
-        return other % self.__wrapped__
+        return other % self._wrapped_
 
     def __rdivmod__(self, other):
-        return divmod(other, self.__wrapped__)
+        return divmod(other, self._wrapped_)
 
     def __rpow__(self, other, *args):
-        return pow(other, self.__wrapped__, *args)
+        return pow(other, self._wrapped_, *args)
 
     def __rlshift__(self, other):
-        return other << self.__wrapped__
+        return other << self._wrapped_
 
     def __rrshift__(self, other):
-        return other >> self.__wrapped__
+        return other >> self._wrapped_
 
     def __rand__(self, other):
-        return other & self.__wrapped__
+        return other & self._wrapped_
 
     def __rxor__(self, other):
-        return other ^ self.__wrapped__
+        return other ^ self._wrapped_
 
     def __ror__(self, other):
-        return other | self.__wrapped__
+        return other | self._wrapped_
 
     def __iadd__(self, other):
-        self.__wrapped__ += other
+        self._wrapped_ += other
         return self
 
     def __isub__(self, other):
-        self.__wrapped__ -= other
+        self._wrapped_ -= other
         return self
 
     def __imul__(self, other):
-        self.__wrapped__ *= other
+        self._wrapped_ *= other
         return self
 
     def __idiv__(self, other):
-        self.__wrapped__ = operator.idiv(self.__wrapped__, other)
+        self._wrapped_ = operator.idiv(self._wrapped_, other)
         return self
 
     def __itruediv__(self, other):
-        self.__wrapped__ = operator.itruediv(self.__wrapped__, other)
+        self._wrapped_ = operator.itruediv(self._wrapped_, other)
         return self
 
     def __ifloordiv__(self, other):
-        self.__wrapped__ //= other
+        self._wrapped_ //= other
         return self
 
     def __imod__(self, other):
-        self.__wrapped__ %= other
+        self._wrapped_ %= other
         return self
 
     def __ipow__(self, other):
-        self.__wrapped__ **= other
+        self._wrapped_ **= other
         return self
 
     def __ilshift__(self, other):
-        self.__wrapped__ <<= other
+        self._wrapped_ <<= other
         return self
 
     def __irshift__(self, other):
-        self.__wrapped__ >>= other
+        self._wrapped_ >>= other
         return self
 
     def __iand__(self, other):
-        self.__wrapped__ &= other
+        self._wrapped_ &= other
         return self
 
     def __ixor__(self, other):
-        self.__wrapped__ ^= other
+        self._wrapped_ ^= other
         return self
 
     def __ior__(self, other):
-        self.__wrapped__ |= other
+        self._wrapped_ |= other
         return self
 
     def __neg__(self):
-        return -self.__wrapped__
+        return -self._wrapped_
 
     def __pos__(self):
-        return +self.__wrapped__
+        return +self._wrapped_
 
     def __abs__(self):
-        return abs(self.__wrapped__)
+        return abs(self._wrapped_)
 
     def __invert__(self):
-        return ~self.__wrapped__
+        return ~self._wrapped_
 
     def __int__(self):
-        return int(self.__wrapped__)
+        return int(self._wrapped_)
 
     def __long__(self):
-        return long(self.__wrapped__)
+        return long(self._wrapped_)
 
     def __float__(self):
-        return float(self.__wrapped__)
+        return float(self._wrapped_)
 
     def __complex__(self):
-        return complex(self.__wrapped__)
+        return complex(self._wrapped_)
 
     def __oct__(self):
-        return oct(self.__wrapped__)
+        return oct(self._wrapped_)
 
     def __hex__(self):
-        return hex(self.__wrapped__)
+        return hex(self._wrapped_)
 
     def __index__(self):
-        return operator.index(self.__wrapped__)
+        return operator.index(self._wrapped_)
 
     def __len__(self):
-        return len(self.__wrapped__)
+        return len(self._wrapped_)
 
     def __contains__(self, value):
-        return value in self.__wrapped__
+        return value in self._wrapped_
 
     def __getitem__(self, key):
-        return self.__wrapped__[key]
+        return self._wrapped_[key]
 
     def __setitem__(self, key, value):
-        self.__wrapped__[key] = value
+        self._wrapped_[key] = value
 
     def __delitem__(self, key):
-        del self.__wrapped__[key]
+        del self._wrapped_[key]
 
     def __getslice__(self, i, j):
-        return self.__wrapped__[i:j]
+        return self._wrapped_[i:j]
 
     def __setslice__(self, i, j, value):
-        self.__wrapped__[i:j] = value
+        self._wrapped_[i:j] = value
 
     def __delslice__(self, i, j):
-        del self.__wrapped__[i:j]
+        del self._wrapped_[i:j]
 
     def __enter__(self):
-        return self.__wrapped__.__enter__()
+        return self._wrapped_.__enter__()
 
     def __exit__(self, *args, **kwargs):
-        return self.__wrapped__.__exit__(*args, **kwargs)
+        return self._wrapped_.__exit__(*args, **kwargs)
 
     def __iter__(self):
-        return iter(self.__wrapped__)
+        return iter(self._wrapped_)
 
     def __copy__(self):
         raise NotImplementedError('object proxy must define __copy__()')
@@ -438,12 +442,18 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
 
 
 class CallableObjectProxy(ObjectProxy):
+    """
+    CallableObjectProxy
+    """
 
     def __call__(self, *args, **kwargs):
-        return self.__wrapped__(*args, **kwargs)
+        return self._wrapped_(*args, **kwargs)
 
 
 class PartialCallableObjectProxy(ObjectProxy):
+    """
+    PartialCallableObjectProxy
+    """
 
     def __init__(self, *args, **kwargs):
         if len(args) < 1:
@@ -465,7 +475,7 @@ class PartialCallableObjectProxy(ObjectProxy):
         _kwargs = dict(self._self_kwargs)
         _kwargs.update(kwargs)
 
-        return self.__wrapped__(*_args, **_kwargs)
+        return self._wrapped_(*_args, **_kwargs)
 
 
 class _FunctionWrapperBase(ObjectProxy):
@@ -511,10 +521,10 @@ class _FunctionWrapperBase(ObjectProxy):
         # first argument of those passed in.
 
         if self._self_parent is None:
-            if not inspect.isclass(self.__wrapped__):
-                descriptor = self.__wrapped__.__get__(instance, owner)
+            if not inspect.isclass(self._wrapped_):
+                descriptor = self._wrapped_.__get__(instance, owner)
 
-                return self.__bound_function_wrapper__(descriptor, instance,
+                return self._bound_function_wrapper_(descriptor, instance,
                                                        self._self_wrapper, self._self_enabled,
                                                        self._self_binding, self)
 
@@ -530,10 +540,10 @@ class _FunctionWrapperBase(ObjectProxy):
         # function from the parent again.
 
         if self._self_instance is None and self._self_binding == 'function':
-            descriptor = self._self_parent.__wrapped__.__get__(
+            descriptor = self._self_parent._wrapped_.__get__(
                 instance, owner)
 
-            return self._self_parent.__bound_function_wrapper__(
+            return self._self_parent._bound_function_wrapper_(
                 descriptor, instance, self._self_wrapper,
                 self._self_enabled, self._self_binding,
                 self._self_parent)
@@ -550,9 +560,9 @@ class _FunctionWrapperBase(ObjectProxy):
         if self._self_enabled is not None:
             if callable(self._self_enabled):
                 if not self._self_enabled():
-                    return self.__wrapped__(*args, **kwargs)
+                    return self._wrapped_(*args, **kwargs)
             elif not self._self_enabled:
-                return self.__wrapped__(*args, **kwargs)
+                return self._wrapped_(*args, **kwargs)
 
         # This can occur where initial function wrapper was applied to
         # a function that was already bound to an instance. In that case
@@ -560,9 +570,9 @@ class _FunctionWrapperBase(ObjectProxy):
 
         if self._self_binding == 'function':
             if self._self_instance is None:
-                instance = getattr(self.__wrapped__, '__self__', None)
+                instance = getattr(self._wrapped_, '__self__', None)
                 if instance is not None:
-                    return self._self_wrapper(self.__wrapped__, instance,
+                    return self._self_wrapper(self._wrapped_, instance,
                                               args, kwargs)
 
         # This is generally invoked when the wrapped function is being
@@ -571,11 +581,14 @@ class _FunctionWrapperBase(ObjectProxy):
         # wrapped function was a method, but this wrapper was in turn
         # wrapped using the staticmethod decorator.
 
-        return self._self_wrapper(self.__wrapped__, self._self_instance,
+        return self._self_wrapper(self._wrapped_, self._self_instance,
                                   args, kwargs)
 
 
 class BoundFunctionWrapper(_FunctionWrapperBase):
+    """
+    BoundFunctionWrapper
+    """
 
     def __call__(self, *args, **kwargs):
         # If enabled has been specified, then evaluate it at this point
@@ -587,9 +600,9 @@ class BoundFunctionWrapper(_FunctionWrapperBase):
         if self._self_enabled is not None:
             if callable(self._self_enabled):
                 if not self._self_enabled():
-                    return self.__wrapped__(*args, **kwargs)
+                    return self._wrapped_(*args, **kwargs)
             elif not self._self_enabled:
-                return self.__wrapped__(*args, **kwargs)
+                return self._wrapped_(*args, **kwargs)
 
         # We need to do things different depending on whether we are
         # likely wrapping an instance method vs a static method or class
@@ -608,10 +621,10 @@ class BoundFunctionWrapper(_FunctionWrapperBase):
                     raise TypeError('missing 1 required positional argument')
 
                 instance, args = args[0], args[1:]
-                wrapped = PartialCallableObjectProxy(self.__wrapped__, instance)
+                wrapped = PartialCallableObjectProxy(self._wrapped_, instance)
                 return self._self_wrapper(wrapped, instance, args, kwargs)
 
-            return self._self_wrapper(self.__wrapped__, self._self_instance,
+            return self._self_wrapper(self._wrapped_, self._self_instance,
                                       args, kwargs)
 
         else:
@@ -628,15 +641,18 @@ class BoundFunctionWrapper(_FunctionWrapperBase):
             # class type, as it reflects what they have available in the
             # decoratored function.
 
-            instance = getattr(self.__wrapped__, '__self__', None)
+            instance = getattr(self._wrapped_, '__self__', None)
 
-            return self._self_wrapper(self.__wrapped__, instance, args,
+            return self._self_wrapper(self._wrapped_, instance, args,
                                       kwargs)
 
 
 class FunctionWrapper(_FunctionWrapperBase):
+    """
+    FunctionWrapper
+    """
 
-    __bound_function_wrapper__ = BoundFunctionWrapper
+    _bound_function_wrapper_ = BoundFunctionWrapper
 
     def __init__(self, wrapped, wrapper, enabled=None):
         # What it is we are wrapping here could be anything. We need to
@@ -742,6 +758,9 @@ except ImportError:
 
 
 def resolve_path(module, name):
+    """
+    resolve_path
+    """
     if isinstance(module, string_types):
         __import__(module)
         module = sys.modules[module]
@@ -783,10 +802,22 @@ def resolve_path(module, name):
 
 
 def apply_patch(parent, attribute, replacement):
+    """
+    apply_patch
+    """
     setattr(parent, attribute, replacement)
 
 
-def wrap_object(module, name, factory, args=(), kwargs={}):
+def wrap_object(module, name, factory, args=None, kwargs=None):
+    """
+    wrap_object
+    """
+    if args is None:
+        args = ()
+
+    if kwargs is None:
+        kwargs = {}
+
     (parent, attribute, original) = resolve_path(module, name)
     wrapper = factory(original, *args, **kwargs)
     apply_patch(parent, attribute, wrapper)
@@ -800,6 +831,9 @@ def wrap_object(module, name, factory, args=(), kwargs={}):
 
 
 class AttributeWrapper(object):
+    """
+    AttributeWrapper
+    """
 
     def __init__(self, attribute, factory, args, kwargs):
         self.attribute = attribute
@@ -819,6 +853,15 @@ class AttributeWrapper(object):
 
 
 def wrap_object_attribute(module, name, factory, args=(), kwargs={}):
+    """
+    wrap_object_attribute
+    """
+    if args is None:
+        args = ()
+
+    if kwargs is None:
+        kwargs = {}
+
     path, attribute = name.rsplit('.', 1)
     parent = resolve_path(module, path)[2]
     wrapper = AttributeWrapper(attribute, factory, args, kwargs)
@@ -832,6 +875,9 @@ def wrap_object_attribute(module, name, factory, args=(), kwargs={}):
 
 
 def function_wrapper(wrapper):
+    """
+    function_wrapper
+    """
     def _wrapper(wrapped, instance, args, kwargs):
         target_wrapped = args[0]
         if instance is None:
@@ -845,16 +891,25 @@ def function_wrapper(wrapper):
 
 
 def wrap_function_wrapper(module, name, wrapper):
+    """
+    wrap_function_wrapper
+    """
     return wrap_object(module, name, FunctionWrapper, (wrapper,))
 
 
 def patch_function_wrapper(module, name):
+    """
+    patch_function_wrapper
+    """
     def _wrapper(wrapper):
         return wrap_object(module, name, FunctionWrapper, (wrapper,))
     return _wrapper
 
 
 def transient_function_wrapper(module, name):
+    """
+    transient_function_wrapper
+    """
     def _decorator(wrapper):
         def _wrapper(wrapped, instance, args, kwargs):
             target_wrapped = args[0]
@@ -902,6 +957,9 @@ def _weak_function_proxy_callback(ref, proxy, callback):
 
 
 class WeakFunctionProxy(ObjectProxy):
+    """
+    WeakFunctionProxy
+    """
 
     __slots__ = ('_self_expired', '_self_instance')
 
@@ -956,7 +1014,7 @@ class WeakFunctionProxy(ObjectProxy):
         # calling if the reference had expired.
 
         instance = self._self_instance and self._self_instance()
-        function = self.__wrapped__ and self.__wrapped__
+        function = self._wrapped_ and self._wrapped_
 
         # If the wrapped function was originally a bound function, for
         # which we retained a reference to the instance and the unbound
@@ -964,6 +1022,6 @@ class WeakFunctionProxy(ObjectProxy):
         # not just called the wrapped function.
 
         if instance is None:
-            return self.__wrapped__(*args, **kwargs)
+            return self._wrapped_(*args, **kwargs)
 
         return function.__get__(instance, type(instance))(*args, **kwargs)

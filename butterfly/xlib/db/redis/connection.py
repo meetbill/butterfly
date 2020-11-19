@@ -140,7 +140,7 @@ class Encoder(object):
 
 class BaseParser(object):
     """
-    Parser 基类
+    Parser Base Class
     """
     EXCEPTION_CLASSES = {
         'ERR': {
@@ -195,7 +195,7 @@ class SocketBuffer(object):
     @property
     def length(self):
         """
-        返回 length
+        Return length
         """
         return self.bytes_written - self.bytes_read
 
@@ -246,7 +246,7 @@ class SocketBuffer(object):
 
     def can_read(self, timeout):
         """
-        buffer 中是否有数据
+        Check whether there is data in the buffer
         """
         return bool(self.length) or \
             self._read_from_socket(timeout=timeout,
@@ -254,7 +254,7 @@ class SocketBuffer(object):
 
     def read(self, length):
         """
-        读取数据
+        Read Data
         """
         length = length + 2  # make sure to read the \r\n terminator
         # make sure we've read enough data from the socket
@@ -274,7 +274,7 @@ class SocketBuffer(object):
 
     def readline(self):
         """
-        读取一行
+        Read line
         """
         buf = self._buffer
         buf.seek(self.bytes_read)
@@ -296,7 +296,7 @@ class SocketBuffer(object):
 
     def purge(self):
         """
-        清空 buffer
+        Clear buffer
         """
         self._buffer.seek(0)
         self._buffer.truncate()
@@ -305,7 +305,7 @@ class SocketBuffer(object):
 
     def close(self):
         """
-        关闭
+        close
         """
         try:
             self.purge()
@@ -359,7 +359,7 @@ class PythonParser(BaseParser):
 
     def can_read(self, timeout):
         """
-        Buffer 中是否有数据
+        Check whether there is data in the buffer
         """
         return self._buffer and self._buffer.can_read(timeout)
 
@@ -430,7 +430,7 @@ class HiredisParser(BaseParser):
 
     def on_connect(self, connection):
         """
-        建立连接
+        connect
         """
         self._sock = connection._sock
         self._socket_timeout = connection.socket_timeout
@@ -452,7 +452,7 @@ class HiredisParser(BaseParser):
 
     def on_disconnect(self):
         """
-        断开连接
+        disconnect
         """
         self._sock = None
         self._reader = None
@@ -460,7 +460,7 @@ class HiredisParser(BaseParser):
 
     def can_read(self, timeout):
         """
-        是否有可读数据
+        Check whether there is data in the buffer
         """
         if not self._reader:
             raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
@@ -474,7 +474,7 @@ class HiredisParser(BaseParser):
 
     def read_from_socket(self, timeout=None, raise_on_timeout=True):
         """
-        从 cocket 中读取数据
+        Read data from socket
         """
         if timeout is None:
             timeout = SENTINEL
@@ -518,7 +518,7 @@ class HiredisParser(BaseParser):
 
     def read_response(self):
         """
-        读响应数据
+        Read response
         """
         if not self._reader:
             raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
@@ -619,13 +619,13 @@ class Connection(object):
 
     def register_connect_callback(self, callback):
         """
-        注册回调函数
+        Registering callbacks
         """
         self._connect_callbacks.append(callback)
 
     def clear_connect_callbacks(self):
         """
-        清理回调函数
+        Clear callbacks
         """
         self._connect_callbacks = []
 
@@ -1205,7 +1205,7 @@ class ConnectionPool(object):
 
     def reset(self):
         """
-        重置连接
+        Reset connect
         """
         self._lock = threading.Lock()
         self._created_connections = 0
