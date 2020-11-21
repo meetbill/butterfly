@@ -302,51 +302,47 @@ class StateMachineMetaclass(type):
     状态机器 meta
     """
 
-    def __init__(cls, name, bases, attrs):
-        super(StateMachineMetaclass, cls).__init__(name, bases, attrs)
+    def __new__(cls, name, bases, attrs):
+        # name 为 StateMachine 时表示为 StateMachine 基类，可直接返回 type.__new__
+        if name == "StateMachine":
+            return super(StateMachineMetaclass, cls).__new__(cls, name, bases, attrs)
+
+        # Construct the new class.
+        cls = super(StateMachineMetaclass, cls).__new__(cls, name, bases, attrs)
         cls.states = []
         cls.transitions = []
         cls.states_map = {}
-        cls.add_inherited(bases)
-        cls.add_from_attributes(attrs)
+
+        # add inherited
+        for base in bases:
+            for state in getattr(base, 'states', []):
+                # 添加 state
+                state._set_identifier(state.identifier)
+                cls.states.append(state)
+                cls.states_map[state.value] = state
+            for transition in getattr(base, 'transitions', []):
+                # 添加 transition
+                transition._set_identifier(transition.identifier)
+                cls.transitions.append(transition)
+
+        # 从 attributes 中添加 state/transition
+        for key, value in sorted(attrs.items(), key=lambda pair: pair[0]):
+            if isinstance(value, State):
+                # 添加 state
+                state = value
+                state._set_identifier(key)
+                cls.states.append(state)
+                cls.states_map[state.value] = value
+            elif isinstance(value, Transition):
+                # 添加 transition
+                transition = value
+                transition._set_identifier(key)
+                cls.transitions.append(transition)
 
         for state in cls.states:
             setattr(cls, 'is_{}'.format(state.identifier), check_state_factory(state))
 
-    def add_inherited(cls, bases):
-        """
-        add inherited
-        """
-        for base in bases:
-            for state in getattr(base, 'states', []):
-                cls.add_state(state.identifier, state)
-            for transition in getattr(base, 'transitions', []):
-                cls.add_transition(transition.identifier, transition)
-
-    def add_from_attributes(cls, attrs):
-        """
-        从 attributes 中添加 state/transition
-        """
-        for key, value in sorted(attrs.items(), key=lambda pair: pair[0]):
-            if isinstance(value, State):
-                cls.add_state(key, value)
-            elif isinstance(value, Transition):
-                cls.add_transition(key, value)
-
-    def add_state(cls, identifier, state):
-        """
-        添加 state
-        """
-        state._set_identifier(identifier)
-        cls.states.append(state)
-        cls.states_map[state.value] = state
-
-    def add_transition(cls, identifier, transition):
-        """
-        添加 transition
-        """
-        transition._set_identifier(identifier)
-        cls.transitions.append(transition)
+        return cls
 
 
 class Model(object):

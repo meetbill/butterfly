@@ -522,6 +522,12 @@ class _CallableContextManager(object):
                 return fn(*args, **kwargs)
         return inner
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self):
+        pass
+
 ################################################################
 # SQL Generation.
 ################################################################
@@ -1490,6 +1496,7 @@ class ColumnBase(Node):
                 return Expression(rhs, op, self)
             return Expression(self, op, rhs)
         return inner
+
     __and__ = _e(OP.AND)
     __or__ = _e(OP.OR)
 
@@ -1570,12 +1577,6 @@ class ColumnBase(Node):
         ||
         """
         return StringExpression(self, OP.CONCAT, rhs)
-
-    def regexp(self, rhs):
-        """
-        REGEXP
-        """
-        return Expression(self, OP.REGEXP, rhs)
 
     def iregexp(self, rhs):
         """
@@ -3871,7 +3872,8 @@ class ConnectionContext(_CallableContextManager):
         if self.db.is_closed():
             self.db.connect()
 
-    def __exit__(self, exc_type, exc_val, exc_tb): self.db.close()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.db.close()
 
 
 class Database(_CallableContextManager):
@@ -5374,7 +5376,7 @@ class MySQLDatabase(Database):
             date_part (str) -- 要截断到的日期部分，例如“day”。
             date_field (Node) -- 包含日期/时间的SQL节点，例如 DateTimeField
         """
-        return fn.DATE_FORMAT(date_field, __mysql_date_trunc[date_part],
+        return fn.DATE_FORMAT(date_field, _mysql_date_trunc_[date_part],
                               python_value=simple_date_time)
 
     def to_timestamp(self, date_field):
@@ -7738,7 +7740,7 @@ class DoesNotExist(Exception):
 
 class ModelBase(type):
     """
-    ModelBase
+    ModelBase Metaclass
     """
     # 定义可被继承的属性列表（全局）
     inheritable = set(['constraints', 'database', 'indexes', 'primary_key',

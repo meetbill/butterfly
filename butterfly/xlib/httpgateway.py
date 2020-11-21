@@ -229,7 +229,7 @@ class WSGIGateway(object):
                 headers.append(("x-reason", req.error_str))
             stat_str = ",".join("%s:%.3f" % (k, v) for k, v in req.log_stat.iteritems())
             log_params_str = ",".join("%s:%s" % (k, v) for k, v in req.log_params.iteritems())
-            self._acclog.log("{ip}\t{reqid}\t{method}\t{funcname}\t{cost}\t{ret_code}\t{username}\tstat:{stat}\t" \
+            self._acclog.log("{ip}\t{reqid}\t{method}\t{funcname}\tcost:{cost}\t{ret_code}\t{username}\tstat:{stat}\t" \
                              "params:{log_params}\terror_msg:{error}\tres:{res}".format
                              (ip=req.ip,
                               reqid=req.reqid,
