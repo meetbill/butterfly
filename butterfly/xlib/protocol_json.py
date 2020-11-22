@@ -104,7 +104,7 @@ class Protocol(object):
         """
         if stat is not None:
             data["stat"] = stat
-        ret = json.dumps(data, cls=json_util.JsonToDatetime)
+        ret = json.dumps(data, default=json_util.json_default)
         if isinstance(ret, unicode):
             ret = ret.encode("utf8")
         return ret

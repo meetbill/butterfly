@@ -14,23 +14,18 @@ import json
 import datetime
 
 
-class JsonToDatetime(json.JSONEncoder):
+def json_default(obj):
     """
-    JSONEncoder 不知道怎么去把这个数据转换成 json 字符串的时候，
-    它就会调用 default() 函数，default() 函数默认会抛出异常。
-    所以，重写 default() 函数来处理 datetime 类型的数据。
-
+    json default
     """
+    if isinstance(obj, datetime.datetime):
+        return obj.strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(obj, datetime.date):
+        return obj.strftime('%Y-%m-%d')
 
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
-        elif isinstance(obj, datetime.date):
-            return obj.strftime('%Y-%m-%d')
-        else:
-            return json.JSONEncoder.default(self, obj)
+    return obj
 
 
 if __name__ == "__main__":
     d = {'name': 'meetbill', 'age': 18, 'data': datetime.datetime.now()}
-    print(json.dumps(d, cls=JsonToDatetime))
+    print json.dumps(d, default=json_default)
