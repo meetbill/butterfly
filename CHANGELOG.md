@@ -3,6 +3,31 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.3] - 2020-11-22
+### Added
+
+- Add the nshead client example with mcpack
+- Add peewee tests
+- 添加大部分函数注释
+
+### Changed
+
+- 修正 butterfly/xlib/util/http_util.py get 方法例子
+- 将代码中 `__xxx__` 修改为 `_xxx_` （因为变量名`__xxx__`对 Python 来说有特殊含义，对于普通的变量应当避免这种命名风格）
+- statemachine metaclass 方法从 `__init__` 修改为 `__new__`
+- 修改 access 日志，将耗时部分从 `{cost}` 修改为 `cost:{cost}`，方便进行监控服务采集日志中的耗时
+- 部分类名修正为"骆驼命名"
+- 修改 json 序列化 Datetime 类型方法
+
+### Removed
+
+- [butterfly/xlib/db/pymysql/times.py] 文件
+- [butterfly/xlib/db/peewee.py] 部分函数
+
+### Fixed
+
+- [butterfly/xlib/db/peewee.py] fix regexp method already defined bug
+
 ## [1.1.2] - 2020-10-11
 ### Added
 
@@ -12,14 +37,14 @@ Changelog
 
 ### Changed
 
-- Modify the dependency decorator of retry to wrapt (decorator.py 也是个第三方包)
+- Modify the dependency decorator of retry to wrapt (decorator.py 也是个第三方包）
 - 使用 test_handler.py 调试时，排序输出 handler
 - handler 方法当没有 funcattr 装饰时，修改为默认不读取 body 中内容
 
 ## [1.1.1] - 2020-08-23
 ### Added
 
-- 新增【星枢】用于管理服务 API，比如在线调整 log level ，以及获取服务运行信息等  
+- 新增【星枢】用于管理服务 API，比如在线调整 log level ，以及获取服务运行信息等
 - 新增加权随机算法 util
 - 新增磁盘缓存 diskcache
 
@@ -30,7 +55,7 @@ handlers/report ==> handlers/x_lv
 ```
 ### Fixed
 
-- 修复日志按日期切割时句柄不释放问题(原因是不同的 logger 写入了同一个日志文件)
+- 修复日志按日期切割时句柄不释放问题（原因是不同的 logger 写入了同一个日志文件）
 
 ## [1.1.0] - 2020-08-10
 ### Changed
@@ -80,7 +105,7 @@ Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
 ### Changed
 - 修改 xlib/util/shell.py ==> xlib/util/shell_util.py
 - 修改 xlib/util/shell_util.py 打印日志内容
-- 增加 xlib/util/http_util.py 库, 用于访问第三方接口
+- 增加 xlib/util/http_util.py 库，用于访问第三方接口
 
 ## [1.0.19] - 2020-05-21
 ### Changed
@@ -92,7 +117,7 @@ Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
 ### Fixed
 - 修复 1.0.17 因 version 字段导致 acclog 不打印情况
 ```
-将 butterfly_version 在启动时初始化, 同时可以通过《变量本地化》提高性能
+将 butterfly_version 在启动时初始化，同时可以通过《变量本地化》提高性能
 ```
 - 修复单元测试中因添加 header 异常导致的单元测试遗漏问题
 
@@ -100,12 +125,12 @@ Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
 ### Added
 - shell util 模块用于执行系统命令
 ```
-基于 subprocess.Popen 封装, 增加如下功能
+基于 subprocess.Popen 封装，增加如下功能
     (1) 超时，默认 10s
-    (2) 日志，每次调用系统命令都进行记录, 日志中包含 reqid (如果传入的话)及调用处代码信息
+    (2) 日志，每次调用系统命令都进行记录，日志中包含 reqid （如果传入的话）及调用处代码信息
     (3) 结果封装
 
-日志记录在 logs/common.log 及 logs/common.log.wf (异常日志)
+日志记录在 logs/common.log 及 logs/common.log.wf （异常日志）
 ```
 
 ## [1.0.16] - 2020-05-07
@@ -134,9 +159,9 @@ Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
 
 ## [1.0.11] - 2020-03-23
 ### Changed
-- content 在 josn 序列化时,添加对 Datetime 类型的支持
+- content 在 josn 序列化时，添加对 Datetime 类型的支持
 ```
-变更原因:
+变更原因：
 使用 peewee DateTimeField 时，为 Datetime 类型
 ```
 
@@ -144,7 +169,7 @@ Cherrypy/3.2.0 wsgiserver ==> Cherrypy/8.9.1 wsgiserver 绝版 :(
 ### Changed
 - 增加默认获取请求 header 中的 `X-Username` 用作日志中中记录的用户名
 ```
-变更原因:
+变更原因：
 当身份验证组件和接口服务组件分离时，接口服务组件需要获取到用户名
 
 比如当用户认证使用 nginx auth_request module 进行身份验证时，验证身份通过后，可以将验证后的用户名使用 header 传到后端接口
