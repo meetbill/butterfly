@@ -85,8 +85,6 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
     ObjectProxy
     """
 
-    __slots__ = '_wrapped_'
-
     def __init__(self, wrapped):
         object.__setattr__(self, '_wrapped_', wrapped)
 
@@ -390,7 +388,7 @@ class ObjectProxy(with_metaclass(_ObjectProxyMetaType)):
     def __hex__(self):
         return hex(self._wrapped_)
 
-    def __index__(self):
+    def _index_(self):
         return operator.index(self._wrapped_)
 
     def __len__(self):
@@ -852,7 +850,7 @@ class AttributeWrapper(object):
         del instance.__dict__[self.attribute]
 
 
-def wrap_object_attribute(module, name, factory, args=(), kwargs={}):
+def wrap_object_attribute(module, name, factory, args=None, kwargs=None):
     """
     wrap_object_attribute
     """

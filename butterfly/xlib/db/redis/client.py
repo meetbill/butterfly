@@ -559,7 +559,7 @@ class Redis(object):
         string_keys_to_dict('BLPOP BRPOP', lambda r: r and tuple(r) or None),
         string_keys_to_dict(
             'SDIFF SINTER SMEMBERS SUNION',
-            lambda r: r and set(r) or set()
+            lambda r: r and set(r) or set() # pylint:disable=undefined-variable
         ),
         string_keys_to_dict(
             'ZPOPMAX ZPOPMIN ZRANGE ZRANGEBYSCORE ZREVRANGE ZREVRANGEBYSCORE',

@@ -525,7 +525,7 @@ class _CallableContextManager(object):
     def __enter__(self):
         pass
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
 ################################################################
@@ -2590,12 +2590,13 @@ class BaseQuery(Node):
         return context.parse(self)
 
     @database_required
-    def execute(self, database):
+    def execute(self, database=None):
         """
         执行查询并返回结果
 
         Args:
             database (Database) -- 要对其执行查询的数据库。如果查询以前绑定到数据库，则不需要。
+                                   此参数会通过 database_required 装饰器进行传进来
         """
         return self._execute(database)
 

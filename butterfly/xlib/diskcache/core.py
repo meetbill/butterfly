@@ -232,17 +232,17 @@ class Disk(object):
                 or (type_value in INT_TYPES
                     and -9223372036854775808 <= value <= 9223372036854775807)
                 or (type_value is float)):
-            return 0, MODE_RAW, None, value
+            return (0, MODE_RAW, None, value)
         elif type_value is BytesType:
             if len(value) < min_file_size:
-                return 0, MODE_RAW, None, sqlite3.Binary(value)
+                return (0, MODE_RAW, None, sqlite3.Binary(value))
             else:
                 filename, full_path = self.filename(key, value)
 
                 with open(full_path, 'wb') as writer:
                     writer.write(value)
 
-                return len(value), MODE_BINARY, filename, None
+                return (len(value), MODE_BINARY, filename, None)
         elif type_value is TextType:
             filename, full_path = self.filename(key, value)
 
@@ -250,7 +250,7 @@ class Disk(object):
                 writer.write(value)
 
             size = op.getsize(full_path)
-            return size, MODE_TEXT, filename, None
+            return (size, MODE_TEXT, filename, None)
         elif read:
             size = 0
             reader = ft.partial(value.read, 2 ** 22)
@@ -261,19 +261,19 @@ class Disk(object):
                     size += len(chunk)
                     writer.write(chunk)
 
-            return size, MODE_BINARY, filename, None
+            return (size, MODE_BINARY, filename, None)
         else:
             result = pickle.dumps(value, protocol=self.pickle_protocol)
 
             if len(result) < min_file_size:
-                return 0, MODE_PICKLE, None, sqlite3.Binary(result)
+                return (0, MODE_PICKLE, None, sqlite3.Binary(result))
             else:
                 filename, full_path = self.filename(key, value)
 
                 with open(full_path, 'wb') as writer:
                     writer.write(result)
 
-                return len(result), MODE_PICKLE, filename, None
+                return (len(result), MODE_PICKLE, filename, None)
 
     def fetch(self, mode, filename, value, read):
         """Convert fields `mode`, `filename`, and `value` from Cache table to
