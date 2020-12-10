@@ -6,7 +6,7 @@
 
 # File Name: __init__.py
 # Description:
-    封装管理 db 相关接口
+    封装管理 MySQL/Redis 相关接口
 
 """
 try:
@@ -15,10 +15,15 @@ except ImportError:
     from urllib.parse import parse_qsl, unquote, urlparse
 
 from xlib.db import peewee
+from xlib.db import redisorm
 from xlib.db.pool import PooledMySQLDatabase
 from xlib.db.shortcuts import ReconnectMixin
 from conf import config
 
+
+###############################################################
+# MySQL
+###############################################################
 
 class RetryPooledMySQLDatabase(ReconnectMixin, PooledMySQLDatabase):
     """
@@ -120,6 +125,16 @@ class BaseModel(peewee.Model):
         """Meta class"""
         database = my_database
 
+###############################################################
+# Redis
+###############################################################
+my_redis = redisorm.Database.from_url(config.redis_config_url)
+
+class RedisModel(redisorm.Model):
+    """
+    Common Redis base model
+    """
+    _database_ = my_redis
 
 if __name__ == "__main__":
     mysql_config_url = "mysql+pool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"

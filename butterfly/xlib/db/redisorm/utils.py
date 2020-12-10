@@ -1,75 +1,80 @@
-# -*- coding: utf-8 -*-
-import calendar
-import string
-import random
-import datetime
-
-from .compat import xrange
+import os
+import re
+import sys
 
 
-def random_string(len, corpus=None):
-    """
-    Return random string with given len
-    """
-    if not corpus:
-        corpus = string.ascii_letters + string.digits
-    return ''.join(random.choice(corpus) for _ in xrange(len))
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    unicode_type = str
+    basestring_type = (str, bytes)
+    def exception_message(exc):
+        return exc.args[0]
+else:
+    unicode_type = unicode
+    basestring_type = basestring
+    def exception_message(exc):
+        return exc.message
 
 
-def expire_to_datetime(expire):
-    """
-    Convert datetime(), timedelta() or number of seconds to datetime object
-
-    :param expire: the expiration mark (None, seconds, datetime or timedelta)
-    :returns: datetime object, which is "naive" but considered as having UTC
-              timezone
-    """
-    if expire is None:
-        return None
-    if isinstance(expire, datetime.datetime):
-        return expire
-    ts = utcnow()
-    if isinstance(expire, datetime.timedelta):
-        return ts + expire
-    return ts + datetime.timedelta(seconds=expire)
+def encode(s):
+    return s.encode('utf-8') if isinstance(s, unicode_type) else s
 
 
-def datetime_to_timestamp(dt):
-    """
-    Convert datetime objects to correct timestamps
-
-    Consider naive datetimes as UTC ones
-    """
-    if dt is None:
-        return None
-    micro = dt.microsecond / 1e6
-    ts = calendar.timegm(dt.timetuple())
-    return ts + micro
+def decode(s):
+    return s.decode('utf-8') if isinstance(s, bytes) else s
 
 
-def timestamp_to_datetime(ts):
-    """
-    Convert timestamps to datetime objects
-    """
-    if ts is None:
-        return None
-    if isinstance(ts, (str, bytes)):
-        ts = float(ts)
-    return datetime.datetime.utcfromtimestamp(ts)
+def decode_dict(d):
+    accum = {}
+    for key in d:
+        accum[decode(key)] = decode(d[key])
+    return accum
 
 
-def utcnow():
-    # see http://www.redhotchilipython.com/en_posts/2012-07-13-double-call-hack.html
-    # for explanation why this function is required
-    # tl;dr: for tests
-    return datetime.datetime.utcnow()
+def safe_decode_list(l):
+    return [i.decode('raw_unicode_escape') if isinstance(i, bytes) else i
+            for i in l]
 
 
-def random_true(prob):
-    """
-    Return True with the probability of :param:`prob`
+def decode_dict_keys(d):
+    accum = {}
+    for key in d:
+        accum[decode(key)] = d[key]
+    return accum
 
-    :param prob: float value in range [0, 1]. 0 means "never return True", 1
-                 means "always return True"
-    """
-    return random.random() < prob
+
+def make_python_attr(s):
+    if isinstance(s, bytes):
+        s = decode(s)
+    s = re.sub('[^\w]+', '_', s)
+    if not s:
+        raise ValueError('cannot construct python identifer from "%s"' % s)
+    if s[0].isdigit():
+        s = '_' + s
+    return s.lower()
+
+
+class memoize(dict):
+    def __init__(self, fn):
+        self._fn = fn
+
+    def __call__(self, *args):
+        return self[args]
+
+    def __missing__(self, key):
+        result = self[key] = self._fn(*key)
+        return result
+
+
+@memoize
+def load_stopwords(stopwords_file):
+    path, filename = os.path.split(stopwords_file)
+    if not path:
+        path = os.path.dirname(__file__)
+    filename = os.path.join(path, filename)
+    if not os.path.exists(filename):
+        return
+
+    with open(filename) as fh:
+        return fh.read()

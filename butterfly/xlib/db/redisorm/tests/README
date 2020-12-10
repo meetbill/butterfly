@@ -1,0 +1,11 @@
+cd project dir
+
+```
+export PYTHONPATH=$(pwd):$PYTHONPATH
+```
+
+cd here
+
+```
+python __init__.py
+```
