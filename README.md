@@ -238,6 +238,8 @@ $ git rebase upstream/master
 $ git log
 # 推送到自己仓库
 $ git push -f origin master
+# 把本地全部存在的 tag 推送到服务器
+$ git push origin --tags
 ```
 
 [changelog]: CHANGELOG.md
