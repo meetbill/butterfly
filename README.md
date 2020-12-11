@@ -22,7 +22,7 @@
     * [2.2 五分钟体验之编写 handler （预计 3 分钟）](#22-五分钟体验之编写-handler-预计-3-分钟)
     * [2.3 五分钟体验之调试 handler （预计 1 分钟）](#23-五分钟体验之调试-handler-预计-1-分钟)
 * [3 设计蓝图](#3-设计蓝图)
-* [4 使用手册](#4-使用手册)
+* [4 了解更多](#4-了解更多)
 * [5 版本信息](#5-版本信息)
 * [6 参加步骤](#6-参加步骤)
 
@@ -192,13 +192,15 @@ Butterfly       |                   |      |          |
      \ +-----------------------------------------------+
 ```
 
-# 4 使用手册
+# 4 了解更多
 
 > * [Butterfly 用户手册](https://github.com/meetbill/butterfly/wiki/usage)
 > * [Butterfly 进阶手册](https://github.com/meetbill/butterfly/wiki)
 > * [Butterfly 示例](https://github.com/meetbill/butterfly-examples)
 > * [Butterfly 前端](https://github.com/meetbill/butterfly-fe)
 > * [Butterfly nginx 配置](https://github.com/meetbill/butterfly-nginx)
+
+如果您想报告错误，请在 GitHub 上[创建一个新问题](https://github.com/meetbill/butterfly/issues/new)。
 
 # 5 版本信息
 
@@ -207,25 +209,34 @@ Butterfly       |                   |      |          |
 # 6 参加步骤
 
 * 在 GitHub 上 `fork` 到自己的仓库，然后 `clone` 到本地，并设置用户信息。
-```
+```bash
 $ git clone https://github.com/meetbill/butterfly.git
 $ cd butterfly
 $ git config user.name "yourname"
 $ git config user.email "your email"
 ```
 * 修改代码后提交，并推送到自己的仓库。
-```
+```bash
 $ #do some change on the content
 $ git commit -am "Fix issue #1: change helo to hello"
 $ git push
 ```
 * 在 GitHub 网站上提交 pull request。
 * 定期使用项目仓库内容更新自己仓库内容。
-```
+```bash
+# 配置原仓库地址
 $ git remote add upstream https://github.com/meetbill/butterfly.git
+# 查看当前仓库的远程仓库地址和原仓库地址
+$ git remote -v
+# 获取原仓库的更新，使用 fetch 更新，fetch 后会被存储在一个本地分支 upstream/master 上
 $ git fetch upstream
+# 切换到本地 master 分支
 $ git checkout master
+# 合并
 $ git rebase upstream/master
+# 查看更新
+$ git log
+# 推送到自己仓库
 $ git push -f origin master
 ```
 
