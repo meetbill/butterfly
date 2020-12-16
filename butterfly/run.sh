@@ -90,9 +90,9 @@ function docker_start_procs()
 
 function set_env()
 {
-    export PYTHONPATH=$(pwd):$PYTHONPATH
-    export butterfly_dir=$(pwd)
-    echo "Done"
+    echo "Please exe this command:"
+    echo "------------------------"
+    echo "PYTHONPATH=\$(pwd):\$PYTHONPATH"
 }
 
 MODE=${1}

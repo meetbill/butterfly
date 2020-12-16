@@ -166,6 +166,7 @@ if __name__ == "__main__":
     wsgienv["HTTP_AUTHORIZATION"] = "Bearer: {}".format(token)
     ip = "127.0.0.1"
     req = httpgateway.Request(reqid, wsgienv, ip)
+
     token_check = is_token_valid(req)
     if token_check.success:
         print token_check.token_info
