@@ -1,4 +1,8 @@
+# coding=utf8
 """
+# Description:
+    apscheduler: 3.6.3
+
 +scheduler(new thread)--------------------------------------------------------------------------------------+
 |+job manager---------------+       + _main_loop-----------------------------------------------------------+|
 ||                          |       |+process_jobs------------------------------------------------+ +-----+||
@@ -37,9 +41,20 @@
                                     | | exe _run_job(self, job, run_times)(scheduler)| |
                                     | +----------------------------------------------+ |
                                     +--------------------------------------------------+
+
+# Removed
+apscheduler/executors/tornado.py
+apscheduler/executors/twisted.py
+apscheduler/schedulers/tornado.py
+apscheduler/schedulers/twisted.py
+apscheduler/schedulers/qt.py
+apscheduler/jobstores/rethinkdb.py
+apscheduler/jobstores/zookeeper.py
+apscheduler/jobstores/mongodb.py
+timezone
+
+# Changed
+apscheduler/util.py
+  datetime_to_utc_timestamp => datetime_to_timestamp
+  utc_timestamp_to_datetime => timestamp_to_datetime
 """
-
-version_info = (2, 1, 2)
-version = '.'.join(str(n) for n in version_info[:3])
-release = '.'.join(str(n) for n in version_info)
-

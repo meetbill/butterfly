@@ -1,33 +1,58 @@
-from datetime import date, datetime
+from datetime import datetime, timedelta
 
-from xlib.apscheduler.triggers.cron.fields import *
-from xlib.apscheduler.util import datetime_ceil, convert_to_datetime, iteritems
+from xlib.util import six
+
+from xlib.apscheduler.triggers.base import BaseTrigger
+from xlib.apscheduler.triggers.cron.fields import (
+    BaseField, MonthField, WeekField, DayOfMonthField, DayOfWeekField, DEFAULT_VALUES)
+from xlib.apscheduler.util import datetime_ceil, convert_to_datetime, datetime_repr
 
 
-class CronTrigger(object):
-    FIELD_NAMES = ('year', 'month', 'day', 'week', 'day_of_week', 'hour',
-                   'minute', 'second')
-    FIELDS_MAP = {'year': BaseField,
-                  'month': BaseField,
-                  'week': WeekField,
-                  'day': DayOfMonthField,
-                  'day_of_week': DayOfWeekField,
-                  'hour': BaseField,
-                  'minute': BaseField,
-                  'second': BaseField}
+class CronTrigger(BaseTrigger):
+    """
+    Triggers when current time matches all specified time constraints,
+    similarly to how the UNIX cron scheduler works.
 
-    def __init__(self, **values):
-        self.start_date = values.pop('start_date', None)
-        if self.start_date:
-            self.start_date = convert_to_datetime(self.start_date)
+    :param int|str year: 4-digit year
+    :param int|str month: month (1-12)
+    :param int|str day: day of the (1-31)
+    :param int|str week: ISO week (1-53)
+    :param int|str day_of_week: number or name of weekday (0-6 or mon,tue,wed,thu,fri,sat,sun)
+    :param int|str hour: hour (0-23)
+    :param int|str minute: minute (0-59)
+    :param int|str second: second (0-59)
+    :param datetime|str start_date: earliest possible date/time to trigger on (inclusive)
+    :param datetime|str end_date: latest possible date/time to trigger on (inclusive)
+    :param int|None jitter: advance or delay the job execution by ``jitter`` seconds at most.
 
-        # Check field names and yank out all None valued fields
-        for key, value in list(iteritems(values)):
-            if key not in self.FIELD_NAMES:
-                raise TypeError('Invalid field name: %s' % key)
-            if value is None:
-                del values[key]
+    .. note:: The first weekday is always **monday**.
+    """
 
+    FIELD_NAMES = ('year', 'month', 'day', 'week', 'day_of_week', 'hour', 'minute', 'second')
+    FIELDS_MAP = {
+        'year': BaseField,
+        'month': MonthField,
+        'week': WeekField,
+        'day': DayOfMonthField,
+        'day_of_week': DayOfWeekField,
+        'hour': BaseField,
+        'minute': BaseField,
+        'second': BaseField
+    }
+
+    __slots__ = 'start_date', 'end_date', 'fields', 'jitter'
+
+    def __init__(self, year=None, month=None, day=None, week=None, day_of_week=None, hour=None,
+                 minute=None, second=None, start_date=None, end_date=None,
+                 jitter=None):
+
+        self.start_date = convert_to_datetime(start_date)
+        self.end_date = convert_to_datetime(end_date)
+
+        self.jitter = jitter
+
+        values = dict((key, value) for (key, value) in six.iteritems(locals())
+                      if key in self.FIELD_NAMES and value is not None)
         self.fields = []
         assign_defaults = False
         for field_name in self.FIELD_NAMES:
@@ -46,20 +71,38 @@ class CronTrigger(object):
             field = field_class(field_name, exprs, is_default)
             self.fields.append(field)
 
+    @classmethod
+    def from_crontab(cls, expr):
+        """
+        Create a :class:`~CronTrigger` from a standard crontab expression.
+
+        See https://en.wikipedia.org/wiki/Cron for more information on the format accepted here.
+
+        :param expr: minute, hour, day of month, month, day of week
+        :return: a :class:`~CronTrigger` instance
+
+        """
+        values = expr.split()
+        if len(values) != 5:
+            raise ValueError('Wrong number of fields; got {}, expected 5'.format(len(values)))
+
+        return cls(minute=values[0], hour=values[1], day=values[2], month=values[3],
+                   day_of_week=values[4])
+
     def _increment_field_value(self, dateval, fieldnum):
         """
-        Increments the designated field and resets all less significant fields
-        to their minimum values.
+        Increments the designated field and resets all less significant fields to their minimum
+        values.
 
         :type dateval: datetime
         :type fieldnum: int
-        :type amount: int
+        :return: a tuple containing the new date, and the number of the field that was actually
+            incremented
         :rtype: tuple
-        :return: a tuple containing the new date, and the number of the field
-                 that was actually incremented
         """
-        i = 0
+
         values = {}
+        i = 0
         while i < len(self.fields):
             field = self.fields[i]
             if not field.REAL:
@@ -86,7 +129,8 @@ class CronTrigger(object):
                     values[field.name] = value + 1
                     i += 1
 
-        return datetime(**values), fieldnum
+        difference = datetime(**values) - dateval.replace(tzinfo=None)
+        return (dateval + difference), fieldnum
 
     def _set_field_value(self, dateval, fieldnum, new_value):
         values = {}
@@ -101,11 +145,16 @@ class CronTrigger(object):
 
         return datetime(**values)
 
-    def get_next_fire_time(self, start_date):
-        if self.start_date:
-            start_date = max(start_date, self.start_date)
-        next_date = datetime_ceil(start_date)
+    def get_next_fire_time(self, previous_fire_time, now):
+        if previous_fire_time:
+            start_date = min(now, previous_fire_time + timedelta(microseconds=1))
+            if start_date == previous_fire_time:
+                start_date += timedelta(microseconds=1)
+        else:
+            start_date = max(now, self.start_date) if self.start_date else now
+
         fieldnum = 0
+        next_date = datetime_ceil(start_date)
         while 0 <= fieldnum < len(self.fields):
             field = self.fields[fieldnum]
             curr_value = field.get_value(next_date)
@@ -113,32 +162,62 @@ class CronTrigger(object):
 
             if next_value is None:
                 # No valid value was found
-                next_date, fieldnum = self._increment_field_value(
-                    next_date, fieldnum - 1)
+                next_date, fieldnum = self._increment_field_value(next_date, fieldnum - 1)
             elif next_value > curr_value:
                 # A valid, but higher than the starting value, was found
                 if field.REAL:
-                    next_date = self._set_field_value(
-                        next_date, fieldnum, next_value)
+                    next_date = self._set_field_value(next_date, fieldnum, next_value)
                     fieldnum += 1
                 else:
-                    next_date, fieldnum = self._increment_field_value(
-                        next_date, fieldnum)
+                    next_date, fieldnum = self._increment_field_value(next_date, fieldnum)
             else:
                 # A valid value was found, no changes necessary
                 fieldnum += 1
 
+            # Return if the date has rolled past the end date
+            if self.end_date and next_date > self.end_date:
+                return None
+
         if fieldnum >= 0:
-            return next_date
+            next_date = self._apply_jitter(next_date, self.jitter, now)
+            return min(next_date, self.end_date) if self.end_date else next_date
+
+    def __getstate__(self):
+        return {
+            'version': 2,
+            'start_date': self.start_date,
+            'end_date': self.end_date,
+            'fields': self.fields,
+            'jitter': self.jitter,
+        }
+
+    def __setstate__(self, state):
+        # This is for compatibility with APScheduler 3.0.x
+        if isinstance(state, tuple):
+            state = state[1]
+
+        if state.get('version', 1) > 2:
+            raise ValueError(
+                'Got serialized data for version %s of %s, but only versions up to 2 can be '
+                'handled' % (state['version'], self.__class__.__name__))
+
+        self.start_date = state['start_date']
+        self.end_date = state['end_date']
+        self.fields = state['fields']
+        self.jitter = state.get('jitter')
 
     def __str__(self):
-        options = ["%s='%s'" % (f.name, str(f)) for f in self.fields
-                   if not f.is_default]
+        options = ["%s='%s'" % (f.name, f) for f in self.fields if not f.is_default]
         return 'cron[%s]' % (', '.join(options))
 
     def __repr__(self):
-        options = ["%s='%s'" % (f.name, str(f)) for f in self.fields
-                   if not f.is_default]
+        options = ["%s='%s'" % (f.name, f) for f in self.fields if not f.is_default]
         if self.start_date:
-            options.append("start_date='%s'" % self.start_date.isoformat(' '))
-        return '<%s (%s)>' % (self.__class__.__name__, ', '.join(options))
+            options.append("start_date=%r" % datetime_repr(self.start_date))
+        if self.end_date:
+            options.append("end_date=%r" % datetime_repr(self.end_date))
+        if self.jitter:
+            options.append('jitter=%s' % self.jitter)
+
+        return "<%s (%s)>" % (
+            self.__class__.__name__, ', '.join(options))
