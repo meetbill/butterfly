@@ -92,7 +92,7 @@ function set_env()
 {
     echo "Please exe this command:"
     echo "------------------------"
-    echo "PYTHONPATH=\$(pwd):\$PYTHONPATH"
+    echo "export PYTHONPATH=\$(pwd):\$PYTHONPATH"
 }
 
 MODE=${1}

@@ -123,7 +123,7 @@ def datetime_to_timestamp(timeval):
 
     """
     if timeval is not None:
-        return time.mktime(timeval.timetuple()) + timeval.microsecond / 1000000
+        return time.mktime(timeval.timetuple()) + timeval.microsecond / 1000000.0
 
 
 def timestamp_to_datetime(timestamp):
