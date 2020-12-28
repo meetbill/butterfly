@@ -32,18 +32,21 @@ from xlib.db.peewee import DateTimeField
 from xlib.db.peewee import BooleanField
 from xlib.db import shortcuts
 
+
 class PickleField(BlobField):
 
-     def __init__(self, *args, **kwargs):
-         super(PickleField, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(PickleField, self).__init__(*args, **kwargs)
 
-     def db_value(self, value):
-         return pickle.dumps(value)
+    def db_value(self, value):
+        return pickle.dumps(value)
 
-     def python_value(self, value):
-         return pickle.loads(value)
+    def python_value(self, value):
+        return pickle.loads(value)
 
 # Define a model class
+
+
 class RuqiJobs(xlib.db.BaseModel):
     """
     如期表结构
@@ -52,7 +55,7 @@ class RuqiJobs(xlib.db.BaseModel):
     # an auto-incrementing primary key will automatically be created and named 'id'.
     id = CharField(primary_key=True)
     next_run_time = DoubleField(index=True)
-    job_state=PickleField()
+    job_state = PickleField()
     job_lock = BooleanField(default=False, index=True)
     job_name = CharField(max_length=64, index=True, null=True)
     job_rule = CharField(max_length=64, null=True)
@@ -61,6 +64,7 @@ class RuqiJobs(xlib.db.BaseModel):
 
     class Meta(object):
         table_name = 'ruqi_jobs'
+
 
 class MySQLJobStore(BaseJobStore):
     """
@@ -108,10 +112,12 @@ class MySQLJobStore(BaseJobStore):
         old_datetime = now - datetime.timedelta(seconds=20)
         old_timestamp = datetime_to_timestamp(old_datetime)
         data = {
-                    "job_lock": False,
-                    "u_time": datetime.datetime.now()
-                }
-        update = self.jobs_t.update(data).where(self.jobs_t.next_run_time <= old_timestamp, self.jobs_t.job_lock == True)
+            "job_lock": False,
+            "u_time": datetime.datetime.now()
+        }
+        update = self.jobs_t.update(data).where(
+            self.jobs_t.next_run_time <= old_timestamp,
+            self.jobs_t.job_lock == True)
         result = update.execute()
         if result > 0:
             self._logger.info("[apscheduler]: Unlock expired jobs, hvae {num} job unlock".format(num=result))
@@ -123,7 +129,7 @@ class MySQLJobStore(BaseJobStore):
         获取最近的下次执行时间, 排除掉加锁的任务
         """
         row = self.jobs_t.select(self.jobs_t.next_run_time).where(
-                self.jobs_t.next_run_time != None).order_by(self.jobs_t.next_run_time).limit(1).execute()
+            self.jobs_t.next_run_time is not None).order_by(self.jobs_t.next_run_time).limit(1).execute()
         if len(row) == 1:
             result_dict = shortcuts.model_to_dict(row[0])
             return timestamp_to_datetime(result_dict["next_run_time"])
@@ -139,7 +145,7 @@ class MySQLJobStore(BaseJobStore):
         return jobs
 
     def add_job(self, job):
-        job_state=job.__getstate__()
+        job_state = job.__getstate__()
         job_rule = ""
         if isinstance(job_state["trigger"], cron.CronTrigger):
             fields = job_state["trigger"].fields
@@ -167,19 +173,19 @@ class MySQLJobStore(BaseJobStore):
             'job_state': job_state,
             'job_name': job_state["name"],
             'job_rule': job_rule
-            }
+        }
         try:
             self.jobs_t.create(**values)
-        except:
+        except BaseException:
             raise ConflictingIdError(job.id)
 
     def update_job(self, job):
         data = {
-                    "next_run_time": datetime_to_timestamp(job.next_run_time),
-                    "job_state": job.__getstate__(),
-                    "job_lock": False,
-                    "u_time": datetime.datetime.now()
-                }
+            "next_run_time": datetime_to_timestamp(job.next_run_time),
+            "job_state": job.__getstate__(),
+            "job_lock": False,
+            "u_time": datetime.datetime.now()
+        }
         update = self.jobs_t.update(data).where(self.jobs_t.id == job.id)
         result = update.execute()
         if result == 0:
@@ -206,32 +212,49 @@ class MySQLJobStore(BaseJobStore):
         job._jobstore_alias = self._alias
         return job
 
-    def _add_lock(self, job_id, next_run_time):
+    def _add_lock(self, job_id, next_run_time_timestamp, next_run_time_datetime):
         """
         对 job 加锁
+
+        Args:
+            job_id: (Str) job id
+            next_run_time_timestamp: (Str) next_run_time 时间戳
+            next_run_time_datetime: (DateTime)
+        Returns:
+            bool
         """
         data = {
-                    "job_lock": True,
-                    "u_time": datetime.datetime.now()
-                }
-        update = self.jobs_t.update(data).where(self.jobs_t.id == job_id, self.jobs_t.job_lock == False)
+            "job_lock": True,
+            "u_time": datetime.datetime.now()
+        }
+        update = self.jobs_t.update(data).where(self.jobs_t.id == job_id,
+                                                self.jobs_t.next_run_time == next_run_time_timestamp,
+                                                self.jobs_t.job_lock == False)
         result = update.execute()
         if result == 0:
-            self._logger.info("[apscheduler]: id={id} next_run_time={next_run_time} add lock failed".format(id=job_id, next_run_time=next_run_time))
+            self._logger.info(
+                "[apscheduler]: id={id} run_time={run_time} add lock failed".format(
+                    id=job_id, run_time=next_run_time_datetime))
             return False
         else:
-            self._logger.info("[apscheduler]: id={id} next_run_time={next_run_time} add lock success".format(id=job_id, next_run_time=next_run_time))
+            self._logger.info(
+                "[apscheduler]: id={id} run_time={run_time} add lock success".format(
+                    id=job_id, run_time=next_run_time_datetime))
             return True
 
     def _get_jobs_with_lock(self, *conditions):
         jobs = []
-        query_cmd = self.jobs_t.select(self.jobs_t.id, self.jobs_t.job_state).order_by(self.jobs_t.next_run_time)
+        query_cmd = self.jobs_t.select(
+            self.jobs_t.id,
+            self.jobs_t.next_run_time,
+            self.jobs_t.job_state).order_by(
+            self.jobs_t.next_run_time)
         selectable = query_cmd.where(*conditions) if conditions else query_cmd
         failed_job_ids = set()
         for row in selectable:
             row_dict = shortcuts.model_to_dict(row)
             # 对任务加锁
-            if not self._add_lock(row_dict["id"], row_dict["job_state"]["next_run_time"]):
+            if not self._add_lock(row_dict["id"], row_dict["next_run_time"], row_dict["job_state"]["next_run_time"]):
                 continue
             try:
                 jobs.append(self._reconstitute_job(row_dict["job_state"]))
