@@ -9,6 +9,7 @@ SERVER_THREAD_NUM = 16
 # Log
 LOG_SIZE_LIMIT = 1024 * 1024 * 2
 LOG_BATCH_WRITE = 0
+PATH_INIT_LOG = "logs/init.log"
 PATH_ACC_LOG = "logs/acc.log"
 PATH_INFO_LOG = "logs/info.log"
 PATH_WARNING_LOG = "logs/warning.log"
@@ -31,3 +32,7 @@ diskcache_dir = "data/diskcache"
 # Auth
 SECRET_KEY = None        # If it is None, a key will be randomly generated each time butterfly is started
 JWT_TOKEN_TTL = 28800    # default 8 hours
+
+# Scheduler
+scheduler_name="Scheduler1"# Scheduler name, Used to perform historical queries
+scheduler_store="none"    # ("none"/"mysql"/"memory") ; if set none, the schedule is not run

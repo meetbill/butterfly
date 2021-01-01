@@ -1,0 +1,410 @@
+# coding=utf8
+import os
+import re
+import traceback
+
+from xlib.apscheduler.schedulers import background
+from xlib.apscheduler.triggers.interval import IntervalTrigger
+from xlib.apscheduler.triggers.cron import CronTrigger
+from xlib.apscheduler.triggers.date import DateTrigger
+from xlib.apscheduler.jobstores.mysql import MySQLJobStore
+from xlib.apscheduler.jobstores.memory import MemoryJobStore
+from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
+from xlib.apscheduler.models.apscheduler_model import RuqiJobs
+
+from xlib.util import shell_util
+from xlib.db import peewee
+from xlib.db import shortcuts
+from conf import config
+
+
+def run_cmd(job_id, job_name, cmd, errlog):
+    """
+    执行本地命令
+    Args:
+        job_id  : (Str) job_id
+        job_name: (Str) job_name
+        cmd     : (Str) "python/bash file_path args"
+        errlog  : (object) errlog logger
+    """
+    # 设置 1 小时超时
+    cmd_result = shell_util.run(cmd, timeout=3600)
+    values = {
+        "job_id": job_id,
+        "job_name": job_name,
+        "cmd": cmd,
+        "cmd_is_success": cmd_result.success(),
+        # 设置的在数据库中最多存储 4096 字节
+        "cmd_output": cmd_result.output()[:4096],
+        "scheduler_name": config.scheduler_name,
+        "cmd_cost": cmd_result.cost
+    }
+    try:
+        RuqiJobsHistory.create(**values)
+    except BaseException:
+        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+            job_id=job_id, exception_info=traceback.format_exc()))
+
+
+class Scheduler(object):
+    def __init__(self, initlog, errlog, jobstore_alias="memory"):
+        self._scheduler = background.BackgroundScheduler()
+        if jobstore_alias == "mysql":
+            self._jobstore = MySQLJobStore()
+        else:
+            self._jobstore = MemoryJobStore()
+
+        self._scheduler.add_jobstore(self._jobstore)
+        self._initlog = initlog
+        self._errlog = errlog
+
+    def _check_cmd(self, cmd):
+        """
+        检查 cmd 命令合法性, 仅支持执行 Python/Shell 脚本
+        Args:
+            cmd: (Str)
+                example: "python/bash file_path args"
+        Returns:
+            bool
+        """
+        if ";" in cmd or "&&" in cmd or "||" in cmd:
+            return False
+
+        cmd_list = cmd.split()
+        if len(cmd_list) < 2:
+            return False
+
+        file_type = cmd_list[0]
+        file_path = cmd_list[1]
+        if file_type not in ["python", "bash"]:
+            return False
+
+        if not os.path.exists(file_path):
+            return False
+
+        return True
+
+    def _add_cron_job(self, job_id, job_name, cmd, rule):
+        """
+        创建 cron 任务, 有同名任务时则失败
+        Args:
+            job_id  : job id(唯一索引)
+            job_name: 用作分类
+            cmd     : job cmd
+            rule    : "* * * * * *"
+        Returns:
+            (Bool, Str)
+        """
+        cron_rule_list = rule.split(' ')
+        if len(cron_rule_list) != 6:
+            return (False, "Rule check failed")
+
+        kwargs = {}
+        kwargs["cmd"] = cmd
+        kwargs["job_id"] = job_id
+        kwargs["job_name"] = job_name
+        kwargs["errlog"] = self._errlog
+
+        cron_trigger = CronTrigger(
+            second=cron_rule_list[0],
+            minute=cron_rule_list[1],
+            hour=cron_rule_list[2],
+            day=cron_rule_list[3],
+            month=cron_rule_list[4],
+            day_of_week=cron_rule_list[5])
+
+        self._scheduler.add_job(
+            func=run_cmd,
+            trigger=cron_trigger,
+            kwargs=kwargs,
+            id=job_id,
+            name=job_name,
+            # 允许调度 30s 前未调度的任务
+            misfire_grace_time=30,
+        )
+        return (True, "OK")
+
+    def _add_interval_job(self, job_id, job_name, cmd, rule):
+        """
+        添加间隔任务
+        Args:
+            job_id  : job id(唯一索引)
+            job_name: 用作分类
+            cmd     : job cmd
+            rule    : Xs/Xm/Xh/Xd
+        Returns:
+            (Bool, Str)
+        """
+        interval_cron_dict = {}
+        interval_cron_dict["days"] = 0
+        interval_cron_dict["hours"] = 0
+        interval_cron_dict["minutes"] = 0
+        interval_cron_dict["seconds"] = 0
+
+        rule_list = re.findall(r"[0-9]+|[a-z]+", rule)
+        if len(rule_list) != 2:
+            return (False, "Rule check failed")
+
+        if rule_list[1] not in ["s", "m", "h", "d"]:
+            return (False, "Rule check failed")
+
+        if rule_list[1] == "s":
+            interval_cron_dict["seconds"] = int(rule_list[0])
+        elif rule_list[1] == "m":
+            interval_cron_dict["minutes"] = int(rule_list[0])
+        elif rule_list[1] == "h":
+            interval_cron_dict["hours"] = int(rule_list[0])
+        elif rule_list[1] == "d":
+            interval_cron_dict["days"] = int(rule_list[0])
+
+        kwargs = {}
+        kwargs["cmd"] = cmd
+        kwargs["job_id"] = cmd
+        kwargs["job_name"] = job_name
+        kwargs["errlog"] = self._errlog
+
+        interval_trigger = IntervalTrigger(
+            days=interval_cron_dict["days"],
+            hours=interval_cron_dict["hours"],
+            minutes=interval_cron_dict["minutes"],
+            seconds=interval_cron_dict["seconds"],
+        )
+
+        self._scheduler.add_job(
+            func=run_cmd,
+            trigger=interval_trigger,
+            kwargs=kwargs,
+            id=job_id,
+            name=job_name,
+            # 允许调度 30s 前未调度的任务
+            misfire_grace_time=30,
+        )
+        return (True, "OK")
+
+    def _add_date_job(self, job_id, job_name, cmd, rule):
+        """
+        添加一次任务
+        Args:
+            job_id  : job id(唯一索引)
+            job_name: 用作分类
+            cmd     : job cmd
+            rule    : "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+        Returns:
+            (Bool, Str)
+        """
+
+        if rule == "now":
+            date_trigger = DateTrigger()
+        else:
+            date_trigger = DateTrigger(run_date=rule)
+
+        kwargs = {}
+        kwargs["cmd"] = cmd
+        kwargs["job_id"] = job_id
+        kwargs["job_name"] = job_name
+        kwargs["errlog"] = self._errlog
+
+        self._scheduler.add_job(
+            func=run_cmd,
+            trigger=date_trigger,
+            kwargs=kwargs,
+            id=job_id,
+            name=job_name,
+            # 允许调度 30s 前未调度的任务
+            misfire_grace_time=30,
+        )
+
+        return (True, "OK")
+
+    def add_job(self, job_trigger, job_id, job_name, cmd, rule):
+        """
+        Args:
+            job_trigger: job_trigger(cron/interval/date)
+            job_id     : job id(唯一索引)
+            job_name   : 用作分类
+            cmd        : job cmd
+            rule       : "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+        Returns:
+            (Bool, Str)
+        """
+        jobs_map ={
+                    "cron": self._add_cron_job,
+                    "interval": self._add_interval_job,
+                    "date":self._add_date_job
+                }
+
+        if job_trigger not in jobs_map.keys():
+            return (False, "Job_trigger not in jobs_map" )
+
+        if not self._check_cmd(cmd):
+            return (False, "Cmd does not meet expectations")
+
+        return jobs_map[job_trigger](job_id, job_name, cmd, rule)
+
+    def start(self):
+        """
+        启动 scheduler
+        """
+        is_success = False
+        try:
+            self._scheduler.start()
+            is_success = True
+        except BaseException:
+            self._errlog.log(
+                "[module=start_scheduler  exception_info={exception_info}]".format(
+                    exception_info=traceback.format_exc()))
+
+        self._initlog.log("[module=start_scheduler jobstore={jobstore} is_success={is_success}]".format(
+            jobstore=self._jobstore,
+            is_success=is_success
+        ))
+
+    def _get_jobs_in_memory(self):
+        """
+        获取所有任务
+
+        job.__dict__
+        {
+            'runs': 0,
+            'args': [],
+            'name': u'test_name',
+            'misfire_grace_time': 1,
+            'instances': 0,
+            '_lock': <thread.lock object at 0x10241c5d0>,
+            'next_run_time': datetime.datetime(2020, 12, 15, 19, 48),
+            'max_instances': 1,
+            'max_runs': None,
+            'coalesce': True,
+            'trigger': <CronTrigger (month='*', day='*', day_of_week='*', hour='*', minute='*/4', second='*/3')>,
+            'func': <function run_cmd at 0x102676140>,
+            'kwargs': {'cmd': 'cc'},
+            'id': '512965'
+        }
+        """
+        data = {}
+        jobs = []
+        for job in self._scheduler.get_jobs():
+            # cron_rule
+            jobinfo = {}
+
+            rule = ""
+            trigger = ""
+            if isinstance(job.trigger, CronTrigger):
+                trigger = "cron"
+                fields = job.trigger.fields
+                cron = {}
+                for field in fields:
+                    cron[field.name] = str(field)
+                rule = "{second} {minute} {hour} {day} {month} {day_of_week}".format(
+                    second=cron['second'],
+                    minute=cron['minute'],
+                    hour=cron['hour'],
+                    day=cron['day'],
+                    month=cron['month'],
+                    day_of_week=cron["day_of_week"]
+                )
+
+            if isinstance(job.trigger, IntervalTrigger):
+                trigger = "interval"
+                rule = str(job.trigger.interval_length) + "s"
+
+            if isinstance(job.trigger, DateTrigger):
+                trigger = "date"
+                rule = str(job.trigger.run_date)
+
+            jobinfo["job_id"] = job.id
+            jobinfo["job_name"] = job.name
+            jobinfo["job_trigger"] = trigger
+            jobinfo["cmd"] = job.kwargs["cmd"]
+            jobinfo["rule"] = rule
+            jobinfo["nexttime"] = str(job.next_run_time)
+            jobs.append(jobinfo)
+
+        data["total"] = len(jobs)
+        data["list"] = jobs
+        return data
+
+    def _get_jobs_in_mysql(self, job_id=None, job_name=None, page_index=None, page_size=10):
+        data={}
+        # 如下方式以分页数据返回
+        model = RuqiJobs
+        query_cmd = RuqiJobs.select()
+        expressions = []
+        if job_id is not None:
+            expressions.append(peewee.NodeList((model.job_id, peewee.SQL('='), job_id)))
+
+        if job_name is not None:
+            expressions.append(peewee.NodeList((model.job_name, peewee.SQL('='), job_name)))
+
+        if len(expressions):
+            query_cmd = query_cmd.where(*expressions)
+
+        record_count = query_cmd.count()
+        if page_index is None:
+            record_list = query_cmd.order_by(model.c_time.desc())
+        else:
+            record_list = query_cmd.order_by(model.c_time.desc()).paginate(int(page_index), int(page_size))
+
+        data_list = []
+        for record in record_list:
+            record_dict = shortcuts.model_to_dict(record)
+            record_select_dict = {}
+            record_select_dict["job_id"] = record_dict["id"]
+            record_select_dict["job_name"] = record_dict["job_name"]
+            record_select_dict["Job_trigger"] = record_dict["job_trigger"]
+            record_select_dict["cmd"] = record_dict["job_state"]["kwargs"]["cmd"]
+            record_select_dict["rule"] = record_dict["job_rule"]
+            record_select_dict["next_run_time"] = record_dict["job_state"]["next_run_time"]
+            data_list.append(record_dict)
+
+        data["total"] = record_count
+        data["list"] = data_list
+        return data
+
+    def get_jobs(self, job_id=None, job_name=None, page_index=None, page_size=10):
+        """
+        Returns:
+            data: (dict)
+                total: 总个数
+                list : 数据列表
+        """
+        if isinstance(self._jobstore, MySQLJobStore):
+            return self._get_jobs_in_mysql(job_id, job_name, page_index, page_size)
+        else:
+            return self._get_jobs_in_memory()
+
+    def remove_job(self, job_id):
+        self._scheduler.remove_job(job_id, self._jobstore)
+
+    def pause_job(self, job_id):
+        self.pause_job(job_id, self._jobstore)
+
+    def resume_job(self, job_id):
+        self.resume_job(job_id, self._jobstore)
+
+
+if __name__ == "__main__":
+    import time
+    from conf import logger_conf
+
+    scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias="mysql")
+    #scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias="memory")
+
+    # start
+    scheduler.start()
+
+    cmd = "bash test_scripts.sh"
+
+    print scheduler.add_cron_job("test_cron1", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_cron_job("test_cron2", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_cron_job("test_cron3", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_interval_job("test_interval1", "scripts", cmd, "10s")
+    print scheduler.add_date_job("test_date1", "scripts", cmd, "2020-12-16 21:40:00")
+
+    for job in scheduler.get_jobs():
+        print job
+
+    # crontab.remove_job("test_name")
+
+    while True:
+        time.sleep(2)

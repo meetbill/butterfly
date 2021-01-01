@@ -27,7 +27,7 @@ from xlib import urls
 from xlib import httpgateway
 from xlib import uuid64
 
-route = urls.Route(logger_conf.infolog, logger_conf.errlog)
+route = urls.Route(logger_conf.initlog, logger_conf.errlog)
 # 自动将 handlers 目录加 package 自动注册
 route.autoload_handler("handlers")
 # 手动添加注册(访问 /ping ,则会自动转到 apidemo.ping)

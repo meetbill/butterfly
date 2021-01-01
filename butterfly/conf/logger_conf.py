@@ -23,3 +23,5 @@ warninglog = logger.LoggerBase(config.PATH_WARNING_LOG, False, config.LOG_SIZE_L
 infolog = logger.LoggerBase(config.PATH_INFO_LOG, False, config.LOG_SIZE_LIMIT, config.LOG_BATCH_WRITE)
 
 acclog = logger.LoggerBase(config.PATH_ACC_LOG, False, config.LOG_SIZE_LIMIT, config.LOG_BATCH_WRITE)
+
+initlog = logger.LoggerBase(config.PATH_INIT_LOG, False, config.LOG_SIZE_LIMIT, config.LOG_BATCH_WRITE)

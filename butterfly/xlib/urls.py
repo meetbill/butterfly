@@ -56,13 +56,13 @@ class Route(object):
     """Managing Route
 
     Attributes:
-        infolog:(logger.LoggerBase) record info log
+        initlog:(logger.LoggerBase) record init log
         errlog:(logger.LoggerBase) record error log
         apicube:(Dict) route info
     """
 
-    def __init__(self, infolog, errlog):
-        self._infolog = infolog
+    def __init__(self, initlog, errlog):
+        self._initlog = initlog
         self._errlog = errlog
         self.apicube = {}
 
@@ -129,9 +129,9 @@ class Route(object):
 
             args_count = func.func_code.co_argcount - 1 if inspect.ismethod(func) else func.func_code.co_argcount
             func_args = func.func_code.co_varnames[:args_count]
-            self._infolog.log(
-                "[Init handler] {path:20} [args]:{func_args:30} [response_type]:{response_type} [is_parse_post]:{is_parse_post}"
-                " [is_encode_response]:{is_encode_response}".format(
+            self._initlog.log(
+                "[module=init_handler path={path:20} args={func_args:30} response_type={response_type} is_parse_post={is_parse_post}"
+                " is_encode_response={is_encode_response}]".format(
                     path=path_name,
                     func_args=func_args,
                     response_type=response_type,
@@ -144,7 +144,7 @@ class Route(object):
             package_dir: package dir
         """
         # 将 "handlers" 目录下的 package 自动加载，也就是 __init__.py
-        self._infolog.log("-----------------------------------------start autoload_handler")
+        self._initlog.log("[module=init_handler msg=-----------------------------------------start autoload_handler]")
         results = import_submodules(package_dir)
         for package_name in results:
             package = results[package_name]

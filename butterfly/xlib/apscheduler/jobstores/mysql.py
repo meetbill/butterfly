@@ -18,52 +18,10 @@ from xlib.apscheduler.triggers import interval
 from xlib.apscheduler.triggers import cron
 import datetime
 
-try:
-    import cPickle as pickle
-except ImportError:  # pragma: nocover
-    import pickle
-
-
 import xlib.db
-from xlib.db.peewee import DoubleField
-from xlib.db.peewee import BlobField
-from xlib.db.peewee import CharField
-from xlib.db.peewee import DateTimeField
-from xlib.db.peewee import BooleanField
 from xlib.db import shortcuts
-
-
-class PickleField(BlobField):
-
-    def __init__(self, *args, **kwargs):
-        super(PickleField, self).__init__(*args, **kwargs)
-
-    def db_value(self, value):
-        return pickle.dumps(value)
-
-    def python_value(self, value):
-        return pickle.loads(value)
-
-# Define a model class
-
-
-class RuqiJobs(xlib.db.BaseModel):
-    """
-    如期表结构
-    """
-    # If none of the fields are initialized with primary_key=True,
-    # an auto-incrementing primary key will automatically be created and named 'id'.
-    id = CharField(primary_key=True)
-    next_run_time = DoubleField(index=True)
-    job_state = PickleField()
-    job_lock = BooleanField(default=False, index=True)
-    job_name = CharField(max_length=64, index=True, null=True)
-    job_rule = CharField(max_length=64, null=True)
-    u_time = DateTimeField(column_name="u_time", default=datetime.datetime.now)
-    c_time = DateTimeField(column_name="c_time", default=datetime.datetime.now)
-
-    class Meta(object):
-        table_name = 'ruqi_jobs'
+from xlib.apscheduler.models.apscheduler_model import RuqiJobs
+from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 
 
 class MySQLJobStore(BaseJobStore):
@@ -80,6 +38,7 @@ class MySQLJobStore(BaseJobStore):
         # 191 = max key length in MySQL for InnoDB/utf8mb4 tables,
         # 25 = precision that translates to an 8-byte float
         self.jobs_t = RuqiJobs
+        self.jobs_t_history = RuqiJobsHistory
         # 设置为 true 时，从 MySQL 中取任务时会进行加锁，下次取任务时会将超过 20s 的 job 进行解锁
         self.ha = ha
 
@@ -88,7 +47,7 @@ class MySQLJobStore(BaseJobStore):
         The table will be created if it doesn't exist in the database.
         """
         super(MySQLJobStore, self).start(scheduler, alias)
-        xlib.db.my_database.create_tables([self.jobs_t])
+        xlib.db.my_database.create_tables([self.jobs_t, self.jobs_t_history])
 
     def lookup_job(self, job_id):
         """
@@ -147,7 +106,9 @@ class MySQLJobStore(BaseJobStore):
     def add_job(self, job):
         job_state = job.__getstate__()
         job_rule = ""
+        job_trigger = ""
         if isinstance(job_state["trigger"], cron.CronTrigger):
+            job_trigger = "cron"
             fields = job_state["trigger"].fields
             field_dict = {}
             for field in fields:
@@ -162,9 +123,11 @@ class MySQLJobStore(BaseJobStore):
             )
 
         if isinstance(job_state["trigger"], interval.IntervalTrigger):
+            job_trigger = "interval"
             job_rule = str(job_state["trigger"].interval_length) + "s"
 
         if isinstance(job_state["trigger"], date.DateTrigger):
+            job_trigger = "date"
             job_rule = str(job_state["trigger"].run_date)
 
         values = {
@@ -172,6 +135,7 @@ class MySQLJobStore(BaseJobStore):
             'next_run_time': datetime_to_timestamp(job.next_run_time),
             'job_state': job_state,
             'job_name': job_state["name"],
+            'job_trigger': job_trigger,
             'job_rule': job_rule
         }
         try:
@@ -290,4 +254,4 @@ class MySQLJobStore(BaseJobStore):
         return jobs
 
     def __repr__(self):
-        return '<%s (url=%s)>' % (self.__class__.__name__, self.engine.url)
+        return '<%s>' % (self.__class__.__name__)
