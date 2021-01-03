@@ -345,7 +345,7 @@ class Scheduler(object):
         query_cmd = RuqiJobs.select()
         expressions = []
         if job_id is not None:
-            expressions.append(peewee.NodeList((model.job_id, peewee.SQL('='), job_id)))
+            expressions.append(peewee.NodeList((model.id, peewee.SQL('='), job_id)))
 
         if job_name is not None:
             expressions.append(peewee.NodeList((model.job_name, peewee.SQL('='), job_name)))
