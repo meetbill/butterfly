@@ -336,6 +336,9 @@ class Scheduler(object):
         return data
 
     def _get_jobs_in_mysql(self, job_id=None, job_name=None, page_index=None, page_size=10):
+        """
+        mysql jobstore 时, 获取 job 列表
+        """
         data={}
         # 如下方式以分页数据返回
         model = RuqiJobs
@@ -366,7 +369,7 @@ class Scheduler(object):
             record_select_dict["cmd"] = record_dict["job_state"]["kwargs"]["cmd"]
             record_select_dict["rule"] = record_dict["job_rule"]
             record_select_dict["next_run_time"] = record_dict["job_state"]["next_run_time"]
-            data_list.append(record_dict)
+            data_list.append(record_select_dict)
 
         data["total"] = record_count
         data["list"] = data_list
