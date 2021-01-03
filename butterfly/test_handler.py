@@ -26,7 +26,12 @@ from conf import logger_conf
 from xlib import urls
 from xlib import httpgateway
 from xlib import uuid64
+from conf import config
+from xlib.apscheduler import manager
 
+# ********************************************************
+# * Route                                                *
+# ********************************************************
 route = urls.Route(logger_conf.initlog, logger_conf.errlog)
 # 自动将 handlers 目录加 package 自动注册
 route.autoload_handler("handlers")
@@ -42,6 +47,13 @@ if __name__ == "__main__":
     reqid = uuid64.UUID64().gen()
     wsgienv = {"PATH_INFO": "/echo"}
     req = httpgateway.Request(reqid, wsgienv, ip)
+
+    # ********************************************************
+    # * Schedule(不进行启动)
+    # ********************************************************
+    if config.scheduler_store != "none":
+        scheduler = manager.Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
+        req.scheduler = scheduler
 
     import inspect
     if len(sys.argv) < 2:
