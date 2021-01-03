@@ -30,9 +30,9 @@ redis_config_url="redis://@localhost:6379/0"  # "redis://[[username]:[password]]
 diskcache_dir = "data/diskcache"
 
 # Auth
-SECRET_KEY = None        # If it is None, a key will be randomly generated each time butterfly is started
-JWT_TOKEN_TTL = 28800    # default 8 hours
+SECRET_KEY = None           # If it is None, a key will be randomly generated each time butterfly is started
+JWT_TOKEN_TTL = 28800       # default 8 hours
 
 # Scheduler
-scheduler_name="Scheduler1"# Scheduler name, Used to perform historical queries
-scheduler_store="none"    # ("none"/"mysql"/"memory") ; if set none, the schedule is not run
+scheduler_name="Scheduler1" # Scheduler name, Used to perform historical queries
+scheduler_store="none"      # ("none"/"mysql"/"memory") ; if set none, the schedule is not run

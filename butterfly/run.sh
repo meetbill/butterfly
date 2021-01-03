@@ -130,7 +130,7 @@ case ${MODE} in
         echo -e ${WITE}" stop           "${NC}"Kill all $DISP_NAME processes."
         echo -e ${WITE}" restart        "${NC}"Kill all $DISP_NAME processes and start again."
         echo -e ${WITE}" status         "${NC}"Show $DISP_NAME processes status."
-        echo -e ${WITE}" env            "${NC}"set env(source ./run.sh env).\n"
+        echo -e ${WITE}" env            "${NC}"env(Set PYTHONPATH tips).\n"
         exit 1
         ;;
 esac

@@ -104,6 +104,14 @@ class MySQLJobStore(BaseJobStore):
         return jobs
 
     def add_job(self, job):
+        """
+        添加 job
+        """
+        # 检查 job 是否已存在
+        _job = self.jobs_t.get_or_none(self.jobs_t.id == job.id)
+        if _job is not None:
+            raise ConflictingIdError(job.id)
+
         job_state = job.__getstate__()
         job_rule = ""
         job_trigger = ""
@@ -139,7 +147,7 @@ class MySQLJobStore(BaseJobStore):
             'job_rule': job_rule
         }
         try:
-            self.jobs_t.create(**values)
+            self.jobs_t.insert(**values).execute()
         except BaseException:
             raise ConflictingIdError(job.id)
 

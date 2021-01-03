@@ -57,4 +57,8 @@ timezone
 apscheduler/util.py
   datetime_to_utc_timestamp => datetime_to_timestamp
   utc_timestamp_to_datetime => timestamp_to_datetime
+
+# Added
+apscheduler/models
+apscheduler/manager
 """

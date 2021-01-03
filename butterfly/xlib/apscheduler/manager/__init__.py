@@ -11,6 +11,7 @@ from xlib.apscheduler.jobstores.mysql import MySQLJobStore
 from xlib.apscheduler.jobstores.memory import MemoryJobStore
 from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 from xlib.apscheduler.models.apscheduler_model import RuqiJobs
+from xlib.apscheduler.jobstores.base import ConflictingIdError
 
 from xlib.util import shell_util
 from xlib.db import peewee
@@ -223,7 +224,10 @@ class Scheduler(object):
             job_id     : job id(唯一索引)
             job_name   : 用作分类
             cmd        : job cmd
-            rule       : "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+            rule       :
+                   date: "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+                   cron: "* * * * * *"
+               interval: Xs/Xm/Xh/Xd
         Returns:
             (Bool, Str)
         """
@@ -239,7 +243,14 @@ class Scheduler(object):
         if not self._check_cmd(cmd):
             return (False, "Cmd does not meet expectations")
 
-        return jobs_map[job_trigger](job_id, job_name, cmd, rule)
+        try:
+            is_success, err_msg = jobs_map[job_trigger](job_id, job_name, cmd, rule)
+        except ConflictingIdError as e:
+            is_success, err_msg = False, str(e)
+        except BaseException as e:
+            is_success, err_msg = False, str(e)
+
+        return (is_success, err_msg)
 
     def start(self):
         """
@@ -395,11 +406,11 @@ if __name__ == "__main__":
 
     cmd = "bash test_scripts.sh"
 
-    print scheduler.add_cron_job("test_cron1", "scripts", cmd, "*/3 */4 * * * *")
-    print scheduler.add_cron_job("test_cron2", "scripts", cmd, "*/3 */4 * * * *")
-    print scheduler.add_cron_job("test_cron3", "scripts", cmd, "*/3 */4 * * * *")
-    print scheduler.add_interval_job("test_interval1", "scripts", cmd, "10s")
-    print scheduler.add_date_job("test_date1", "scripts", cmd, "2020-12-16 21:40:00")
+    scheduler.add_job("cron", "test_cron1", "scripts", cmd, "*/3 */4 * * * *")
+    scheduler.add_job("cron", "test_cron2", "scripts", cmd, "*/3 */4 * * * *")
+    scheduler.add_job("cron", "test_cron3", "scripts", cmd, "*/3 */4 * * * *")
+    scheduler.add_job("interval", "test_interval1", "scripts", cmd, "10s")
+    scheduler.add_job("date", "test_date1", "scripts", cmd, "now")
 
     for job in scheduler.get_jobs():
         print job
