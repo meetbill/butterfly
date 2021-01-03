@@ -388,13 +388,40 @@ class Scheduler(object):
             return self._get_jobs_in_memory()
 
     def remove_job(self, job_id):
-        self._scheduler.remove_job(job_id, self._jobstore)
+        """
+        移除 job
+        """
+        is_success = True
+        err_msg = "OK"
+        try:
+            self._scheduler.remove_job(job_id)
+        except BaseException as e:
+            is_success, err_msg = False, str(e)
+        return (is_success, err_msg)
 
     def pause_job(self, job_id):
-        self.pause_job(job_id, self._jobstore)
+        """
+        暂停 job
+        """
+        is_success = True
+        err_msg = "OK"
+        try:
+            self._scheduler.pause_job(job_id)
+        except BaseException as e:
+            is_success, err_msg = False, str(e)
+        return (is_success, err_msg)
 
     def resume_job(self, job_id):
-        self.resume_job(job_id, self._jobstore)
+        """
+        继续 job
+        """
+        is_success = True
+        err_msg = "OK"
+        try:
+            self._scheduler.resume_job(job_id)
+        except BaseException as e:
+            is_success, err_msg = False, str(e)
+        return (is_success, err_msg)
 
 
 if __name__ == "__main__":
