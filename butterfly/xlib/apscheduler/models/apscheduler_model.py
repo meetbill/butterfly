@@ -47,7 +47,8 @@ class RuqiJobs(xlib.db.BaseModel):
     # If none of the fields are initialized with primary_key=True,
     # an auto-incrementing primary key will automatically be created and named 'id'.
     id = CharField(primary_key=True)
-    next_run_time = DoubleField(index=True)
+    # 通过设置 null 来标记此 job 为暂停中任务
+    next_run_time = DoubleField(index=True, null=True)
     job_state = PickleField()
     job_lock = BooleanField(default=False, index=True)
     job_name = CharField(max_length=64, index=True, null=True)
