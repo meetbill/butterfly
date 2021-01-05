@@ -43,11 +43,18 @@
                                     +--------------------------------------------------+
 
 # Removed
+## 执行器
 apscheduler/executors/tornado.py
 apscheduler/executors/twisted.py
+apscheduler/executors/gevent.py
+apscheduler/executors/asyncio.py
+## 调度器
 apscheduler/schedulers/tornado.py
 apscheduler/schedulers/twisted.py
 apscheduler/schedulers/qt.py
+apscheduler/schedulers/asyncio.py
+apscheduler/schedulers/gevent.py
+## 作业存储
 apscheduler/jobstores/rethinkdb.py
 apscheduler/jobstores/zookeeper.py
 apscheduler/jobstores/mongodb.py
