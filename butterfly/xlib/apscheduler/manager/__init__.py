@@ -160,7 +160,7 @@ class Scheduler(object):
 
         kwargs = {}
         kwargs["cmd"] = cmd
-        kwargs["job_id"] = cmd
+        kwargs["job_id"] = job_id
         kwargs["job_name"] = job_name
         kwargs["errlog"] = self._errlog
 
