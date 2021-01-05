@@ -3,6 +3,26 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.5] - 2021-01-05
+### Changed
+
+- update APScheduler 2.1.2 ==> APScheduler 3.6.3
+```
+(1) add apscheduler mysql jobstores use peewee
+(2) 增加 scheduler job_lock，scheduler 检查任务时进行抢锁发起任务
+(3) 增加 scheduler manager 作为通用配置
+(4) 增加 scheduler 执行历史，存储在 MySQL 中
+(5) 增加 scheduler 定期探测是否有任务配置
+(6) scheduler 增加到 req.scheduler 属性中
+```
+- update test_handler.py
+```
+如果开启 scheduler，则使用 test_handler.py 调试时以 MemoryJobStore 方式启动
+```
+- 日志
+```
+启动时插件加载相关日志从 logs/init.log 修改为 logs/init.log
+```
 
 ## [1.1.4] - 2020-12-16
 ### Added

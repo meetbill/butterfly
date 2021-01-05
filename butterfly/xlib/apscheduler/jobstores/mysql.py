@@ -85,7 +85,7 @@ class MySQLJobStore(BaseJobStore):
 
     def get_next_run_time(self):
         """
-        获取最近的下次执行时间, 排除掉加锁的任务
+        获取最近的下次执行时间, 不检查 job_lock 是否存在
         """
         row = self.jobs_t.select(self.jobs_t.next_run_time).where(
             self.jobs_t.next_run_time is not None).order_by(self.jobs_t.next_run_time).limit(1).execute()
