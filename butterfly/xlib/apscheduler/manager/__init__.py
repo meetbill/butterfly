@@ -81,8 +81,6 @@ class Scheduler(object):
             'default_wait_seconds': 300 # 单位:s 假如检测到无 job 时，将会在 default_wait_seconds 后进行唤醒
         }
         #-----------------------------------------------------------------end
-
-        self._scheduler.add_jobstore(self._jobstore)
         self._initlog = initlog
         self._errlog = errlog
         self._scheduler = background.BackgroundScheduler(jobstores=jobstores,
