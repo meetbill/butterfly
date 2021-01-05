@@ -12,6 +12,7 @@
 try:
     from urlparse import parse_qsl, unquote, urlparse
 except ImportError:
+    # Python 3.0
     from urllib.parse import parse_qsl, unquote, urlparse
 
 from xlib.db import peewee

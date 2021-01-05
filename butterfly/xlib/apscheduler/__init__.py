@@ -58,6 +58,9 @@ apscheduler/schedulers/gevent.py
 apscheduler/jobstores/rethinkdb.py
 apscheduler/jobstores/zookeeper.py
 apscheduler/jobstores/mongodb.py
+apscheduler/jobstores/sqlalchemy.py
+
+## other
 timezone
 
 # Changed

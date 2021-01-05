@@ -3,15 +3,21 @@ import os
 import re
 import traceback
 
+# schedulers
 from xlib.apscheduler.schedulers import background
+# triggers
 from xlib.apscheduler.triggers.interval import IntervalTrigger
 from xlib.apscheduler.triggers.cron import CronTrigger
 from xlib.apscheduler.triggers.date import DateTrigger
+# jobstores
+from xlib.apscheduler.jobstores.base import ConflictingIdError
 from xlib.apscheduler.jobstores.mysql import MySQLJobStore
 from xlib.apscheduler.jobstores.memory import MemoryJobStore
+# models
 from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 from xlib.apscheduler.models.apscheduler_model import RuqiJobs
-from xlib.apscheduler.jobstores.base import ConflictingIdError
+# executors
+from xlib.apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 
 from xlib.util import shell_util
 from xlib.db import peewee
@@ -48,16 +54,39 @@ def run_cmd(job_id, job_name, cmd, errlog):
 
 
 class Scheduler(object):
+    """
+    Scheduler class
+    """
     def __init__(self, initlog, errlog, jobstore_alias="memory"):
-        self._scheduler = background.BackgroundScheduler()
         if jobstore_alias == "mysql":
             self._jobstore = MySQLJobStore()
         else:
             self._jobstore = MemoryJobStore()
 
+        #-----------------------------------------------------------------
+        # config
+        #-----------------------------------------------------------------
+        jobstores = {
+            'default': self._jobstore
+            }
+        executors = {
+            'default': ThreadPoolExecutor(20),
+            'processpool': ProcessPoolExecutor(5)
+        }
+        job_defaults = {
+            'coalesce': False,
+            'max_instances': 1
+        }
+        scheduler_config = {
+            'default_wait_seconds': 300 # 单位:s 假如检测到无 job 时，将会在 default_wait_seconds 后进行唤醒
+        }
+        #-----------------------------------------------------------------end
+
         self._scheduler.add_jobstore(self._jobstore)
         self._initlog = initlog
         self._errlog = errlog
+        self._scheduler = background.BackgroundScheduler(jobstores=jobstores,
+                executors=executors, job_defaults=job_defaults, scheduler_config=scheduler_config)
 
     def _check_cmd(self, cmd):
         """

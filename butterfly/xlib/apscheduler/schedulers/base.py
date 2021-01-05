@@ -81,6 +81,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         self._listeners = []
         self._listeners_lock = self._create_lock()
         self._pending_jobs = []
+        self._default_wait_seconds = None
         self.state = STATE_STOPPED
         self.configure(gconfig, **options)
 
@@ -750,6 +751,10 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
                     "Expected job store instance or dict for jobstores['%s'], got %s instead" %
                     (alias, value.__class__.__name__))
 
+        # Configure Scheduler
+        scheduler_defaults = config.get('scheduler_config', {})
+        self._default_wait_seconds = scheduler_defaults.get("default_wait_seconds", None)
+
     def _create_default_executor(self):
         """Creates a default executor store, specific to the particular scheduler type."""
         return ThreadPoolExecutor()
@@ -1006,7 +1011,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
             wait_seconds = None
             self._logger.debug('Scheduler is paused; waiting until resume() is called')
         elif next_wakeup_time is None:
-            wait_seconds = None
+            wait_seconds = self._default_wait_seconds
             self._logger.debug('No jobs; waiting until a job is added')
         else:
             wait_seconds = min(max(timedelta_seconds(next_wakeup_time - now), 0), TIMEOUT_MAX)
