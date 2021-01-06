@@ -297,6 +297,18 @@ class Scheduler(object):
             is_success=is_success
         ))
 
+    def status(self):
+        """
+        Scheduler 状态
+        """
+        return self._scheduler.status()
+
+    def wakeup(self):
+        """
+        唤醒 scheduler
+        """
+        self._scheduler.wakeup()
+
     def _get_jobs_in_memory(self):
         """
         获取所有任务

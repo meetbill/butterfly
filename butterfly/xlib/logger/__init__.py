@@ -104,7 +104,8 @@ class LoggerBase(object):
             logtype     : (str) log msg
         """
         func = inspect.currentframe().f_back
-        filename = os.path.basename(func.f_code.co_filename)
+        filename = func.f_code.co_filename
+        #filename = os.path.basename(func.f_code.co_filename)
         lineno = func.f_lineno
         cur_info = "{filename}:{lineno}".format(
             filename=filename, lineno=lineno)

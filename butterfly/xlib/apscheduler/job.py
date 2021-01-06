@@ -1,3 +1,4 @@
+# coding=utf8
 from inspect import ismethod, isclass
 from uuid import uuid4
 
@@ -292,9 +293,9 @@ class Job(object):
 
     def __unicode__(self):
         if hasattr(self, 'next_run_time'):
-            status = ('next run at: ' + datetime_repr(self.next_run_time) if
-                      self.next_run_time else 'paused')
+            status = ('next_run_at: ' + datetime_repr(self.next_run_time) if self.next_run_time else 'paused')
         else:
             status = 'pending'
 
-        return u'%s (trigger: %s, %s)' % (self.name, self.trigger, status)
+        return u'job_id={job_id} job_name={job_name} job_trigger={job_trigger} job_status={job_status}'.format(
+                job_id=self.id, job_name=self.name, job_trigger=self.trigger, job_status=status)

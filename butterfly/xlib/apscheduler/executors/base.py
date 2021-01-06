@@ -103,6 +103,14 @@ def run_job(job, jobstore_alias, run_times, logger_name):
     """
     Called by executors to run the job. Returns a list of scheduler events to be dispatched by the
     scheduler.
+                       job
+                        |
+                        | (difference > grace_time)
+            +-----------+----------+
+            | START                |
+        +---+----+               MISSED
+        |        |
+    SUCCESS    FAILURE
 
     """
     events = []
@@ -116,10 +124,13 @@ def run_job(job, jobstore_alias, run_times, logger_name):
             if difference > grace_time:
                 events.append(JobExecutionEvent(EVENT_JOB_MISSED, job.id, jobstore_alias,
                                                 run_time))
-                logger.warning('Run time of job "%s" was missed by %s', job, difference)
+                logger.warning(('[module=apscheduler sub_module=executor method=execute_job '
+                    '{job} exe_status=MISSED miss_time={miss_time} ]'.format(
+                    job=job, miss_time=difference)))
                 continue
 
-        logger.info('Running job "%s" (scheduled at %s)', job, run_time)
+        logger.info(('[module=apscheduler sub_module=executor method=execute_job '
+            '{job} exe_status=START scheduled_at={scheduled_at}]'.format(job=job, scheduled_at=run_time)))
         try:
             retval = job.func(*job.args, **job.kwargs)
         except BaseException:
@@ -127,7 +138,9 @@ def run_job(job, jobstore_alias, run_times, logger_name):
             formatted_tb = ''.join(format_tb(tb))
             events.append(JobExecutionEvent(EVENT_JOB_ERROR, job.id, jobstore_alias, run_time,
                                             exception=exc, traceback=formatted_tb))
-            logger.exception('Job "%s" raised an exception', job)
+            logger.execption(('[module=apscheduler sub_module=executor method=execute_job '
+                '{job} exe_status=FAILURE exe_traceback={exe_traceback} ]'.format(
+                job=job, exe_traceback=formatted_tb)))
 
             # This is to prevent cyclic references that would lead to memory leaks
             if six.PY2:
@@ -140,6 +153,7 @@ def run_job(job, jobstore_alias, run_times, logger_name):
         else:
             events.append(JobExecutionEvent(EVENT_JOB_EXECUTED, job.id, jobstore_alias, run_time,
                                             retval=retval))
-            logger.info('Job "%s" executed successfully', job)
+            logger.info(('[module=apscheduler sub_module=executor method=execute_job '
+                '{job} exe_status=SUCCESS ]'.format(job=job)))
 
     return events

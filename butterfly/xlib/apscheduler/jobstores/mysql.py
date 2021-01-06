@@ -57,6 +57,31 @@ class MySQLJobStore(BaseJobStore):
         row_dict = shortcuts.model_to_dict(row)
         return self._reconstitute_job(row_dict["job_state"]) if row_dict["job_state"] else None
 
+    def _unlock_expired_jobs(self, now):
+        """
+        解锁过期的任务, 20s 前仍在加锁中的任务
+        """
+        data = {
+            "job_lock": False,
+            "u_time": datetime.datetime.now()
+        }
+
+        # 解锁 20s 前的任务
+        old_datetime = now - datetime.timedelta(seconds=20)
+        old_timestamp = datetime_to_timestamp(old_datetime)
+        selectable = self.jobs_t.select(self.jobs_t.id).where(self.jobs_t.next_run_time <= old_timestamp,
+                self.jobs_t.job_lock == True)
+        for row in selectable:
+            row_dict = shortcuts.model_to_dict(row)
+            update = self.jobs_t.update(data).where(
+                self.jobs_t.id == row_dict["id"],
+                self.jobs_t.next_run_time <= old_timestamp,
+                self.jobs_t.job_lock == True)
+            result = update.execute()
+            if result > 0:
+                self._logger.warning("[module=apscheduler sub_module=jobstore method=unlock_expired_jobs job_id={job_id} ]".format(
+                    job_id = row_dict["id"]))
+
     def get_due_jobs(self, now):
         """
         取已经到期的 job
@@ -67,19 +92,7 @@ class MySQLJobStore(BaseJobStore):
         if not self.ha:
             return self._get_jobs(self.jobs_t.next_run_time <= timestamp, self.jobs_t.job_lock == False)
 
-        # 解锁 20s 前的任务
-        old_datetime = now - datetime.timedelta(seconds=20)
-        old_timestamp = datetime_to_timestamp(old_datetime)
-        data = {
-            "job_lock": False,
-            "u_time": datetime.datetime.now()
-        }
-        update = self.jobs_t.update(data).where(
-            self.jobs_t.next_run_time <= old_timestamp,
-            self.jobs_t.job_lock == True)
-        result = update.execute()
-        if result > 0:
-            self._logger.info("[apscheduler]: Unlock expired jobs, hvae {num} job unlock".format(num=result))
+        self._unlock_expired_jobs(now)
 
         return self._get_jobs_with_lock(self.jobs_t.next_run_time <= timestamp, self.jobs_t.job_lock == False)
 
@@ -88,7 +101,7 @@ class MySQLJobStore(BaseJobStore):
         获取最近的下次执行时间, 不检查 job_lock 是否存在
         """
         row = self.jobs_t.select(self.jobs_t.next_run_time).where(
-            self.jobs_t.next_run_time is not None).order_by(self.jobs_t.next_run_time).limit(1).execute()
+            self.jobs_t.next_run_time != None).order_by(self.jobs_t.next_run_time).limit(1).execute()
         if len(row) == 1:
             result_dict = shortcuts.model_to_dict(row[0])
             return timestamp_to_datetime(result_dict["next_run_time"])
@@ -205,12 +218,12 @@ class MySQLJobStore(BaseJobStore):
         result = update.execute()
         if result == 0:
             self._logger.info(
-                "[apscheduler]: id={id} run_time={run_time} add lock failed".format(
+                "[module=apscheduler sub_module=jobstore method=lock_job id={id} run_time={run_time} state=failed ]".format(
                     id=job_id, run_time=next_run_time_datetime))
             return False
         else:
             self._logger.info(
-                "[apscheduler]: id={id} run_time={run_time} add lock success".format(
+                "[module=apscheduler sub_module=jobstore method=lock_job id={id} run_time={run_time} state=success ]".format(
                     id=job_id, run_time=next_run_time_datetime))
             return True
 

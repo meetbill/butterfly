@@ -3,6 +3,23 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.6] - 2021-01-06
+### Fixed
+
+- 修复解锁已过期任务可能导致的死锁问题 https://github.com/meetbill/butterfly/issues/4
+- 修复存在暂停中任务时，调度失败问题 https://github.com/meetbill/butterfly/issues/24
+
+### Added
+
+scheduler manager
+
+- 添加查询 scheduler 状态接口
+- 添加强制唤醒 scheduler 接口
+
+### Changed
+
+修改 scheduler 部分日志
+
 ## [1.1.5] - 2021-01-05
 ### Changed
 

@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# Description:
+    Scheduler
+
+"""
 from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod
@@ -84,6 +90,12 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         self._default_wait_seconds = None
         self.state = STATE_STOPPED
         self.configure(gconfig, **options)
+        # 当前等待时间
+        self._wait_seconds = None
+        # 最近检查时间
+        self._check_time = None
+        # 下次唤醒时间
+        self._next_wakeup_time = None
 
     def configure(self, gconfig={}, prefix='apscheduler.', **options):
         """
@@ -880,7 +892,9 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         event = JobEvent(EVENT_JOB_ADDED, job.id, jobstore_alias)
         self._dispatch_event(event)
 
-        self._logger.info('Added job "%s" to job store "%s"', job.name, jobstore_alias)
+        self._logger.info(('[module=apscheduler sub_module=scheduler method=add_job '
+            'job_id={job_id} job_name={job_name} job_store={job_store} ]'.format(
+            job_id = job.id, job_name=job.name, job_store=jobstore_alias)))
 
         # Notify the scheduler about the new job
         if self.state == STATE_RUNNING:
@@ -938,6 +952,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
 
         self._logger.debug('Looking for jobs to run')
         now = datetime.now()
+        self._check_time = now
         next_wakeup_time = None
         events = []
 
@@ -1008,14 +1023,25 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
 
         # Determine the delay until this method should be called again
         if self.state == STATE_PAUSED:
-            wait_seconds = None
+            self._wait_seconds = None
             self._logger.debug('Scheduler is paused; waiting until resume() is called')
         elif next_wakeup_time is None:
-            wait_seconds = self._default_wait_seconds
+            self._wait_seconds = self._default_wait_seconds
             self._logger.debug('No jobs; waiting until a job is added')
         else:
-            wait_seconds = min(max(timedelta_seconds(next_wakeup_time - now), 0), TIMEOUT_MAX)
+            self._wait_seconds = min(max(timedelta_seconds(next_wakeup_time - now), 0), TIMEOUT_MAX)
             self._logger.debug('Next wakeup is due at %s (in %f seconds)', next_wakeup_time,
-                               wait_seconds)
+                               self._wait_seconds)
 
-        return wait_seconds
+        self._next_wakeup_time = next_wakeup_time
+        return self._wait_seconds
+
+    def status(self):
+        """
+        Scheduler status
+        """
+        data = {}
+        data["wait_seconds"] = self._wait_seconds
+        data["check_time"] = self._check_time
+        data["next_wakeup_time"] = self._next_wakeup_time
+        return data
