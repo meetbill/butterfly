@@ -13,7 +13,6 @@ from logging import getLogger
 import warnings
 import sys
 
-from pkg_resources import iter_entry_points
 from xlib.util import six
 
 from xlib.apscheduler.schedulers import SchedulerAlreadyRunningError, SchedulerNotRunningError
@@ -67,11 +66,11 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
     .. seealso:: :ref:`scheduler-config`
     """
 
-    _trigger_plugins = dict((ep.name, ep) for ep in iter_entry_points('apscheduler.triggers'))
+    _trigger_plugins = {}
     _trigger_classes = {}
-    _executor_plugins = dict((ep.name, ep) for ep in iter_entry_points('apscheduler.executors'))
+    _executor_plugins = {}
     _executor_classes = {}
-    _jobstore_plugins = dict((ep.name, ep) for ep in iter_entry_points('apscheduler.jobstores'))
+    _jobstore_plugins = {}
     _jobstore_classes = {}
 
     #
