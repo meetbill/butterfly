@@ -17,7 +17,7 @@ from xlib.apscheduler.jobstores.memory import MemoryJobStore
 from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 from xlib.apscheduler.models.apscheduler_model import RuqiJobs
 # executors
-from xlib.apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from xlib.apscheduler.executors.pool import ThreadPoolExecutor
 
 from xlib.util import shell_util
 from xlib.db import peewee
@@ -71,7 +71,6 @@ class Scheduler(object):
             }
         executors = {
             'default': ThreadPoolExecutor(20),
-            'processpool': ProcessPoolExecutor(5)
         }
         job_defaults = {
             'coalesce': False,
