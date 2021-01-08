@@ -138,7 +138,7 @@ def run_job(job, jobstore_alias, run_times, logger_name):
             formatted_tb = ''.join(format_tb(tb))
             events.append(JobExecutionEvent(EVENT_JOB_ERROR, job.id, jobstore_alias, run_time,
                                             exception=exc, traceback=formatted_tb))
-            logger.execption(('[module=apscheduler sub_module=executor method=execute_job '
+            logger.error(('[module=apscheduler sub_module=executor method=execute_job '
                 '{job} exe_status=FAILURE exe_traceback={exe_traceback} ]'.format(
                 job=job, exe_traceback=formatted_tb)))
 

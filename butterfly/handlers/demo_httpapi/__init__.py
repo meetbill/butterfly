@@ -9,7 +9,7 @@ from xlib import util
 from xlib.httpgateway import Request
 from xlib import retstat
 
-__info = "http_demo"
+__info = "demo"
 __version = "1.0.1"
 
 

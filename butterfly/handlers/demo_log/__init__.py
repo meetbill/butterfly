@@ -15,7 +15,7 @@ from xlib.middleware import funcattr
 butterfly_logger = logging.getLogger("butterfly")
 root_logger = logging.getLogger()
 
-__info = "xingshu"
+__info = "demo"
 __version = "1.0.1"
 
 

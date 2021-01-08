@@ -65,17 +65,17 @@ $ bash run.sh start
 ```
 > 访问
 ```
-$ curl "http://127.0.0.1:8585/x/ping"
+$ curl "http://127.0.0.1:8585/demo_api/ping"
 {"stat": "OK", "randstr": "..."}
 
-$ curl "http://127.0.0.1:8585/x/hello?str_info=meetbill"
+$ curl "http://127.0.0.1:8585/demo_api/hello?str_info=meetbill"
 {"stat": "OK", "str_info": "meetbill"}
 ```
 ##  2.2 五分钟体验之编写 handler （预计 3 分钟）
 
 > 创建 app （handlers 目录下的子目录均为 app）, 直接拷贝个现有的 app 即可
 ```
-$ cp -rf handlers/x handlers/test_app
+$ cp -rf handlers/demo_api handlers/test_app
 ```
 > 新增 handler (app 目录下的`__init__.py` 中编写 handler 函数）
 ```

@@ -138,6 +138,7 @@ class RequestTool(object):
         """
         self.request = None
         self.response = None
+        self.cost = "0"
         self.code = -1
         self.header = {}
         self.cookieJar = None
@@ -267,7 +268,7 @@ class RequestTool(object):
             self.reason = '{}'.format(e)
 
         seconds_passed = time.time() - t_beginning
-        cost_str = "%.6f" % seconds_passed
+        self.cost = "%.6f" % seconds_passed
 
         # 打印日志
         f = inspect.currentframe().f_back
@@ -288,7 +289,7 @@ class RequestTool(object):
                        method=request_type,
                        req_path=url,
                        req_data=data,
-                       cost=cost_str,
+                       cost=self.cost,
                        is_success=self.success(),
                        err_no=self.code,
                        err_msg=self.reason,

@@ -11,7 +11,7 @@
     v1.0.2 : 2020-05-07
     --------------- modify acc.log field
 """
-__info = "report"
+__info = "demo"
 __version = "1.0.2"
 
 import os

@@ -15,10 +15,12 @@ scheduler manager
 
 - 添加查询 scheduler 状态接口
 - 添加强制唤醒 scheduler 接口
+- 增加 scheduler http job 方法
 
 ### Changed
 
-修改 scheduler 部分日志
+- 修改 scheduler 部分日志
+- http_util 增加 cost 属性
 
 ## [1.1.5] - 2021-01-05
 ### Changed

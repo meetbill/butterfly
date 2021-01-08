@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # coding=utf8
 """
+火眼(金睛)
 用于单点登录以及接口认证
 """
 from xlib.httpgateway import Request

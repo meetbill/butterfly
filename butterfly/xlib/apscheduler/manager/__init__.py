@@ -20,6 +20,7 @@ from xlib.apscheduler.models.apscheduler_model import RuqiJobs
 from xlib.apscheduler.executors.pool import ThreadPoolExecutor
 
 from xlib.util import shell_util
+from xlib.util import http_util
 from xlib.db import peewee
 from xlib.db import shortcuts
 from conf import config
@@ -44,7 +45,7 @@ def run_cmd(job_id, job_name, cmd, errlog):
         # 设置的在数据库中最多存储 4096 字节
         "cmd_output": cmd_result.output()[:4096],
         "scheduler_name": config.scheduler_name,
-        "cmd_cost": cmd_result.cost
+        "cmd_cost": float(cmd_result.cost)
     }
     try:
         RuqiJobsHistory.create(**values)
@@ -52,6 +53,33 @@ def run_cmd(job_id, job_name, cmd, errlog):
         errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
+def run_http(job_id, job_name, cmd, errlog):
+    """
+    执行 HTTP 请求
+    Args:
+        job_id  : (Str) job_id
+        job_name: (Str) job_name
+        cmd     : (Str) "python/bash file_path args"
+        errlog  : (object) errlog logger
+    """
+    # 设置 1 小时超时
+    cmd_result = http_util.post_json(cmd)
+    values = {
+        "job_id": job_id,
+        "job_name": job_name,
+        "cmd": cmd,
+        "cmd_is_success": cmd_result.success(),
+        # 设置的在数据库中最多存储 4096 字节
+        # http_util 默认会将 json 转为 dict
+        "cmd_output": str(cmd_result.output())[:4096],
+        "scheduler_name": config.scheduler_name,
+        "cmd_cost": float(cmd_result.cost)
+    }
+    try:
+        RuqiJobsHistory.create(**values)
+    except BaseException:
+        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+            job_id=job_id, exception_info=traceback.format_exc()))
 
 class Scheduler(object):
     """
@@ -111,10 +139,11 @@ class Scheduler(object):
 
         return True
 
-    def _add_cron_job(self, job_id, job_name, cmd, rule):
+    def _add_cron_job(self, func, job_id, job_name, cmd, rule):
         """
         创建 cron 任务, 有同名任务时则失败
         Args:
+            func    : func
             job_id  : job id(唯一索引)
             job_name: 用作分类
             cmd     : job cmd
@@ -141,7 +170,7 @@ class Scheduler(object):
             day_of_week=cron_rule_list[5])
 
         self._scheduler.add_job(
-            func=run_cmd,
+            func=func,
             trigger=cron_trigger,
             kwargs=kwargs,
             id=job_id,
@@ -151,10 +180,11 @@ class Scheduler(object):
         )
         return (True, "OK")
 
-    def _add_interval_job(self, job_id, job_name, cmd, rule):
+    def _add_interval_job(self, func, job_id, job_name, cmd, rule):
         """
         添加间隔任务
         Args:
+            func    : func
             job_id  : job id(唯一索引)
             job_name: 用作分类
             cmd     : job cmd
@@ -198,7 +228,7 @@ class Scheduler(object):
         )
 
         self._scheduler.add_job(
-            func=run_cmd,
+            func=func,
             trigger=interval_trigger,
             kwargs=kwargs,
             id=job_id,
@@ -208,10 +238,11 @@ class Scheduler(object):
         )
         return (True, "OK")
 
-    def _add_date_job(self, job_id, job_name, cmd, rule):
+    def _add_date_job(self, func, job_id, job_name, cmd, rule):
         """
         添加一次任务
         Args:
+            func    : func
             job_id  : job id(唯一索引)
             job_name: 用作分类
             cmd     : job cmd
@@ -232,7 +263,7 @@ class Scheduler(object):
         kwargs["errlog"] = self._errlog
 
         self._scheduler.add_job(
-            func=run_cmd,
+            func=func,
             trigger=date_trigger,
             kwargs=kwargs,
             id=job_id,
@@ -266,11 +297,16 @@ class Scheduler(object):
         if job_trigger not in jobs_map.keys():
             return (False, "Job_trigger not in jobs_map" )
 
-        if not self._check_cmd(cmd):
-            return (False, "Cmd does not meet expectations")
+
+        if cmd.startswith("http"):
+            func = run_http
+        else:
+            if not self._check_cmd(cmd):
+                return (False, "(scripts) Cmd does not meet expectations")
+            func = run_cmd
 
         try:
-            is_success, err_msg = jobs_map[job_trigger](job_id, job_name, cmd, rule)
+            is_success, err_msg = jobs_map[job_trigger](func, job_id, job_name, cmd, rule)
         except ConflictingIdError as e:
             is_success, err_msg = False, str(e)
         except BaseException as e:
