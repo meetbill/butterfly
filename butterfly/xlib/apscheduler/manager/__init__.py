@@ -53,6 +53,7 @@ def run_cmd(job_id, job_name, cmd, errlog):
         errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
+
 def run_http(job_id, job_name, cmd, errlog):
     """
     执行 HTTP 请求
@@ -81,22 +82,24 @@ def run_http(job_id, job_name, cmd, errlog):
         errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
+
 class Scheduler(object):
     """
     Scheduler class
     """
+
     def __init__(self, initlog, errlog, jobstore_alias="memory"):
         if jobstore_alias == "mysql":
             self._jobstore = MySQLJobStore()
         else:
             self._jobstore = MemoryJobStore()
 
-        #-----------------------------------------------------------------
+        # -----------------------------------------------------------------
         # config
-        #-----------------------------------------------------------------
+        # -----------------------------------------------------------------
         jobstores = {
             'default': self._jobstore
-            }
+        }
         executors = {
             'default': ThreadPoolExecutor(20),
         }
@@ -105,13 +108,13 @@ class Scheduler(object):
             'max_instances': 1
         }
         scheduler_config = {
-            'default_wait_seconds': 300 # 单位:s 假如检测到无 job 时，将会在 default_wait_seconds 后进行唤醒
+            'default_wait_seconds': 300  # 单位:s 假如检测到无 job 时，将会在 default_wait_seconds 后进行唤醒
         }
-        #-----------------------------------------------------------------end
+        # -----------------------------------------------------------------end
         self._initlog = initlog
         self._errlog = errlog
         self._scheduler = background.BackgroundScheduler(jobstores=jobstores,
-                executors=executors, job_defaults=job_defaults, scheduler_config=scheduler_config)
+                                                         executors=executors, job_defaults=job_defaults, scheduler_config=scheduler_config)
 
     def _check_cmd(self, cmd):
         """
@@ -288,15 +291,14 @@ class Scheduler(object):
         Returns:
             (Bool, Str)
         """
-        jobs_map ={
-                    "cron": self._add_cron_job,
-                    "interval": self._add_interval_job,
-                    "date":self._add_date_job
-                }
+        jobs_map = {
+            "cron": self._add_cron_job,
+            "interval": self._add_interval_job,
+            "date": self._add_date_job
+        }
 
         if job_trigger not in jobs_map.keys():
-            return (False, "Job_trigger not in jobs_map" )
-
+            return (False, "Job_trigger not in jobs_map")
 
         if cmd.startswith("http"):
             func = run_http
@@ -413,7 +415,7 @@ class Scheduler(object):
         """
         mysql jobstore 时, 获取 job 列表
         """
-        data={}
+        data = {}
         # 如下方式以分页数据返回
         model = RuqiJobs
         query_cmd = RuqiJobs.select()

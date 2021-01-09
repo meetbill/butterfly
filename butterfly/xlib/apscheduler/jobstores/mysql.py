@@ -80,7 +80,7 @@ class MySQLJobStore(BaseJobStore):
             result = update.execute()
             if result > 0:
                 self._logger.warning("[module=apscheduler sub_module=jobstore method=unlock_expired_jobs job_id={job_id} ]".format(
-                    job_id = row_dict["id"]))
+                    job_id=row_dict["id"]))
 
     def get_due_jobs(self, now):
         """

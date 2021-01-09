@@ -11,7 +11,7 @@
 """
 
 
-from handlers.x import hello
+from handlers.demo_httpapi import hello
 from xlib import httpgateway
 
 def test_hello():
@@ -22,4 +22,4 @@ def test_hello():
     req = httpgateway.Request(reqid, wsgienv, ip)
 
     # OK
-    assert hello(req, "test_info") == ("OK", {'str_info': 'test_info'}, [('api_demo', '1.0.1')])
+    assert hello(req, "test_info") == (200, {'stat': 'OK', 'str_info': 'test_info'}, [('demo', '1.0.1')])

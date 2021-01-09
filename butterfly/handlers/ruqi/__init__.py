@@ -19,6 +19,7 @@ from xlib.db import shortcuts
 __info = "ruqi"
 __version = "1.0.1"
 
+
 @funcattr.api
 def get_jobs(req, job_id=None, job_name=None, page_index=None, page_size=15):
     """
@@ -75,6 +76,7 @@ def remove_job(req, job_id):
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
 
+
 @funcattr.api
 def pause_job(req, job_id):
     """
@@ -92,6 +94,7 @@ def pause_job(req, job_id):
     else:
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
+
 
 @funcattr.api
 def resume_job(req, job_id):
@@ -111,12 +114,13 @@ def resume_job(req, job_id):
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
 
+
 @funcattr.api
 def get_history(req, job_id=None, job_name=None, page_index=None, page_size=15):
     """
     获取定期任务列表
     """
-    data={}
+    data = {}
     # 如下方式以分页数据返回
     model = RuqiJobsHistory
     query_cmd = model.select()
@@ -145,6 +149,7 @@ def get_history(req, job_id=None, job_name=None, page_index=None, page_size=15):
     data["list"] = data_list
     return retstat.OK, {"data": data}, [(__info, __version)]
 
+
 @funcattr.api
 def status(req):
     """
@@ -156,7 +161,7 @@ def status(req):
     """
     isinstance(req, Request)
     data = req.scheduler.status()
-    return retstat.OK, {"data":data}, [(__info, __version)]
+    return retstat.OK, {"data": data}, [(__info, __version)]
 
 
 @funcattr.api
