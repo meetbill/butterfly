@@ -41,6 +41,8 @@ import json
 
 
 log = logging.getLogger("butterfly")
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 PY2 = sys.version_info.major == 2
