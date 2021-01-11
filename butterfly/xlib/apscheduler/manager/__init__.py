@@ -1,6 +1,7 @@
 # coding=utf8
 import os
 import re
+import json
 import traceback
 
 # schedulers
@@ -60,11 +61,24 @@ def run_http(job_id, job_name, cmd, errlog):
     Args:
         job_id  : (Str) job_id
         job_name: (Str) job_name
-        cmd     : (Str) "python/bash file_path args"
+        cmd     : (Str) 'python/bash file_path args'
+                : 'http://127.0.0.1:8585/demo_api/hello#{"str_info":"hello"}'
+                : 'http://127.0.0.1:8585/demo_api/ping'
         errlog  : (object) errlog logger
     """
-    # 设置 1 小时超时
-    cmd_result = http_util.post_json(cmd)
+    # 请求体数据
+    data = {}
+
+    # cmd
+    cmd_list = cmd.split("#")
+    if len(cmd_list) == 1:
+        url = cmd_list[0]
+    else:
+        url = cmd_list[0]
+        data = json.loads(cmd_list[1])
+
+    cmd_result = http_util.post_json(url, data=data)
+
     values = {
         "job_id": job_id,
         "job_name": job_name,
