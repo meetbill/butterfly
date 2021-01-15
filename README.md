@@ -26,6 +26,7 @@
     * [4.1 手册](#41-手册)
     * [4.2 自带 app 介绍](#42-自带-app-介绍)
     * [4.3 报告错误](#43-报告错误)
+    * [4.4 微信群交流](#44-微信群交流)
 * [5 版本信息](#5-版本信息)
 * [6 参加步骤](#6-参加步骤)
 
@@ -225,6 +226,10 @@ handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进
 ## 4.3 报告错误
 
 如果您想报告错误，请在 GitHub 上[创建一个新问题](https://github.com/meetbill/butterfly/issues/new)。
+
+## 4.4 微信群交流
+
+<div align=center><img src="https://github.com/meetbill/meetbill_static/blob/master/butterfly/butterfly-wexin.png" width="350"/></div>
 
 # 5 版本信息
 
