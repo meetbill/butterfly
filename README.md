@@ -23,6 +23,9 @@
     * [2.3 五分钟体验之调试 handler （预计 1 分钟）](#23-五分钟体验之调试-handler-预计-1-分钟)
 * [3 设计蓝图](#3-设计蓝图)
 * [4 了解更多](#4-了解更多)
+    * [4.1 手册](#41-手册)
+    * [4.2 自带 app 介绍](#42-自带-app-介绍)
+    * [4.3 报告错误](#43-报告错误)
 * [5 版本信息](#5-版本信息)
 * [6 参加步骤](#6-参加步骤)
 
@@ -194,11 +197,32 @@ Butterfly       |                   |      |          |
 
 # 4 了解更多
 
+## 4.1 手册
+
 > * [Butterfly 用户手册](https://github.com/meetbill/butterfly/wiki/usage)
 > * [Butterfly 进阶手册](https://github.com/meetbill/butterfly/wiki)
 > * [Butterfly 示例](https://github.com/meetbill/butterfly-examples)
 > * [Butterfly 前端](https://github.com/meetbill/butterfly-fe)
 > * [Butterfly nginx 配置](https://github.com/meetbill/butterfly-nginx)
+
+## 4.2 自带 app 介绍
+
+看文档不过瘾，还可以通过了解当前 handler 的实现, 进而实现自己的需求:
+
+> * demo_api--------------------: api demo
+> * demo_download---------------: 下载文件 demo
+> * demo_httpapi----------------: 自定义 HTTP 返回码 demo
+> * demo_log--------------------: 日志级别调整 demo
+> * demo_template---------------: 使用后端模板 demo, 本例子会输出访问日志统计状态图
+> * huoyan----------------------: 【火眼金睛】（用于后端接口认证，仅仅抛砖引玉，删除了具体实现）
+> * ruqi------------------------: 【如期而至】（高可用定时任务, 可用于定时发起 HTTP 请求或者执行 Shell/Python 脚本）
+> * wuxing----------------------: 【五行属性】（用于存储配置类/监控类/巡检类数据，可配合状态机进行使用）
+
+> 备注:
+```
+handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进行删除
+```
+## 4.3 报告错误
 
 如果您想报告错误，请在 GitHub 上[创建一个新问题](https://github.com/meetbill/butterfly/issues/new)。
 
