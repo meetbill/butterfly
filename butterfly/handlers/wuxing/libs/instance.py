@@ -35,9 +35,7 @@ __version = "1.0.1"
 @funcattr.api
 def instance_list(req, namespace=None, section_name=None, section_version=None, page_index=1, page_size=10):
     """
-    获取对应 key 的数据
-
-    如果传的参数中含有分页参数，则以 name 属性为准进行返回数据，并且将字典中的 "name" 设置为 name 属性值
+    获取 instance 列表
 
     Args:
         namespace       : (str) 命名空间
@@ -116,8 +114,9 @@ def instance_create(req, namespace, instance_name, section_name, section_version
     for item_name in section_template_dict.keys():
         item_dict = section_template_dict[item_name]
         # 进行创建 item
-        stat, item_data, headher_list = item.item_create(req, namespace,
-                                                         instance_name, item_dict["item_name"], item_dict["item_type"], item_dict["item_default"])
+        stat, item_data, headher_list = item.item_create(req, namespace, section_name,
+                                                         instance_name, item_dict["item_name"],
+                                                         item_dict["item_type"], item_dict["item_default"])
 
         if stat != "OK":
             return stat, {}, [(__info, __version)]
@@ -179,8 +178,9 @@ def instance_update_section(req, namespace, instance_name, section_version):
     # 进行新增 item
     for item_name in add_list:
         item_dict = template_section[item_name]
-        item_stat, item_data, headher_list = item.item_create(req, namespace,
-                                                              instance_name, item_name, item_dict["item_type"], item_dict["item_default"])
+        item_stat, item_data, headher_list = item.item_create(req, namespace, section_name,
+                                                              instance_name, item_name,
+                                                              item_dict["item_type"], item_dict["item_default"])
         if item_stat != retstat.OK:
             return item_stat, {}, [(__info, __version)]
 

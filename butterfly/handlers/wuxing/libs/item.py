@@ -187,7 +187,7 @@ def item_update(req, item_id, item_type, item_value):
 
 
 @funcattr.api
-def item_create(req, namespace, instance_name, item_name, item_type, item_value):
+def item_create(req, namespace, section_name, instance_name, item_name, item_type, item_value):
     """
     创建 item
     """
@@ -200,6 +200,7 @@ def item_create(req, namespace, instance_name, item_name, item_type, item_value)
 
     data = {}
     data["namespace"] = namespace
+    data["section_name"] = section_name
     data["instance_name"] = instance_name
     data["item_name"] = item_name
     data["item_type"] = item_type

@@ -31,7 +31,7 @@ class WuxingSection(xlib.db.BaseModel):
     # 命名空间(如 group_config/service_config/group_attr/service_attr/host_attr), 此处相当于是 1 级分类
     namespace = CharField(max_length=16)
     # 如果 namespace 是 service 的话，这里可能是组件名 twemproxy/memcache, 此处相当于是 2 级分类，对应实际配置的 instance 字段
-    section_name = CharField(max_length=16)
+    section_name = CharField(max_length=64)
     # 此模板的版本号
     section_version = CharField(max_length=16)
     # 模板内容，是个 json
@@ -90,6 +90,7 @@ class WuxingInstanceItem(xlib.db.BaseModel):
     # 命名空间(如 group_config/service_config/group_attr/service_attr/host_attr)
     id = AutoField(primary_key=True)
     namespace = CharField(max_length=16, index=True)
+    section_name = CharField(max_length=64, index=True)
     instance_name = CharField(max_length=64, index=True)
     item_name = CharField(max_length=64, index=True)
     item_type = CharField(max_length=64, index=True)
