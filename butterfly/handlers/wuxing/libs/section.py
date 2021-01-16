@@ -77,15 +77,19 @@ def section_create(req, namespace, section_name, section_version):
     md5.update(section_template)
     section_md5 = md5.hexdigest()[:8]
     # get_or_create 的参数是 **kwargs，其中 defaults 为非查询条件的参数
-    instance_data, is_create = model.WuxingSection.get_or_create(
-        namespace=namespace,
-        section_name=section_name,
-        section_version=section_version,
-        defaults={
-            "section_template": section_template,
-            "section_md5": section_md5,
-            "user": op_user}
-    )
+    try:
+        instance_data, is_create = model.WuxingSection.get_or_create(
+            namespace=namespace,
+            section_name=section_name,
+            section_version=section_version,
+            defaults={
+                "section_template": section_template,
+                "section_md5": section_md5,
+                "user": op_user}
+        )
+    except BaseException as e:
+        req.error_str = str(e)
+        return retstat.ERR_SECTION_CREATE_FAILED , {}, [(__info, __version)]
 
     if is_create:
         return retstat.OK, {}, [(__info, __version)]

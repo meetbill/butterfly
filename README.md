@@ -208,18 +208,18 @@ Butterfly       |                   |      |          |
 
 ## 4.2 自带 app 介绍
 
-看文档不过瘾，还可以通过了解当前 handler 的实现, 进而实现自己的需求:
+看文档不过瘾，还可以通过了解当前 handler 的实现，进而实现自己的需求：
 
-> * demo_api--------------------: api demo
-> * demo_download---------------: 下载文件 demo
-> * demo_httpapi----------------: 自定义 HTTP 返回码 demo
-> * demo_log--------------------: 日志级别调整 demo
-> * demo_template---------------: 使用后端模板 demo, 本例子会输出访问日志统计状态图
-> * huoyan----------------------: 【火眼金睛】（用于后端接口认证，仅仅抛砖引玉，删除了具体实现）
-> * ruqi------------------------: 【如期而至】（高可用定时任务, 可用于定时发起 HTTP 请求或者执行 Shell/Python 脚本）
-> * wuxing----------------------: 【五行属性】（用于存储配置类/监控类/巡检类数据，可配合状态机进行使用）
+> * 【例子】/handlers/demo_api: api demo
+> * 【例子】/handlers/demo_download: 下载文件 demo
+> * 【例子】/handlers/demo_httpapi: 自定义 HTTP 返回码 demo
+> * 【例子】/handlers/demo_log: 日志级别调整 demo
+> * 【例子】/handlers/demo_template: 使用后端模板 demo, 本例子会输出访问日志统计状态图
+> * 【火眼】/handlers/huoyan: 用于后端接口认证，仅仅抛砖引玉，删除了具体实现
+> * 【如期】/handlers/ruqi: 高可用定时任务，可发起 HTTP 请求或者执行 Shell/Python 脚本
+> * 【五行】/handlers/wuxing: 用于存储配置类 / 监控类 / 巡检类数据，可配合状态机进行使用
 
-> 备注:
+> 备注：
 ```
 handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进行删除
 ```

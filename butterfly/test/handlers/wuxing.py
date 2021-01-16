@@ -66,6 +66,13 @@ def test_section_create():
     stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
     assert stat == retstat.OK
 
+    # ERR_SECTION_CREATE_FAILED
+    # namespace 超出长度
+    namespace = "12345678901234567"
+    stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
+    assert stat == retstat.ERR_SECTION_CREATE_FAILED
+
+
 
 def test_section_item_add():
     """
@@ -188,7 +195,8 @@ def test_section_item_add():
     ]
     for item in item_list:
         stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
-                                                          item["item_name"], item["item_type"], item["item_default"], item["item_description"])
+                                                          item["item_name"], item["item_type"],
+                                                          item["item_default"], item["item_description"])
 
         assert stat == retstat.OK
 
