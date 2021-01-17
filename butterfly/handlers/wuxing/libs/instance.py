@@ -33,14 +33,16 @@ __version = "1.0.1"
 
 
 @funcattr.api
-def instance_list(req, namespace=None, section_name=None, section_version=None, page_index=1, page_size=10):
+def instance_list(req, namespace=None, section_name=None, instance_name=None, section_version=None, section_md5=None, page_index=1, page_size=10):
     """
     获取 instance 列表
 
     Args:
         namespace       : (str) 命名空间
         section_name    : (str)
+        instance_name   : (str)
         section_version : (str)
+        section_md5     : (str)
         page_index      : (int) 页数
         page_size       : (int) 每页显示条数
     """
@@ -66,8 +68,14 @@ def instance_list(req, namespace=None, section_name=None, section_version=None, 
     if section_name is not None:
         expressions.append(peewee.NodeList((instance_model.section_name, peewee.SQL('='), section_name)))
 
+    if instance_name is not None:
+        expressions.append(peewee.NodeList((instance_model.instance_name, peewee.SQL('='), instance_name)))
+
     if section_version is not None:
         expressions.append(peewee.NodeList((instance_model.section_version, peewee.SQL('='), section_version)))
+
+    if section_md5 is not None:
+        expressions.append(peewee.NodeList((instance_model.section_md5, peewee.SQL('='), section_md5)))
 
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
