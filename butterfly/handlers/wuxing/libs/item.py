@@ -42,13 +42,6 @@ value_field_map = {
     "string": "item_value_string",
 }
 
-value_field_map_model = {
-    "bool": "item_value_bool",
-    "int": "item_value_int",
-    "float": "item_value_float",
-    "string": "item_value_string",
-}
-
 modelhistory_map = {
     "bool": model.WuxingHistoryBool,
     "int": model.WuxingHistoryInt,

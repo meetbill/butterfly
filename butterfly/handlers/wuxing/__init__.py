@@ -61,6 +61,7 @@
 from handlers.wuxing.libs import section
 from handlers.wuxing.libs import instance
 from handlers.wuxing.libs import item
+from handlers.wuxing.libs import item_history
 
 
 # section
@@ -89,3 +90,6 @@ instance_update_section = instance.instance_update_section
 item_update = item.item_update
 item_get = item.item_get
 item_list = item.item_list
+
+# item_history
+item_history_list = item_history.item_history_list
