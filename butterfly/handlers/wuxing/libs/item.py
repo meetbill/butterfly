@@ -86,17 +86,22 @@ def get_value_by_modeltype(modeltype, value_old):
 
 
 @funcattr.api
-def item_list(req, namespace=None, instance_name=None, item_name=None, page_index=1, page_size=10):
+def item_list(req, namespace=None, section_name=None, instance_name=None, item_name=None, page_index=1, page_size=10):
     """
     获取对应 item 的数据
+
     (namespace, instance_name, item_name) 三者条件，正常情况下只有 1 条数据
+    (namespace, section_name, item_name) 可以输出 instance 列表
 
     Args:
         namespace       : (str) 命名空间
+        section_name    : (str) section name
         instance_name   : (str) instance name
         item_name       : (str) item name
         page_index      : (int) 页数
         page_size       : (int) 每页显示条数
+    Returns:
+        stat, data, header_list
     """
     isinstance(req, Request)
     item_model = model.WuxingInstanceItem
@@ -107,6 +112,9 @@ def item_list(req, namespace=None, instance_name=None, item_name=None, page_inde
     expressions = []
     if namespace is not None:
         expressions.append(peewee.NodeList((item_model.namespace, peewee.SQL('='), namespace)))
+
+    if section_name is not None:
+        expressions.append(peewee.NodeList((item_model.section_name, peewee.SQL('='), section_name)))
 
     if instance_name is not None:
         expressions.append(peewee.NodeList((item_model.instance_name, peewee.SQL('='), instance_name)))
@@ -120,7 +128,20 @@ def item_list(req, namespace=None, instance_name=None, item_name=None, page_inde
     record_count = query_cmd.count()
     record_list = query_cmd.paginate(int(page_index), int(page_size))
     for record in record_list:
-        record_dict = shortcuts.model_to_dict(record)
+        record_dict_source = shortcuts.model_to_dict(record)
+        record_dict = {}
+        record_dict["item_id"] = record_dict_source["id"]
+        record_dict["namespace"] = record_dict_source["namespace"]
+        record_dict["section_name"] = record_dict_source["section_name"]
+        record_dict["instance_name"] = record_dict_source["instance_name"]
+        record_dict["item_name"] = record_dict_source["item_name"]
+        # 将 item_value_bool/item_value_int/item_value_string/item_value_float 转换为 item_value
+        item_type = record_dict_source["item_type"]
+        item_field = value_field_map[item_type]
+        record_dict["item_value"] = record_dict_source[item_field]
+        record_dict["user"] = record_dict_source["user"]
+        record_dict["c_time"] = record_dict_source["c_time"]
+        record_dict["u_time"] = record_dict_source["u_time"]
         data_list.append(record_dict)
 
     data["total"] = record_count
