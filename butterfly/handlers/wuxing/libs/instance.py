@@ -13,6 +13,18 @@
 # Description:
     五行 API
 
+    section_template/instance_template 压缩大小：
+        (1) 通过 attr 缩写(a1...) 代替 (item_type 等), 减少 key 长度
+        (2) section_template 中没有 item_id
+        (3) item 属性中去掉 item_name
+    字节对比：
+        (1) item_id+item_name+item_type+item_default+item_description = 53 个字节
+        (2) id+a1+a1+a3=8 字节
+        +-------+---------+------------+----------------+
+        |   id  |   a1    |    a2      |       a3       |
+        +-------+---------+------------+----------------+
+        |item_id|item_type|item_default|item_description|
+        +-------+---------+------------+----------------+
 """
 from datetime import datetime
 import copy
@@ -33,7 +45,8 @@ __version = "1.0.1"
 
 
 @funcattr.api
-def instance_list(req, namespace=None, section_name=None, instance_name=None, section_version=None, section_md5=None, page_index=1, page_size=10):
+def instance_list(req, namespace=None, section_name=None, instance_name=None,
+                  section_version=None, section_md5=None, page_index=1, page_size=10):
     """
     获取 instance 列表
 
@@ -121,14 +134,17 @@ def instance_create(req, namespace, instance_name, section_name, section_version
     section_template_dict = json.loads(section_data.section_template)
     for item_name in section_template_dict.keys():
         item_dict = section_template_dict[item_name]
+        item_type = item_dict["a1"]
+        item_default = item_dict["a2"]
+
         # 进行创建 item
         stat, item_data, headher_list = item.item_create(req, namespace, section_name,
-                                                         instance_name, item_dict["item_name"],
-                                                         item_dict["item_type"], item_dict["item_default"])
+                                                         instance_name, item_name,
+                                                         item_type, item_default)
 
-        if stat != "OK":
+        if stat != retstat.OK:
             return stat, {}, [(__info, __version)]
-        section_template_dict[item_name]["item_id"] = item_data["data"]
+        section_template_dict[item_name]["id"] = item_data["data"]
 
     template_str = json.dumps(section_template_dict)
     # 插入模板
@@ -186,19 +202,22 @@ def instance_update_section(req, namespace, instance_name, section_version):
     # 进行新增 item
     for item_name in add_list:
         item_dict = template_section[item_name]
+        item_type = item_dict["a1"]
+        item_default = item_dict["a2"]
+
         item_stat, item_data, headher_list = item.item_create(req, namespace, section_name,
                                                               instance_name, item_name,
-                                                              item_dict["item_type"], item_dict["item_default"])
+                                                              item_type, item_default)
         if item_stat != retstat.OK:
             return item_stat, {}, [(__info, __version)]
 
         template_new[item_name] = item_dict
-        template_new[item_name]["item_id"] = item_data["data"]
+        template_new[item_name]["id"] = item_data["data"]
 
     # 进行删除 item
     for item_name in remove_list:
         item_dict = template_old[item_name]
-        item_stat, item_data, headher_list = item.item_delete(req, item_dict["item_id"])
+        item_stat, item_data, headher_list = item.item_delete(req, item_dict["id"])
         if item_stat != retstat.OK:
             return item_stat, {}, [(__info, __version)]
 
@@ -264,20 +283,40 @@ def instance_get(req, namespace, instance_name, item_name=None):
     data = {}
     if item_name is None:
         for key_ in instance_data.keys():
-            data[key_] = instance_data[key_]
-            item_id = instance_data[key_]["item_id"]
-            item_type = instance_data[key_]["item_type"]
+            item_id = instance_data[key_]["id"]
+            item_type = instance_data[key_]["a1"]
+            item_description = instance_data[key_]["a3"]
+
+            # 将模板 + item_value 进行合并
+            data[key_] = {}
+            data[key_]["item_id"] = item_id
+            data[key_]["item_name"] = key_
+            data[key_]["item_type"] = item_type
+            data[key_]["item_description"] = item_description
+
+            # 获取 item_value
             stat, item_data, headher_list = item.item_get(req, item_id, item_type)
             data[key_]["item_value"] = item_data["data"]["item_value"]
             data[key_]["u_time"] = item_data["data"]["u_time"]
+
         return retstat.OK, {"data": data}, [(__info, __version)]
 
     if item_name not in instance_data.keys():
         return retstat.ERR_ITEM_IS_NOT_EXIST, {"data": data}, [(__info, __version)]
 
-    data = instance_data[item_name]
-    stat, item_data, headher_list = item.item_get(req, data["item_id"], data["item_type"])
+    item_id = instance_data[item_name]["id"]
+    item_type = instance_data[item_name]["a1"]
+    item_description = instance_data[item_name]["a3"]
+    stat, item_data, headher_list = item.item_get(req, item_id, item_type)
+    if stat != retstat.OK:
+        return stat, {}, [(__info, __version)]
+
+    data = {}
+    data["item_name"] = item_name
+    data["item_id"] = item_id
+    data["item_type"] = item_type
     data["item_value"] = item_data["data"]["item_value"]
+    data["item_description"] = item_description
     data["u_time"] = item_data["data"]["u_time"]
 
     return retstat.OK, {"data": data}, [(__info, __version)]
@@ -306,8 +345,9 @@ def instance_update_item(req, namespace, instance_name, item_name, item_value):
     if item_name not in template_dict.keys():
         return retstat.ERR_ITEM_IS_NOT_EXIST, {}, [(__info, __version)]
 
-    return item.item_update(req, template_dict[item_name]["item_id"],
-                            template_dict[item_name]["item_type"], item_value)
+    item_id = template_dict[item_name]["id"]
+    item_type = template_dict[item_name]["a1"]
+    return item.item_update(req, item_id, item_type, item_value)
 
 
 @funcattr.api

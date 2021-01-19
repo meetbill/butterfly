@@ -13,6 +13,18 @@
 # Description:
     五行 API
 
+    section_template/instance_template 压缩大小：
+        (1) 通过 attr 缩写(a1...) 代替 (item_type 等), 减少 key 长度
+        (2) section_template 中没有 item_id
+        (3) item 属性中去掉 item_name
+    字节对比：
+        (1) item_id+item_name+item_type+item_default+item_description = 53 个字节
+        (2) id+a1+a1+a3=8 字节
+        +-------+---------+------------+----------------+
+        |   id  |   a1    |    a2      |       a3       |
+        +-------+---------+------------+----------------+
+        |item_id|item_type|item_default|item_description|
+        +-------+---------+------------+----------------+
 """
 import json
 import hashlib
@@ -89,7 +101,7 @@ def section_create(req, namespace, section_name, section_version):
         )
     except BaseException as e:
         req.error_str = str(e)
-        return retstat.ERR_SECTION_CREATE_FAILED , {}, [(__info, __version)]
+        return retstat.ERR_SECTION_CREATE_FAILED, {}, [(__info, __version)]
 
     if is_create:
         return retstat.OK, {}, [(__info, __version)]
@@ -129,10 +141,9 @@ def section_item_add(req, namespace, section_name, section_version, item_name,
         return retstat.ERR_SECTION_ITEM_IS_EXIST, {}, [(__info, __version)]
 
     section_template_dict[item_name] = {}
-    section_template_dict[item_name]["item_name"] = item_name
-    section_template_dict[item_name]["item_type"] = item_type
-    section_template_dict[item_name]["item_default"] = item_default
-    section_template_dict[item_name]["item_description"] = item_description
+    section_template_dict[item_name]["a1"] = item_type
+    section_template_dict[item_name]["a2"] = item_default
+    section_template_dict[item_name]["a3"] = item_description
 
     section_template = json.dumps(section_template_dict)
     md5 = hashlib.md5()
@@ -220,8 +231,16 @@ def section_get(req, namespace, section_name, section_version):
                                                )
     if section_object is None:
         return retstat.ERR_SECTION_IS_NOT_EXIST, {}, [(__info, __version)]
+
     data = {}
-    data["section_template"] = json.loads(section_object.section_template)
+    data["section_template"] = {}
+    section_template_dict = json.loads(section_object.section_template)
+    for item_name in section_template_dict.keys():
+        data["section_template"][item_name] = {}
+        data["section_template"][item_name]["item_type"] = section_template_dict[item_name]["a1"]
+        data["section_template"][item_name]["item_default"] = section_template_dict[item_name]["a2"]
+        data["section_template"][item_name]["item_description"] = section_template_dict[item_name]["a3"]
+
     data["is_enabled"] = section_object.is_enabled
 
     return retstat.OK, {"data": data}, [(__info, __version)]

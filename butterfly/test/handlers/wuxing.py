@@ -73,7 +73,6 @@ def test_section_create():
     assert stat == retstat.ERR_SECTION_CREATE_FAILED
 
 
-
 def test_section_item_add():
     """
     section 添加 item
@@ -255,32 +254,26 @@ def test_section_get():
             'is_enabled': True,
             'section_template': {
                 u'qn_failover': {
-                    u'item_name': u'qn_failover',
                     u'item_type': u'bool',
                     u'item_default': u'true',
-                    u'item_description':
-                    u'qn failover switch'
+                    u'item_description': u'qn failover switch'
                 },
                 u'name_alias': {
-                    u'item_name': u'name_alias',
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'group name alias'
                 },
                 u'resource_name': {
-                    u'item_name': u'resource_name',
                     u'item_type': u'string',
                     u'item_default': u'common_ssd',
                     u'item_description': u'resource for deploy'
                 },
                 u'master_region': {
-                    u'item_name': u'master_region',
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'master region'
                 },
                 u'group_name': {
-                    u'item_name': u'group_name',
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'group name'
@@ -347,7 +340,6 @@ def test_instance_get():
         'data': {
             u'qn_failover': {
                 'item_value': True,
-                u'item_default': u'true',
                 u'item_name': u'qn_failover',
                 u'item_type': u'bool',
                 u'item_id': 1,
@@ -355,7 +347,6 @@ def test_instance_get():
             },
             u'name_alias': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'name_alias',
                 u'item_type': u'string',
                 u'item_id': 2,
@@ -363,7 +354,6 @@ def test_instance_get():
             },
             u'resource_name': {
                 'item_value': u'common_ssd',
-                u'item_default': u'common_ssd',
                 u'item_name': u'resource_name',
                 u'item_type': u'string',
                 u'item_id': 3,
@@ -371,7 +361,6 @@ def test_instance_get():
             },
             u'master_region': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'master_region',
                 u'item_type': u'string',
                 u'item_id': 4,
@@ -379,7 +368,6 @@ def test_instance_get():
             },
             u'group_name': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'group_name',
                 u'item_type': u'string',
                 u'item_id': 5,
@@ -400,7 +388,6 @@ def test_instance_get():
     demo_data = {
         'data': {
             'item_value': True,
-            u'item_default': u'true',
             u'item_name': u'qn_failover',
             u'item_type': u'bool',
             u'item_id': 1,
@@ -433,7 +420,6 @@ def test_instance_update_item():
     demo_data = {
         'data': {
             'item_value': False,
-            u'item_default': u'true',
             u'item_name': u'qn_failover',
             u'item_type': u'bool',
             u'item_id': 1,
@@ -471,7 +457,6 @@ def test_instance_update_section():
             u'qn_failover': {
                 # 此值进行过更新
                 'item_value': False,
-                u'item_default': u'true',
                 u'item_name': u'qn_failover',
                 u'item_type': u'bool',
                 u'item_id': 1,
@@ -479,7 +464,6 @@ def test_instance_update_section():
             },
             u'name_alias': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'name_alias',
                 u'item_type': u'string',
                 u'item_id': 2,
@@ -487,7 +471,6 @@ def test_instance_update_section():
             },
             u'resource_name': {
                 'item_value': u'common_ssd',
-                u'item_default': u'common_ssd',
                 u'item_name': u'resource_name',
                 u'item_type': u'string',
                 u'item_id': 3,
@@ -515,7 +498,6 @@ def test_instance_update_section():
         'data': {
             u'qn_failover': {
                 'item_value': False,
-                u'item_default': u'true',
                 u'item_name': u'qn_failover',
                 u'item_type': u'bool',
                 u'item_id': 1,
@@ -523,7 +505,6 @@ def test_instance_update_section():
             },
             u'name_alias': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'name_alias',
                 u'item_type': u'string',
                 u'item_id': 2,
@@ -531,7 +512,6 @@ def test_instance_update_section():
             },
             u'resource_name': {
                 'item_value': u'common_ssd',
-                u'item_default': u'common_ssd',
                 u'item_name': u'resource_name',
                 u'item_type': u'string',
                 u'item_id': 3,
@@ -539,7 +519,6 @@ def test_instance_update_section():
             },
             u'master_region': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'master_region',
                 u'item_type': u'string',
                 u'item_id': 4,
@@ -547,7 +526,6 @@ def test_instance_update_section():
             },
             u'group_name': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'group_name',
                 u'item_type': u'string',
                 u'item_id': 5,
@@ -555,7 +533,6 @@ def test_instance_update_section():
             },
             u'vip_list': {
                 'item_value': u'-',
-                u'item_default': u'-',
                 u'item_name': u'vip_list',
                 u'item_type': u'string',
                 u'item_id': 7,
