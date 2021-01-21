@@ -218,6 +218,7 @@ Butterfly       |                   |      |          |
 > * 【火眼】/handlers/huoyan: 用于后端接口认证，仅仅抛砖引玉，删除了具体实现
 > * 【如期】/handlers/ruqi: 高可用定时任务，可发起 HTTP 请求或者执行 Shell/Python 脚本
 > * 【五行】/handlers/wuxing: 用于存储配置类 / 监控类 / 巡检类数据，可配合状态机进行使用
+> * 【百川】/handlers/baichuan_worker: 百川-worker，可用于执行异步任务
 
 > 备注：
 ```
