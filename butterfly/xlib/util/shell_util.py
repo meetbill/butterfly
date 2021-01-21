@@ -29,6 +29,8 @@
         去掉 reqid 参数，通过 logging 添加 Filters 自动添加 reqid 方式
     v1.0.3(2020-05-25 11:02:38)
         增加 butterfly logger
+    v1.0.4(2021-01-21 15:43:21)
+        增加 reqid 参数，用于异步任务记录 reqid
 """
 
 import inspect
@@ -45,7 +47,7 @@ class Result(object):
     easyrun 返回结果封装
     """
 
-    def __init__(self, command="", retcode="", output="", cost=""):
+    def __init__(self, command="", retcode="", output="", cost="", reqid=""):
         """
         command : (str) 执行命令
         retcode : (int) 执行结果返回码
@@ -58,6 +60,7 @@ class Result(object):
         self._output_len = len(output)
         self._success = False
         self.cost = cost
+        self.reqid = reqid
         if retcode == 0:
             self._success = True
             self.err_msg = "OK"
@@ -89,6 +92,7 @@ class Result(object):
             output_log = self._output.replace("\n", ">>>") + ":)"
 
         log_msg = ("[file={file_name}:{func_name}:{lineno} "
+                   "reqid={reqid} "
                    "type=shell "
                    "req_path={req_path} "
                    "req_data=None "
@@ -100,6 +104,7 @@ class Result(object):
                    "res_data={res_data} "
                    "res_attr=None]".format(
                        file_name=file_name, func_name=func_name, lineno=lineno,
+                       reqid=self.reqid,
                        req_path=self.command,
                        cost=self.cost,
                        is_success=self._success,
@@ -133,11 +138,12 @@ class Result(object):
         return self._output
 
 
-def run(command, timeout=10):
+def run(command, timeout=10, reqid=""):
     """
     Args:
         command : (str) 执行的命令
         timeout : (int) 默认 10s
+        reqid   : (str) 用于记录异步任务 reqid, 此 reqid 为请求发起时的 reqid
     Returns:
         Result
     """
@@ -158,14 +164,14 @@ def run(command, timeout=10):
         if timeout and seconds_passed > timeout:
             process.terminate()
             cost_str = "%.6f" % seconds_passed
-            return Result(command=command, retcode=124, output="exe timeout", cost=cost_str)
+            return Result(command=command, retcode=124, output="exe timeout", cost=cost_str, reqid=reqid)
 
         time.sleep(0.1)
 
     output, _ = process.communicate()
     output = output.strip('\n')
     cost_str = "%.6f" % seconds_passed
-    return Result(command=command, retcode=process.returncode, output=output, cost=cost_str)
+    return Result(command=command, retcode=process.returncode, output=output, cost=cost_str, reqid=reqid)
 
 
 if __name__ == '__main__':
