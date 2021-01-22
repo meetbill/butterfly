@@ -73,6 +73,7 @@ def test_section_create():
     assert stat == retstat.ERR_SECTION_CREATE_FAILED
 
 
+
 def test_section_item_add():
     """
     section 添加 item
@@ -322,6 +323,33 @@ def test_instance_list():
 
     stat, data, header_list = wuxing.instance_list(req, namespace, section_name, section_version)
     assert stat == retstat.OK
+
+    # get extra item
+    extra_items="qn_failover:resource_name"
+    stat, data, header_list = wuxing.instance_list(req, namespace, section_name, extra_items=extra_items)
+    """
+    data:
+    {
+        'data': {
+            'total': 1,
+            'list': [
+                {
+                    'u_time': datetime.datetime(2021, 1, 22, 9, 5, 11),
+                    'namespace': u'group_qingnang',
+                    'instance_name': u'2523',
+                    'qn_failover': True,
+                    'section_version': u'1.0.1',
+                    'section_name': u'group_appid',
+                    'resource_name': u'common_ssd',
+                    'section_md5': u'a688a0b0'
+                }
+            ]
+        }
+    }
+    """
+    for instance_data in  data["data"]["list"]:
+        for extra_item in extra_items.split(":"):
+            assert extra_item in instance_data.keys()
 
 
 def test_instance_get():

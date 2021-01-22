@@ -46,7 +46,8 @@ __version = "1.0.1"
 
 @funcattr.api
 def instance_list(req, namespace=None, section_name=None, instance_name=None,
-                  section_version=None, section_md5=None, page_index=1, page_size=10):
+                  section_version=None, section_md5=None, extra_items=None,
+                  page_index=1, page_size=10):
     """
     获取 instance 列表
 
@@ -56,6 +57,7 @@ def instance_list(req, namespace=None, section_name=None, instance_name=None,
         instance_name   : (str)
         section_version : (str)
         section_md5     : (str)
+        extra_items     : (str) 此参数用于获取额外 item 进行列表展示，多个item 使用冒号 ":" 进行分割
         page_index      : (int) 页数
         page_size       : (int) 每页显示条数
     """
@@ -72,6 +74,12 @@ def instance_list(req, namespace=None, section_name=None, instance_name=None,
         instance_model.section_md5,
         instance_model.u_time
     ]
+
+    if extra_items is not None:
+        extra_item_list = extra_items.split(":")
+        select_list.append(instance_model.instance_template)
+    else:
+        extra_item_list = []
 
     query_cmd = instance_model.select(*select_list)
     expressions = []
@@ -97,6 +105,24 @@ def instance_list(req, namespace=None, section_name=None, instance_name=None,
     record_list = query_cmd.paginate(int(page_index), int(page_size))
     for record in record_list:
         record_dict = shortcuts.model_to_dict(record, only=select_list)
+        if not extra_item_list:
+            data_list.append(record_dict)
+            continue
+
+        instance_template_dict = json.loads(record_dict["instance_template"])
+        # 列表求交集
+        extra_item_reality_list = list(set(extra_item_list) & set(instance_template_dict.keys()))
+        for item_name in extra_item_reality_list:
+            # 获取 item_value
+            item_id = instance_template_dict[item_name]["id"]
+            item_type = instance_template_dict[item_name]["a1"]
+            stat, item_data, headher_list = item.item_get(req, item_id, item_type)
+
+            # 将 item 信息合并到 record_dict
+            record_dict[item_name] = item_data["data"]["item_value"]
+
+        # 返回列表时去掉模板信息
+        record_dict.pop("instance_template")
         data_list.append(record_dict)
 
     data["total"] = record_count
