@@ -45,19 +45,19 @@ __version = "1.0.1"
 
 
 @funcattr.api
-def instance_list(req, namespace=None, section_name=None, instance_name=None,
+def instance_list(req, namespace, section_name, instance_name=None,
                   section_version=None, section_md5=None, extra_items=None,
                   page_index=1, page_size=10):
     """
     获取 instance 列表
 
     Args:
-        namespace       : (str) 命名空间
-        section_name    : (str)
-        instance_name   : (str)
-        section_version : (str)
-        section_md5     : (str)
-        extra_items     : (str) 此参数用于获取额外 item 进行列表展示，多个item 使用冒号 ":" 进行分割
+        namespace       : (str) 必传，命名空间, 匹配时进行完全匹配
+        section_name    : (str) 必传，section name, 匹配时进行完全匹配
+        instance_name   : (str) 选传，instance name, 匹配时进行模糊匹配
+        section_version : (str) 选传, section 版本，匹配时进行完全匹配
+        section_md5     : (str) 选传，section md5, 匹配时进行完全匹配
+        extra_items     : (str) 选传, 此参数用于获取额外 item 进行列表展示，多个item 使用冒号 ":" 进行分割
         page_index      : (int) 页数
         page_size       : (int) 每页显示条数
     """
@@ -90,7 +90,8 @@ def instance_list(req, namespace=None, section_name=None, instance_name=None,
         expressions.append(peewee.NodeList((instance_model.section_name, peewee.SQL('='), section_name)))
 
     if instance_name is not None:
-        expressions.append(peewee.NodeList((instance_model.instance_name, peewee.SQL('='), instance_name)))
+        instance_name = "%{instance_name}%".format(instance_name=instance_name)
+        expressions.append(peewee.NodeList((instance_model.instance_name, peewee.SQL('LIKE'), instance_name)))
 
     if section_version is not None:
         expressions.append(peewee.NodeList((instance_model.section_version, peewee.SQL('='), section_version)))

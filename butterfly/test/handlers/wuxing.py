@@ -17,6 +17,9 @@
         1.0.3 :item (qn_failover, name_alias, resource_name, master_region, group_name, vip_list), is_enabled(True)
         1.0.4 :item (), is_enabled(False)
 
+    执行方式：
+        python wuxing.py main
+
 """
 
 
@@ -619,8 +622,7 @@ def test_section_delete():
     stat, data, header_list = wuxing.section_delete(req, namespace, section_name, section_version)
     assert stat == retstat.ERR_SECTION_IS_NOT_EXIST
 
-
-if __name__ == "__main__":
+def main():
     xlib.db.my_database.connect()
     model_list = [
         model.WuxingSection,
@@ -680,3 +682,76 @@ if __name__ == "__main__":
     # section delete
     print("section delete----------------------------------")
     test_section_delete()
+
+if __name__ == "__main__":
+    import sys
+    import inspect
+
+    def _usage(func_name=""):
+        """
+        output the module usage
+        """
+        print("Usage:")
+        print("-------------------------------------------------")
+        for k, v in sorted(globals().items(), key=lambda item: item[0]):
+            if func_name and func_name != k:
+                continue
+
+            if not inspect.isfunction(v) or k[0] == "_":
+                continue
+
+            args, __, __, defaults = inspect.getargspec(v)
+            #
+            # have defaults:
+            #       def hello(str_info, test="world"):
+            #               |
+            #               V
+            #       return: (args=['str_info', 'test'], varargs=None, keywords=None, defaults=('world',)
+            # no defaults:
+            #       def echo2(str_info1, str_info2):
+            #               |
+            #               V
+            #       return: (args=['str_info1', 'str_info2'], varargs=None, keywords=None, defaults=None)
+            #
+            # str(['str_info1', 'str_info2'])[1:-1].replace(",", "") ===> 'str_info1' 'str_info2'
+            #
+            if defaults:
+                args_all = str(args[:-len(defaults)])[1:-1].replace(",", ""), \
+                    str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
+            else:
+                args_all = str(v.func_code.co_varnames[:v.func_code.co_argcount])[1:-1].replace(",", "")
+
+            if not isinstance(args_all, tuple):
+                args_all = tuple(args_all.split(" "))
+
+            exe_info = "{file_name} {func_name} {args_all}".format(
+                file_name=sys.argv[0],
+                func_name=k,
+                args_all=" ".join(args_all))
+            print(exe_info)
+
+            # output func_doc
+            if func_name and v.func_doc:
+                print("\n".join(["\t" + line.strip() for line in v.func_doc.strip().split("\n")]))
+
+        print("-------------------------------------------------")
+
+    if len(sys.argv) < 2:
+        _usage()
+        sys.exit(-1)
+    else:
+        func = eval(sys.argv[1])
+        args = sys.argv[2:]
+        try:
+            r = func(*args)
+        except Exception:
+            _usage(func_name=sys.argv[1])
+
+            r = -1
+            import traceback
+            traceback.print_exc()
+
+        if isinstance(r, int):
+            sys.exit(r)
+
+        print r
