@@ -185,7 +185,7 @@ class WuxingHistoryString(xlib.db.BaseModel):
 
 
 if __name__ == "__main__":
-    xlib.db.my_database.connect()
+    xlib.db.my_databases["default"].connect()
     model_list = [
         WuxingSection,
         WuxingInstance,
@@ -195,5 +195,5 @@ if __name__ == "__main__":
         WuxingHistoryInt,
         WuxingHistoryString]
 
-    # xlib.db.my_database.drop_tables(model_list)
-    xlib.db.my_database.create_tables(model_list)
+    # xlib.db.my_databases["default"].drop_tables(model_list)
+    xlib.db.my_databases["default"].create_tables(model_list)

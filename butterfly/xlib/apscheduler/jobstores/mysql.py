@@ -47,7 +47,7 @@ class MySQLJobStore(BaseJobStore):
         The table will be created if it doesn't exist in the database.
         """
         super(MySQLJobStore, self).start(scheduler, alias)
-        xlib.db.my_database.create_tables([self.jobs_t, self.jobs_t_history])
+        xlib.db.my_databases["default"].create_tables([self.jobs_t, self.jobs_t_history])
 
     def lookup_job(self, job_id):
         """

@@ -5,20 +5,8 @@ Butterfly 常用装饰器
 
 import logging
 
-from xlib.db import my_database
 from xlib.util import wrapt
 from xlib import auth
-
-
-@wrapt.decorator
-def db_close(wrapped, instance, args, kwargs):
-    """
-    用于执行 handler 处理请求完后关闭 mysql 连接
-    """
-    result = wrapped(*args, **kwargs)
-    if not my_database.is_closed():
-        my_database.close()
-    return result
 
 
 @wrapt.decorator

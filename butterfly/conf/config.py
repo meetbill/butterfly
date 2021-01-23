@@ -23,8 +23,15 @@ STATIC_PATH = "static"
 STATIC_PREFIX="static"
 
 # DB
-mysql_config_url="mysql+retrypool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
-redis_config_url="redis://@localhost:6379/0"  # "redis://[[username]:[password]]@localhost:6379/0"
+DATABASES = {
+    # wuxing/ruqi use default database
+    "default": "mysql+retrypool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
+    }
+
+# Redis
+CACHES = {
+    "default": "redis://@localhost:6379/0"  # "redis://[[username]:[password]]@localhost:6379/0"
+    }
 
 # Local Cache
 diskcache_dir = "data/diskcache"

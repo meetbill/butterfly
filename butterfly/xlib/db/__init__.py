@@ -117,25 +117,28 @@ def connect(url, unquote_password=False, **connect_params):
     return database_class(**connect_kwargs)
 
 
-my_database = connect(url=config.mysql_config_url)
-
+my_databases = {}
+for database_name in config.DATABASES.keys():
+    my_databases[database_name] = connect(url=config.DATABASES[database_name])
 
 class BaseModel(peewee.Model):
     """Common base model"""
     class Meta(object):
         """Meta class"""
-        database = my_database
+        database = my_databases["default"]
 
 ###############################################################
 # Redis
 ###############################################################
-my_redis = redisorm.Database.from_url(config.redis_config_url)
+my_caches = {}
+for cache_name in config.CACHES.keys():
+    my_caches[cache_name] = redisorm.Database.from_url(config.CACHES[cache_name])
 
 class RedisModel(redisorm.Model):
     """
     Common Redis base model
     """
-    _database_ = my_redis
+    _database_ = my_caches["default"]
 
 if __name__ == "__main__":
     mysql_config_url = "mysql+pool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"

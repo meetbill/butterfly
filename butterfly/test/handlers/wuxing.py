@@ -623,7 +623,7 @@ def test_section_delete():
     assert stat == retstat.ERR_SECTION_IS_NOT_EXIST
 
 def main():
-    xlib.db.my_database.connect()
+    xlib.db.my_databases["default"].connect()
     model_list = [
         model.WuxingSection,
         model.WuxingInstance,
@@ -633,8 +633,8 @@ def main():
         model.WuxingHistoryInt,
         model.WuxingHistoryString]
 
-    xlib.db.my_database.drop_tables(model_list)
-    xlib.db.my_database.create_tables(model_list)
+    xlib.db.my_databases["default"].drop_tables(model_list)
+    xlib.db.my_databases["default"].create_tables(model_list)
     # create section
     print("section create----------------------------------")
     test_section_create()
