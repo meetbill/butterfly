@@ -33,6 +33,7 @@ from datetime import datetime
 from xlib.httpgateway import Request
 from xlib.middleware import funcattr
 from xlib.db import shortcuts
+from xlib.db import peewee
 
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
@@ -43,7 +44,7 @@ __version = "1.0.1"
 
 
 @funcattr.api
-def section_list(req, page_index=1, page_size=10):
+def section_list(req, namespace=None, page_index=1, page_size=10):
     """
     Args:
         namespace   : (str) 命名空间
@@ -65,6 +66,12 @@ def section_list(req, page_index=1, page_size=10):
     ]
 
     query_cmd = section_model.select(*select_list)
+    expressions = []
+    if namespace is not None:
+        expressions.append(peewee.NodeList((section_model.namespace, peewee.SQL('='), namespace)))
+
+    if len(expressions):
+        query_cmd = query_cmd.where(*expressions)
 
     record_count = query_cmd.count()
     record_list = query_cmd.paginate(int(page_index), int(page_size))
@@ -81,6 +88,11 @@ def section_list(req, page_index=1, page_size=10):
 def section_create(req, namespace, section_name, section_version):
     """
     创建 section 模板配置
+
+    Args:
+        namespace       : (str) 命名空间
+        section_name    : (str) section name
+        section_version : (str) section 版本
     """
     isinstance(req, Request)
     op_user = req.username
