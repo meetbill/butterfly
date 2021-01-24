@@ -79,7 +79,8 @@ class MySQLJobStore(BaseJobStore):
                 self.jobs_t.job_lock == True)
             result = update.execute()
             if result > 0:
-                self._logger.warning("[module=apscheduler sub_module=jobstore method=unlock_expired_jobs job_id={job_id} ]".format(
+                self._logger.warning(
+                    "[module=apscheduler sub_module=jobstore method=unlock_expired_jobs job_id={job_id} ]".format(
                     job_id=row_dict["id"]))
 
     def get_due_jobs(self, now):
@@ -165,6 +166,9 @@ class MySQLJobStore(BaseJobStore):
             raise ConflictingIdError(job.id)
 
     def update_job(self, job):
+        """
+        save job info to database
+        """
         data = {
             "next_run_time": datetime_to_timestamp(job.next_run_time),
             "job_state": job.__getstate__(),
@@ -177,16 +181,25 @@ class MySQLJobStore(BaseJobStore):
             raise JobLookupError(job.id)
 
     def remove_job(self, job_id):
+        """
+        remove job
+        """
         delete = self.jobs_t.delete().where(self.jobs_t.id == job_id)
         result = delete.execute()
         if result == 0:
             raise JobLookupError(job_id)
 
     def remove_all_jobs(self):
+        """
+        remove all job
+        """
         delete = self.jobs_t.delete()
         delete.execute()
 
     def shutdown(self):
+        """
+        exit
+        """
         pass
 
     def _reconstitute_job(self, job_state):

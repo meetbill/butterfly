@@ -27,14 +27,23 @@ from xlib.db.peewee import BooleanField
 
 
 class PickleField(BlobField):
+    """
+    PickleField
+    """
 
     def __init__(self, *args, **kwargs):
         super(PickleField, self).__init__(*args, **kwargs)
 
     def db_value(self, value):
+        """
+        save value to db
+        """
         return pickle.dumps(value)
 
     def python_value(self, value):
+        """
+        get value from db
+        """
         return pickle.loads(value)
 
 # Define a model class
@@ -58,6 +67,9 @@ class RuqiJobs(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.datetime.now)
 
     class Meta(object):
+        """
+        RuqiJobs meta
+        """
         table_name = 'ruqi_jobs'
 
 
@@ -77,4 +89,7 @@ class RuqiJobsHistory(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.datetime.now)
 
     class Meta(object):
+        """
+        RuqiJobsHistory meta
+        """
         table_name = 'ruqi_jobs_history'

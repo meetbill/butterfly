@@ -48,6 +48,7 @@ apscheduler/executors/tornado.py
 apscheduler/executors/twisted.py
 apscheduler/executors/gevent.py
 apscheduler/executors/asyncio.py
+apscheduler/executors/base_py3.py
 ## 调度器
 apscheduler/schedulers/tornado.py
 apscheduler/schedulers/twisted.py
@@ -59,6 +60,7 @@ apscheduler/jobstores/rethinkdb.py
 apscheduler/jobstores/zookeeper.py
 apscheduler/jobstores/mongodb.py
 apscheduler/jobstores/sqlalchemy.py
+apscheduler/jobstores/redis.py
 
 ## other
 timezone

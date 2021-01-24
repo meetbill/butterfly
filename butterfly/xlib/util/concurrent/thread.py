@@ -37,6 +37,7 @@ __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False
 
+
 def _python_exit():
     global _shutdown
     _shutdown = True
@@ -44,9 +45,11 @@ def _python_exit():
     for t, q in items:
         q.put(None)
     for t, q in items:
-        t.join(sys.maxint)
+        t.join(sys.maxsize)
+
 
 atexit.register(_python_exit)
+
 
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
@@ -61,11 +64,12 @@ class _WorkItem(object):
 
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except:
+        except BaseException:
             e, tb = sys.exc_info()[1:]
             self.future.set_exception_info(e, tb)
         else:
             self.future.set_result(result)
+
 
 def _worker(executor_reference, work_queue):
     try:
@@ -92,7 +96,7 @@ def _worker(executor_reference, work_queue):
                 work_queue.put(None)
                 return
             del executor
-    except:
+    except BaseException:
         _base.LOGGER.critical('Exception in worker', exc_info=True)
 
 
@@ -166,5 +170,5 @@ class ThreadPoolExecutor(_base.Executor):
             self._work_queue.put(None)
         if wait:
             for t in self._threads:
-                t.join(sys.maxint)
+                t.join(sys.maxsize)
     shutdown.__doc__ = _base.Executor.shutdown.__doc__

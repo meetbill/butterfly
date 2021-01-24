@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: pool.py
+# Description:
+    执行器线程池/进程池管理
+"""
 from abc import abstractmethod
 from xlib.util import concurrent
 
@@ -5,6 +12,9 @@ from xlib.apscheduler.executors.base import BaseExecutor, run_job
 
 
 class BasePoolExecutor(BaseExecutor):
+    """
+    BasePoolExecutor class
+    """
     @abstractmethod
     def __init__(self, pool):
         super(BasePoolExecutor, self).__init__()
@@ -12,6 +22,9 @@ class BasePoolExecutor(BaseExecutor):
 
     def _do_submit_job(self, job, run_times):
         def callback(f):
+            """
+            job callback func
+            """
             exc, tb = (f.exception_info() if hasattr(f, 'exception_info') else
                        (f.exception(), getattr(f.exception(), '__traceback__', None)))
             if exc:
@@ -23,6 +36,9 @@ class BasePoolExecutor(BaseExecutor):
         f.add_done_callback(callback)
 
     def shutdown(self, wait=True):
+        """
+        pool shutdown func
+        """
         self._pool.shutdown(wait)
 
 
