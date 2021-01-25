@@ -37,6 +37,7 @@ from xlib.db import peewee
 
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
+from handlers.wuxing.libs import common_map
 
 
 __info = "wuxing"
@@ -123,18 +124,27 @@ def section_create(req, namespace, section_name, section_version):
 
 @funcattr.api
 def section_item_add(req, namespace, section_name, section_version, item_name,
-                     item_type, item_default, item_description):
+                     item_default, item_description):
     """
     创建 section 模板配置
 
     只能对未启用状态的 section 进行变更
+
+    限定 item_name 名称(约定优于配置):
+        i|xxxx: 表示此 item 的 value 是 int 类型
+        f|xxxx: 表示此 item 的 value 是 float 类型
+        s|xxxx: 表示此 item 的 value 是 string 类型
+        b|xxxx: 表示此 item 的 value 是 bool 类型
     """
     isinstance(req, Request)
     op_user = req.username
     section_model = model.WuxingSection
 
-    if item_type not in ["string", "int", "float", "bool"]:
+    item_prefix = item_name[:2]
+    if item_prefix not in ["i|", "s|", "f|", "b|"]:
         return retstat.ERR_SECTION_ITEM_TYPE_FAILED, {}, [(__info, __version)]
+
+    item_type = common_map.item_type_map[item_prefix]
 
     section_object = section_model.get_or_none(section_model.namespace == namespace,
                                                section_model.section_name == section_name,

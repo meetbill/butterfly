@@ -88,118 +88,102 @@ def test_section_item_add():
     section_version = "1.0.1"
     item_list = [
         {
-            "item_name": "qn_failover",
-            "item_type": "bool",
+            "item_name": "b|qn_failover",
             "item_default": "true",
             "item_description": "qn failover switch"
         },
         {
-            "item_name": "name_alias",
-            "item_type": "string",
+            "item_name": "s|name_alias",
             "item_default": "-",
             "item_description": "group name alias"
         },
         {
-            "item_name": "resource_name",
-            "item_type": "string",
+            "item_name": "s|resource_name",
             "item_default": "common_ssd",
             "item_description": "resource for deploy"
         },
         {
-            "item_name": "master_region",
-            "item_type": "string",
+            "item_name": "s|master_region",
             "item_default": "-",
             "item_description": "master region"
         },
         {
-            "item_name": "group_name",
-            "item_type": "string",
+            "item_name": "s|group_name",
             "item_default": "-",
             "item_description": "group name"
         }
     ]
     for item in item_list:
         stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
-                                                          item["item_name"], item["item_type"],
-                                                          item["item_default"], item["item_description"])
+                                                          item["item_name"], item["item_default"], item["item_description"])
 
         assert stat == retstat.OK
 
     # ERR_SECTION_ITEM_IS_EXIST
     stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
-                                                      "qn_failover", "bool", "true", "qn failover switch")
+                                                      "b|qn_failover", "true", "qn failover switch")
     assert stat == retstat.ERR_SECTION_ITEM_IS_EXIST
 
     # 创建其他 section_version 的 item
     section_version = "1.0.2"
     item_list = [
         {
-            "item_name": "qn_failover",
-            "item_type": "bool",
+            "item_name": "b|qn_failover",
             "item_default": "true",
             "item_description": "qn failover switch"
         },
         {
-            "item_name": "name_alias",
-            "item_type": "string",
+            "item_name": "s|name_alias",
             "item_default": "-",
             "item_description": "group name alias"
         },
         {
-            "item_name": "resource_name",
-            "item_type": "string",
+            "item_name": "s|resource_name",
             "item_default": "common_ssd",
             "item_description": "resource for deploy"
         }
     ]
     for item in item_list:
         stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
-                                                          item["item_name"], item["item_type"], item["item_default"], item["item_description"])
+                                                          item["item_name"], item["item_default"], item["item_description"])
 
         assert stat == retstat.OK
     section_version = "1.0.3"
     item_list = [
         {
-            "item_name": "qn_failover",
-            "item_type": "bool",
+            "item_name": "b|qn_failover",
             "item_default": "true",
             "item_description": "qn failover switch"
         },
         {
-            "item_name": "name_alias",
-            "item_type": "string",
+            "item_name": "s|name_alias",
             "item_default": "-",
             "item_description": "group name alias"
         },
         {
-            "item_name": "resource_name",
-            "item_type": "string",
+            "item_name": "s|resource_name",
             "item_default": "common_ssd",
             "item_description": "resource for deploy"
         },
         {
-            "item_name": "master_region",
-            "item_type": "string",
+            "item_name": "s|master_region",
             "item_default": "-",
             "item_description": "master region"
         },
         {
-            "item_name": "group_name",
-            "item_type": "string",
+            "item_name": "s|group_name",
             "item_default": "-",
             "item_description": "group name"
         },
         {
-            "item_name": "vip_list",
-            "item_type": "string",
+            "item_name": "s|vip_list",
             "item_default": "-",
             "item_description": "vip list"
         }
     ]
     for item in item_list:
         stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
-                                                          item["item_name"], item["item_type"],
-                                                          item["item_default"], item["item_description"])
+                                                          item["item_name"], item["item_default"], item["item_description"])
 
         assert stat == retstat.OK
 
@@ -257,27 +241,27 @@ def test_section_get():
         'data': {
             'is_enabled': True,
             'section_template': {
-                u'qn_failover': {
+                u'b|qn_failover': {
                     u'item_type': u'bool',
                     u'item_default': u'true',
                     u'item_description': u'qn failover switch'
                 },
-                u'name_alias': {
+                u's|name_alias': {
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'group name alias'
                 },
-                u'resource_name': {
+                u's|resource_name': {
                     u'item_type': u'string',
                     u'item_default': u'common_ssd',
                     u'item_description': u'resource for deploy'
                 },
-                u'master_region': {
+                u's|master_region': {
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'master region'
                 },
-                u'group_name': {
+                u's|group_name': {
                     u'item_type': u'string',
                     u'item_default': u'-',
                     u'item_description': u'group name'
@@ -328,7 +312,7 @@ def test_instance_list():
     assert stat == retstat.OK
 
     # get extra item
-    extra_items="qn_failover:resource_name"
+    extra_items="b|qn_failover:s|resource_name"
     stat, data, header_list = wuxing.instance_list(req, namespace, section_name, extra_items=extra_items)
     """
     data:
@@ -369,64 +353,60 @@ def test_instance_get():
 
     demo_data = {
         'data': {
-            u'qn_failover': {
+            u'b|qn_failover': {
                 'item_value': True,
-                u'item_name': u'qn_failover',
+                u'item_name': u'b|qn_failover',
                 u'item_type': u'bool',
-                u'item_id': 1,
                 u'item_description': u'qn failover switch'
             },
-            u'name_alias': {
+            u's|name_alias': {
                 'item_value': u'-',
-                u'item_name': u'name_alias',
+                u'item_name': u's|name_alias',
                 u'item_type': u'string',
-                u'item_id': 2,
                 u'item_description': u'group name alias'
             },
-            u'resource_name': {
+            u's|resource_name': {
                 'item_value': u'common_ssd',
-                u'item_name': u'resource_name',
+                u'item_name': u's|resource_name',
                 u'item_type': u'string',
-                u'item_id': 3,
                 u'item_description': u'resource for deploy'
             },
-            u'master_region': {
+            u's|master_region': {
                 'item_value': u'-',
-                u'item_name': u'master_region',
+                u'item_name': u's|master_region',
                 u'item_type': u'string',
-                u'item_id': 4,
                 u'item_description': u'master region'
             },
-            u'group_name': {
+            u's|group_name': {
                 'item_value': u'-',
-                u'item_name': u'group_name',
+                u'item_name': u's|group_name',
                 u'item_type': u'string',
-                u'item_id': 5,
                 u'item_description': u'group name'
             }
         }
     }
     # 去掉返回值中的 u_time
     for item_name in data["data"].keys():
-        data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("item_id")
 
     assert data == demo_data
 
     # 测试某个 item 获取
-    demo_item_name = "qn_failover"
+    demo_item_name = "b|qn_failover"
     stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
     assert stat == retstat.OK
     demo_data = {
         'data': {
             'item_value': True,
-            u'item_name': u'qn_failover',
+            u'item_name': u'b|qn_failover',
             u'item_type': u'bool',
-            u'item_id': 1,
             u'item_description': u'qn failover switch'
         }
     }
     # 去掉返回值中的 u_time
-    data["data"].pop("u_time")
+    assert data["data"].pop("u_time")
+    assert data["data"].pop("item_id")
     assert data == demo_data
 
 
@@ -438,27 +418,27 @@ def test_instance_update_item():
     # OK
     namespace = "group_qingnang"
     instance_name = "2523"
-    item_name = "qn_failover"
+    item_name = "b|qn_failover"
     item_value = False
 
     stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value)
     assert stat == retstat.OK
 
     # 检查配置是否修改成功
-    demo_item_name = "qn_failover"
+    demo_item_name = "b|qn_failover"
     stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
     assert stat == retstat.OK
     demo_data = {
         'data': {
             'item_value': False,
-            u'item_name': u'qn_failover',
+            u'item_name': u'b|qn_failover',
             u'item_type': u'bool',
-            u'item_id': 1,
             u'item_description': u'qn failover switch'
         }
     }
     # 去掉返回值中的 u_time
-    data["data"].pop("u_time")
+    assert data["data"].pop("u_time")
+    assert data["data"].pop("item_id")
     assert data == demo_data
 
     # ERR_ITEM_IS_NOT_EXIST
@@ -485,33 +465,31 @@ def test_instance_update_section():
 
     demo_data = {
         'data': {
-            u'qn_failover': {
+            u'b|qn_failover': {
                 # 此值进行过更新
                 'item_value': False,
-                u'item_name': u'qn_failover',
+                u'item_name': u'b|qn_failover',
                 u'item_type': u'bool',
-                u'item_id': 1,
                 u'item_description': u'qn failover switch'
             },
-            u'name_alias': {
+            u's|name_alias': {
                 'item_value': u'-',
-                u'item_name': u'name_alias',
+                u'item_name': u's|name_alias',
                 u'item_type': u'string',
-                u'item_id': 2,
                 u'item_description': u'group name alias'
             },
-            u'resource_name': {
+            u's|resource_name': {
                 'item_value': u'common_ssd',
-                u'item_name': u'resource_name',
+                u'item_name': u's|resource_name',
                 u'item_type': u'string',
-                u'item_id': 3,
                 u'item_description': u'resource for deploy'
             },
         }
     }
     # 去掉返回值中的 u_time
     for item_name in data["data"].keys():
-        data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("item_id")
     assert data == demo_data
 
     # OK
@@ -527,59 +505,54 @@ def test_instance_update_section():
 
     demo_data = {
         'data': {
-            u'qn_failover': {
+            u'b|qn_failover': {
                 'item_value': False,
-                u'item_name': u'qn_failover',
+                u'item_name': u'b|qn_failover',
                 u'item_type': u'bool',
-                u'item_id': 1,
                 u'item_description': u'qn failover switch'
             },
-            u'name_alias': {
+            u's|name_alias': {
                 'item_value': u'-',
-                u'item_name': u'name_alias',
+                u'item_name': u's|name_alias',
                 u'item_type': u'string',
-                u'item_id': 2,
                 u'item_description': u'group name alias'
             },
-            u'resource_name': {
+            u's|resource_name': {
                 'item_value': u'common_ssd',
-                u'item_name': u'resource_name',
+                u'item_name': u's|resource_name',
                 u'item_type': u'string',
-                u'item_id': 3,
                 u'item_description': u'resource for deploy'
             },
-            u'master_region': {
+            u's|master_region': {
                 'item_value': u'-',
-                u'item_name': u'master_region',
+                u'item_name': u's|master_region',
                 u'item_type': u'string',
-                u'item_id': 4,
                 u'item_description': u'master region'
             },
-            u'group_name': {
+            u's|group_name': {
                 'item_value': u'-',
-                u'item_name': u'group_name',
+                u'item_name': u's|group_name',
                 u'item_type': u'string',
-                u'item_id': 5,
                 u'item_description': u'group name'
             },
-            u'vip_list': {
+            u's|vip_list': {
                 'item_value': u'-',
-                u'item_name': u'vip_list',
+                u'item_name': u's|vip_list',
                 u'item_type': u'string',
-                u'item_id': 7,
                 u'item_description': u'vip list'
             }
         }
     }
     # 去掉返回值中的 u_time
     for item_name in data["data"].keys():
-        data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("u_time")
+        assert data["data"][item_name].pop("item_id")
     assert data["data"].keys() == demo_data["data"].keys()
 
     # 检测 item
-    assert data["data"]["qn_failover"] == demo_data["data"]["qn_failover"]
-    assert data["data"]["name_alias"] == demo_data["data"]["name_alias"]
-    assert data["data"]["resource_name"] == demo_data["data"]["resource_name"]
+    assert data["data"]["b|qn_failover"] == demo_data["data"]["b|qn_failover"]
+    assert data["data"]["s|name_alias"] == demo_data["data"]["s|name_alias"]
+    assert data["data"]["s|resource_name"] == demo_data["data"]["s|resource_name"]
 
     # ERR_SECTION_IS_NOT_ENABLED
     namespace = "group_qingnang"

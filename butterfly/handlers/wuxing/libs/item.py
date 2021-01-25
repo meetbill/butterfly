@@ -22,32 +22,11 @@ from xlib.db import peewee
 
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
+from handlers.wuxing.libs import common_map
 
 
 __info = "wuxing"
 __version = "1.0.1"
-
-
-modeltype_map = {
-    "bool": bool,
-    "int": int,
-    "float": float,
-    "string": str,
-}
-
-value_field_map = {
-    "bool": "item_value_bool",
-    "int": "item_value_int",
-    "float": "item_value_float",
-    "string": "item_value_string",
-}
-
-modelhistory_map = {
-    "bool": model.WuxingHistoryBool,
-    "int": model.WuxingHistoryInt,
-    "float": model.WuxingHistoryFloat,
-    "string": model.WuxingHistoryString,
-}
 
 
 def get_value_by_modeltype(modeltype, value_old):
@@ -86,7 +65,10 @@ def get_value_by_modeltype(modeltype, value_old):
 
 
 @funcattr.api
-def item_list(req, namespace=None, section_name=None, instance_name=None, item_name=None, page_index=1, page_size=10):
+def item_list(req, namespace=None, section_name=None, instance_name=None,
+              item_name=None, item_value_operator=None, item_value=None,
+              start_time=None, end_time=None, sort=None,
+              page_index=1, page_size=10):
     """
     获取对应 item 的数据
 
@@ -94,12 +76,20 @@ def item_list(req, namespace=None, section_name=None, instance_name=None, item_n
     (namespace, section_name, item_name) 可以输出 instance 列表
 
     Args:
-        namespace       : (str) 命名空间
-        section_name    : (str) section name
-        instance_name   : (str) instance name
-        item_name       : (str) item name
-        page_index      : (int) 页数
-        page_size       : (int) 每页显示条数
+        namespace           : (str) 命名空间
+        section_name        : (str) section name
+        instance_name       : (str) instance name
+        item_name           : (str) item name
+        item_value_operator : (str) item value operator(=/</<=/>/>=/!=)
+        item_value          : (str) item_value
+        start_time          : (str) example: 20210124194805
+        end_time            : (str) example: 20210124195005
+        sort                : (str) {item_name}/-{item_name}  或者 instance_name, u_time
+                            :       如果是 {item_name}/-{item_name} ，应该转换为 item_value_bool/item_value_int/
+                                    item_value_string/item_value_float
+                                    如果 sort 值是 "-" 开头，则是以降序进行排序
+        page_index          : (int) 页数
+        page_size           : (int) 每页显示条数
     Returns:
         stat, data, header_list
     """
@@ -121,9 +111,53 @@ def item_list(req, namespace=None, section_name=None, instance_name=None, item_n
 
     if item_name is not None:
         expressions.append(peewee.NodeList((item_model.item_name, peewee.SQL('='), item_name)))
+        if item_value_operator is not None and item_value is not None:
+            if item_value_operator not in ["=", "<", "<=", ">", ">=", "!="]:
+                return retstat.ERR_ITEM_VALUE_OPERATOR, {}, [(__info, __version)]
+            item_prefix = item_name[:2]
+            item_type = common_map.item_type_map[item_prefix]
+            item_value_field = common_map.value_field_model_map[item_type]
+            expressions.append(peewee.NodeList((item_value_field, peewee.SQL(item_value_operator), item_value)))
+
+    if start_time is not None:
+        try:
+            start_time_datetime = datetime.strptime(start_time, '%Y%m%d%H%M%S')
+        except BaseException:
+            return retstat.ERR_TIME_FORMATE_INVALID, {}, [(__info, __version)]
+        expressions.append(peewee.NodeList((item_model.u_time, peewee.SQL('>='), start_time_datetime)))
+
+    if end_time is not None:
+        try:
+            end_time_datetime = datetime.strptime(end_time, '%Y%m%d%H%M%S')
+        except BaseException:
+            return retstat.ERR_TIME_FORMATE_INVALID, {}, [(__info, __version)]
+        expressions.append(peewee.NodeList((item_model.u_time, peewee.SQL('<'), end_time_datetime)))
 
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
+
+    if sort:
+        model_sort_field = None
+        desc = False
+        if sort.startswith("-"):
+            sort = sort[1:]
+            desc = True
+
+        # 如果排序字段是 instance_name/u_time 则直接从 item_model 中进行获取 field 对象
+        if sort in ["instance_name", "u_time"]:
+            model_sort_field = getattr(item_model, sort)
+
+        if sort == item_name:
+            item_prefix = item_name[:2]
+            item_type = common_map.item_type_map[item_prefix]
+            model_sort_field = common_map.value_field_model_map[item_type]
+
+        if model_sort_field is None:
+            req.log_res.add("model_sort_field_is_None")
+        else:
+            if desc:
+                model_sort_field = model_sort_field.desc()
+            query_cmd = query_cmd.order_by(model_sort_field)
 
     record_count = query_cmd.count()
     record_list = query_cmd.paginate(int(page_index), int(page_size))
@@ -137,7 +171,7 @@ def item_list(req, namespace=None, section_name=None, instance_name=None, item_n
         record_dict["item_name"] = record_dict_source["item_name"]
         # 将 item_value_bool/item_value_int/item_value_string/item_value_float 转换为 item_value
         item_type = record_dict_source["item_type"]
-        item_field = value_field_map[item_type]
+        item_field = common_map.value_field_map[item_type]
         record_dict["item_value"] = record_dict_source[item_field]
         record_dict["user"] = record_dict_source["user"]
         record_dict["c_time"] = record_dict_source["c_time"]
@@ -167,7 +201,7 @@ def item_get(req, item_id, item_type):
         return retstat.ERR_ITEM_IS_NOT_FOUND, {}, [(__info, __version)]
 
     instance_data_dict = shortcuts.model_to_dict(instance_data)
-    value_field = value_field_map[item_type]
+    value_field = common_map.value_field_map[item_type]
     item_value = instance_data_dict[value_field]
     u_time = instance_data_dict["u_time"]
     return retstat.OK, {"data": {"item_value": item_value, "u_time": u_time}}, [(__info, __version)]
@@ -183,7 +217,7 @@ def item_update(req, item_id, item_type, item_value):
     op_user = req.username
 
     new_value = get_value_by_modeltype(item_type, item_value)
-    value_field = value_field_map[item_type]
+    value_field = common_map.value_field_map[item_type]
 
     update_data = {}
     update_data[value_field] = new_value
@@ -194,7 +228,8 @@ def item_update(req, item_id, item_type, item_value):
         item_model.id == item_id).execute()
 
     if effect_count == 1:
-        modelhistory_map[item_type].create(item_id=item_id, item_value=new_value, cmd="update", user=op_user)
+        common_map.modelhistory_map[item_type].create(
+            item_id=item_id, item_value=new_value, cmd="update", user=op_user)
         return retstat.OK, {}, [(__info, __version)]
     else:
         return retstat.ERR, {}, [(__info, __version)]
@@ -210,7 +245,7 @@ def item_create(req, namespace, section_name, instance_name, item_name, item_typ
 
     op_user = req.username
     new_value = get_value_by_modeltype(item_type, item_value)
-    value_field = value_field_map[item_type]
+    value_field = common_map.value_field_map[item_type]
 
     data = {}
     data["namespace"] = namespace
@@ -224,7 +259,7 @@ def item_create(req, namespace, section_name, instance_name, item_name, item_typ
     item_id = item_model.insert(data).execute()
 
     if item_id:
-        modelhistory_map[item_type].create(
+        common_map.modelhistory_map[item_type].create(
             item_id=item_id,
             item_value=new_value,
             cmd="create",

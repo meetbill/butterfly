@@ -47,6 +47,7 @@ __version = "1.0.1"
 @funcattr.api
 def instance_list(req, namespace, section_name, instance_name=None,
                   section_version=None, section_md5=None, extra_items=None,
+                  sort=None,
                   page_index=1, page_size=10):
     """
     获取 instance 列表
@@ -58,6 +59,10 @@ def instance_list(req, namespace, section_name, instance_name=None,
         section_version : (str) 选传, section 版本，匹配时进行完全匹配
         section_md5     : (str) 选传，section md5, 匹配时进行完全匹配
         extra_items     : (str) 选传, 此参数用于获取额外 item 进行列表展示，多个item 使用冒号 ":" 进行分割
+        sort            : (str) {item_name}/-{item_name}  或者 instance_name, u_time
+                        :       如果是 {item_name}/-{item_name} ，应该转换为 item_value_bool/item_value_int/
+                                item_value_string/item_value_float
+                                如果 sort 值是 "-" 开头，则是以降序进行排序
         page_index      : (int) 页数
         page_size       : (int) 每页显示条数
     """
@@ -101,6 +106,24 @@ def instance_list(req, namespace, section_name, instance_name=None,
 
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
+
+    if sort:
+        model_sort_field = None
+        desc = False
+        if sort.startswith("-"):
+            sort = sort[1:]
+            desc = True
+
+        # 如果排序字段是 instance_name/u_time 则直接从 instance_model 中进行获取 field 对象
+        if sort in ["instance_name", "u_time"]:
+            model_sort_field = getattr(instance_model, sort)
+
+        if model_sort_field is None:
+            req.log_res.add("model_sort_field_is_None")
+        else:
+            if desc:
+                model_sort_field = model_sort_field.desc()
+            query_cmd = query_cmd.order_by(model_sort_field)
 
     record_count = query_cmd.count()
     record_list = query_cmd.paginate(int(page_index), int(page_size))
