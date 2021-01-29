@@ -26,7 +26,6 @@
     * [4.1 手册](#41-手册)
     * [4.2 自带 app 介绍](#42-自带-app-介绍)
     * [4.3 报告错误](#43-报告错误)
-    * [4.4 微信群交流](#44-微信群交流)
 * [5 版本信息](#5-版本信息)
 * [6 参加步骤](#6-参加步骤)
 
@@ -41,14 +40,14 @@ env:Python 2.7
 ## 1.2 特性
 
 > * 方便开发
->   * (1) 无需配置路由：根据 handlers package 下 package 目录结构自动加载路由（目前不支持动态路由）
+>   * (1) 无需配置路由：根据 handlers package 下目录结构自动加载路由（目前不支持动态路由）
 >   * (2) 参数保持一致：Handler 的参数列表与 HTTP 请求参数保持一致，HTTP 接口所需参数一目了然
 >   * (3) 自动参数检查：自动对 HTTP 请求参数进行参数检查
 >   * (4) 简易调试模式：简易方便的 DEBUG
 > * 方便运维
 >   * (1) 请求完整追溯：请求的响应 Header 中包含请求的 reqid（会记录在日志中）, 便于进行 trace
 >   * (2) 自定义响应头：Header 函数中很方便自定义 HTTP header, 如增加固定的接口版本号
->   * (3) 代码耗时打点：通过代码打点可以准确获取每个方法的执行时间，耗时比较长的可能是某个 SQL，可能是某个接口
+>   * (3) 代码耗时打点：通过代码打点可以准确获代码执行耗时
 
 # 2 五分钟 Butterfly 体验指南
 
@@ -135,8 +134,7 @@ Elapsed time: 00:00:00.002140
 ```
        +-------------------------------------------------------------+
        |                        WEB brower                           |
-       +-------------------------------------------------------------+
-                            |              ^
+       +-----------------------------------^-------------------------+
      /                      |              |
     |  +--------------------V--------------|-------------------------+
     |  | +----------------HTTPServer(Threadpool&Queue)-------------+ |
@@ -148,10 +146,9 @@ Elapsed time: 00:00:00.002140
     |  | |   ||+-+ +-+ +-+ +-+|  |     | |req.respond()#^!^  | |   | |（封装了 WSGIGateway.response)
     |  | |   |+-|---|---|---|-+  |     | +-------------------+ |   | |
     |  | |   +--|---|---|---|----+     +-----------------------+   | |
-    |  | +------|---|---|---|--------------------------------------+ |
-    |  |        |   |   |   |                       ^                | WSGI server
-    |  |        V   V   V   V                       |                |
-    |  | +---------------WSGIGateway(response)------|--------------+ |
+    |  | +------|---|---|---|-----------------------^--------------+ |
+    |  |        |   |   |   |                       |                | WSGI server
+    |  | +------V---V---V---V-WSGIGateway(response)-|--------------+ |
     |  | |                       +------------------+-------------+| |
     |  | |+----------------+     | +----------+   +-------------+ || |
     |  | ||   gen environ  |     | |header_set|   |response body| || |
@@ -210,15 +207,15 @@ Butterfly       |                   |      |          |
 
 看文档不过瘾，还可以通过了解当前 handler 的实现，进而实现自己的需求：
 
-> * 【例子】/handlers/demo_api: api demo
-> * 【例子】/handlers/demo_download: 下载文件 demo
-> * 【例子】/handlers/demo_httpapi: 自定义 HTTP 返回码 demo
-> * 【例子】/handlers/demo_log: 日志级别调整 demo
-> * 【例子】/handlers/demo_template: 使用后端模板 demo, 本例子会输出访问日志统计状态图
+> * 【例子】/handlers/demo_api: 简单 api handler demo
+> * 【例子】/handlers/demo_download: 文件下载 handler demo
+> * 【例子】/handlers/demo_httpapi: 自定义 HTTP 返回码 handler demo
+> * 【例子】/handlers/demo_log: 日志级别调整 handler demo
+> * 【例子】/handlers/demo_template: 后端模板 handler demo, 本例子用于输出访问日志统计状态图
+> * 【例子】/handlers/demo_async_job: 异步任务 handler demo
 > * 【火眼】/handlers/huoyan: 用于后端接口认证，仅仅抛砖引玉，删除了具体实现
-> * 【如期】/handlers/ruqi: 高可用定时任务，可发起 HTTP 请求或者执行 Shell/Python 脚本
+> * 【如期】/handlers/ruqi: 高可用定时任务，可发起 HTTP POST 请求或者执行 Shell/Python 脚本
 > * 【五行】/handlers/wuxing: 用于存储配置类 / 监控类 / 巡检类数据，可配合状态机进行使用
-> * 【百川】/handlers/baichuan_worker: 百川-worker，可用于执行异步任务
 
 > 备注：
 ```
@@ -228,9 +225,6 @@ handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进
 
 如果您想报告错误，请在 GitHub 上[创建一个新问题](https://github.com/meetbill/butterfly/issues/new)。
 
-## 4.4 微信群交流
-
-<div align=center><img src="https://github.com/meetbill/meetbill_static/blob/master/butterfly/butterfly-wexin.png" width="350"/></div>
 
 # 5 版本信息
 

@@ -7,9 +7,9 @@
 # File Name: __init__.py
 # Description:
 
-    baichuan-Worker --发起异步任务，由单独线程进行处理
+    async_job --发起异步任务，由单独线程进行处理
 
-    1.0.1: baichuan-worker 1.0.1 版本，用于简易创建异步任务，异步任务进行执行本地 Shell/Python 脚本
+    1.0.1: async_job 1.0.1 版本，用于简易创建异步任务，异步任务进行执行本地 Shell/Python 脚本
 """
 
 import os
@@ -22,7 +22,7 @@ from xlib.util import concurrent
 from xlib.util import shell_util
 
 
-__info = "baichuan-worker"
+__info = "async_job"
 __version = "1.0.1"
 
 executor = concurrent.ThreadPoolExecutor(max_workers=10)
