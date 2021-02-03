@@ -82,6 +82,7 @@ def section_list(req, namespace=None, page_index=1, page_size=10):
 
     data["total"] = record_count
     data["list"] = data_list
+    req.log_res.add("total_count:{total_count}".format(total_count=record_count))
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 

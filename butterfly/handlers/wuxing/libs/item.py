@@ -180,6 +180,7 @@ def item_list(req, namespace=None, section_name=None, instance_name=None,
 
     data["total"] = record_count
     data["list"] = data_list
+    req.log_res.add("total_count:{total_count}".format(total_count=record_count))
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 

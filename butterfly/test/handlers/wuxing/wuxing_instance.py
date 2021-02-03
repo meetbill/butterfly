@@ -48,6 +48,13 @@ def test_instance_create():
     stat, data, header_list = wuxing.instance_create(req, namespace, instance_name, section_name, section_version)
     assert stat == retstat.ERR_SECTION_IS_NOT_ENABLED
 
+    # 创建 instance 时，指定 item_value 值
+    section_version = "1.0.1"
+    instance_name = "2525"
+    items_data = {"s|master_region", "bj"}
+    stat, data, header_list = wuxing.instance_create(req, namespace, instance_name, section_name, section_version, items_data)
+    assert stat == retstat.OK
+
 
 def test_instance_list():
     """
@@ -326,10 +333,15 @@ def test_instance_delete():
     instance delete
     """
     namespace = "group_qingnang"
+    # 默认值创建的 instance
     instance_name = "2523"
     stat, data, header_list = wuxing.instance_delete(req, namespace, instance_name)
     assert stat == retstat.OK
 
+    # 指定值创建的 instance
+    instance_name = "2525"
+    stat, data, header_list = wuxing.instance_delete(req, namespace, instance_name)
+    assert stat == retstat.OK
 
 def main():
     # instance create

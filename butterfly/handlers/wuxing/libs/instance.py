@@ -151,17 +151,32 @@ def instance_list(req, namespace, section_name, instance_name=None,
 
     data["total"] = record_count
     data["list"] = data_list
+    req.log_res.add("total_count:{total_count}".format(total_count=record_count))
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 
 @funcattr.api
-def instance_create(req, namespace, instance_name, section_name, section_version):
+def instance_create(req, namespace, instance_name, section_name, section_version, items_data=None):
     """
     创建时会创建模板关联，以及创建初始配置
+
+    Args:
+        namespace       : (str) 必传，命名空间
+        section_name    : (str) 必传，section name
+        instance_name   : (str) 必传，instance name
+        section_version : (str) 必传, section 版本
+        items_data      : (dict) 选传，item 的 value 值
+                        : {"item_value": "item_value"}
     """
     isinstance(req, Request)
     instance_model = model.WuxingInstance
     section_model = model.WuxingSection
+
+    if items_data is None:
+        items_data = {}
+    elif not isinstance(items_data, dict):
+        req.error_str = "items_data format failed"
+        items_data = {}
 
     # 检查是否有此 instance
     instance_object = instance_model.get_or_none(instance_model.namespace == namespace,
@@ -185,7 +200,11 @@ def instance_create(req, namespace, instance_name, section_name, section_version
     for item_name in section_template_dict.keys():
         item_dict = section_template_dict[item_name]
         item_type = item_dict["a1"]
-        item_default = item_dict["a2"]
+        # 如果传了默认值，则以传的值进行创建 item
+        if item_name in items_data.keys():
+            item_default = items_data[item_name]
+        else:
+            item_default = item_dict["a2"]
 
         # 进行创建 item
         stat, item_data, headher_list = item.item_create(req, namespace, section_name,
