@@ -23,14 +23,20 @@ STATIC_PATH = "static"
 STATIC_PREFIX="static"
 
 # DB
+"""
+# wuxing/ruqi use default database
+"""
 DATABASES = {
-    # wuxing/ruqi use default database
     "default": "mysql+retrypool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
     }
 
 # Redis
+"""
+# eg1:"redis://[[username]:[password]]@localhost:6379/0"
+# eg2:"redis://@localhost:6379/0?socket_timeout=2&socket_connect_timeout=1&retry_on_timeout=true"
+"""
 CACHES = {
-    "default": "redis://@localhost:6379/0"  # "redis://[[username]:[password]]@localhost:6379/0"
+    "default": "redis://@localhost:6379/0"
     }
 
 # Local Cache

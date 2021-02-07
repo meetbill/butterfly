@@ -41,10 +41,47 @@ schemes = {
 }
 
 
+def _querystring2dict(query):
+    """
+    # Get additional connection args from the query string
+    Args:
+        query: (String)
+    Returns:
+        dict
+    Examples:
+        query="socket_timeout=2&retry_on_timeout=true"
+        parse_qsl(query, keep_blank_values=False) ==> [('socket_timeout', '2'), ('retry_on_timeout', 'true')]
+        adapter value ==> {"socket_timeout":2 ,"retry_on_timeout":True}
+    """
+    connect_kwargs = {}
+    qs_args = parse_qsl(query, keep_blank_values=True)
+    for key, value in qs_args:
+        if value.lower() == 'false':
+            value = False
+        elif value.lower() == 'true':
+            value = True
+        elif value.isdigit():
+            value = int(value)
+        elif '.' in value and all(p.isdigit() for p in value.split('.', 1)):
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        elif value.lower() in ('null', 'none'):
+            value = None
+
+        connect_kwargs[key] = value
+
+    return connect_kwargs
+
+
 def _parseresult_to_dict(parsed, unquote_password=False):
+    """
+    解析 mysql url
 
     # urlparse in python 2.6 is broken so query will be empty and instead
     # appended to path complete with '?'
+    """
     path_parts = parsed.path[1:].split('?')
     try:
         query = path_parts[1]
@@ -69,24 +106,9 @@ def _parseresult_to_dict(parsed, unquote_password=False):
     elif 'sqlite' in parsed.scheme and not connect_kwargs['database']:
         connect_kwargs['database'] = ':memory:'
 
-    # Get additional connection args from the query string
-    qs_args = parse_qsl(query, keep_blank_values=True)
-    for key, value in qs_args:
-        if value.lower() == 'false':
-            value = False
-        elif value.lower() == 'true':
-            value = True
-        elif value.isdigit():
-            value = int(value)
-        elif '.' in value and all(p.isdigit() for p in value.split('.', 1)):
-            try:
-                value = float(value)
-            except ValueError:
-                pass
-        elif value.lower() in ('null', 'none'):
-            value = None
-
-        connect_kwargs[key] = value
+    extra_connect_kwargs = _querystring2dict(query)
+    for item in extra_connect_kwargs.keys():
+        connect_kwargs[item] = extra_connect_kwargs[item]
 
     return connect_kwargs
 
@@ -121,24 +143,38 @@ my_databases = {}
 for database_name in config.DATABASES.keys():
     my_databases[database_name] = connect(url=config.DATABASES[database_name])
 
+
 class BaseModel(peewee.Model):
     """Common base model"""
     class Meta(object):
         """Meta class"""
         database = my_databases["default"]
 
+
 ###############################################################
 # Redis
 ###############################################################
 my_caches = {}
 for cache_name in config.CACHES.keys():
-    my_caches[cache_name] = redisorm.Database.from_url(config.CACHES[cache_name])
+    _redis_url_config = config.CACHES[cache_name]
+    _redis_url_config_list = _redis_url_config.split("?")
+    if len(_redis_url_config_list) == 2:
+        redis_url = _redis_url_config_list[0]
+        query = _redis_url_config_list[1]
+        redis_connection_kwargs = _querystring2dict(query)
+    else:
+        redis_url = _redis_url_config_list[0]
+        redis_connection_kwargs = {}
+
+    my_caches[cache_name] = redisorm.Database.from_url(redis_url, **redis_connection_kwargs)
+
 
 class RedisModel(redisorm.Model):
     """
     Common Redis base model
     """
     _database_ = my_caches["default"]
+
 
 if __name__ == "__main__":
     mysql_config_url = "mysql+pool://root:password@127.0.0.1:3306/test?max_connections=300&stale_timeout=300"
