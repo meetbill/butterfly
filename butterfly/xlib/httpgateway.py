@@ -50,7 +50,7 @@ class Request(object):
         wsgienv     : (Dict)
         ip          : (String)
         log_params  : (Dict)
-        log_stat    : (Dict)
+        log_talk    : (Dict)
         log_ret     : (Dict)
         funcname    : (String)
         error_str   : (String)
@@ -72,7 +72,7 @@ class Request(object):
         self.ip = ip
 
         self.log_params = {}
-        self.log_stat = {}
+        self.log_talk = {}
         self.log_ret_code = ""
         self.log_res = set()
         self.funcname = ""
@@ -99,17 +99,23 @@ class Request(object):
         self._tm = time.time()
 
     def timming(self, name):
-        """获取从 _tm 到当前的耗时"""
+        """
+        获取从 _tm 到当前的耗时
+        单位: ms
+
+        Args:
+            name: (str) 耗时统计名，eg.: sql/write/read
+        """
         tm = time.time()
         cost = tm - self._tm
         self._tm = tm
-        if name in self.log_stat:
+        if name in self.log_talk:
             try:
-                self.log_stat[name] += cost
+                self.log_talk[name] += cost * 1000
             except BaseException:
                 pass
         else:
-            self.log_stat[name] = cost
+            self.log_talk[name] = cost * 1000
 
     def cookies(self):
         """parse cookie"""
@@ -234,9 +240,11 @@ class WSGIGateway(object):
             headers.append(("x-cost", cost_str))
             if req.error_str:
                 headers.append(("x-reason", req.error_str))
-            stat_str = ",".join("%s:%.3f" % (k, v) for k, v in req.log_stat.iteritems())
-            log_params_str = ",".join("%s:%s" % (k, v) for k, v in req.log_params.iteritems())
-            self._acclog.log("{ip}\t{reqid}\t{method}\t{funcname}\tcost:{cost}\t{ret_code}\t{username}\tstat:{stat}\t" \
+            talk_str = ",".join("%s=%.3f" % (k, v) for k, v in req.log_talk.iteritems())
+            # 这里的参数有可能是带 = 的 URL, 如果需要根据日志进行取参数时，需要仅对第一个 = 进行分割处理
+            log_params_str = ",".join("%s=%s" % (k, v) for k, v in req.log_params.iteritems())
+            self._acclog.log(("{ip}\t{reqid}\t{method}\t{funcname}\tcost:{cost}\t"
+                             "stat:{ret_code}\tuser:{username}\ttalk:{talk}\t"
                              "params:{log_params}\terror_msg:{error}\tres:{res}".format
                              (ip=req.ip,
                               reqid=req.reqid,
@@ -245,10 +253,10 @@ class WSGIGateway(object):
                               cost=cost_str,
                               ret_code=req.log_ret_code,
                               username=req.username,
-                              stat=stat_str,
+                              talk=talk_str,
                               log_params=log_params_str,
                               error=req.error_str,
-                              res=",".join(req.log_res)))
+                              res=",".join(req.log_res))))
         except BaseException:
             try:
                 self._errlog.log(
