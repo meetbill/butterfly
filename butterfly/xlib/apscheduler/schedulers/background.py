@@ -29,13 +29,21 @@ class BackgroundScheduler(BlockingScheduler):
         super(BackgroundScheduler, self)._configure(config)
 
     def start(self, *args, **kwargs):
-        self._event = Event()
+        """
+        start scheduler
+        """
+        # https://github.com/agronholm/apscheduler/issues/441
+        if self._event is None or self._event.is_set():
+            self._event = Event()
         BaseScheduler.start(self, *args, **kwargs)
         self._thread = Thread(target=self._main_loop, name='APScheduler')
         self._thread.daemon = self._daemon
         self._thread.start()
 
     def shutdown(self, *args, **kwargs):
+        """
+        shutdown scheduler
+        """
         super(BackgroundScheduler, self).shutdown(*args, **kwargs)
         self._thread.join()
         del self._thread

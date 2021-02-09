@@ -242,8 +242,10 @@ class Job(object):
 
         # Instance methods cannot survive serialization as-is, so store the "self" argument
         # explicitly
-        if ismethod(self.func) and not isclass(self.func.__self__):
-            args = (self.func.__self__,) + tuple(self.args)
+        # https://github.com/agronholm/apscheduler/issues/466
+        func = self.func
+        if ismethod(func) and not isclass(func.__self__) and obj_to_ref(func) == self.func_ref:
+            args = (func.__self__,) + tuple(self.args)
         else:
             args = self.args
 

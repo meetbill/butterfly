@@ -10,6 +10,12 @@ from xlib.util import concurrent
 
 from xlib.apscheduler.executors.base import BaseExecutor, run_job
 
+try:
+    # todo, add BrokenProcessPool to xlib.util.concurrent.process
+    from xlib.util.concurrent.process import BrokenProcessPool
+except ImportError:
+    BrokenProcessPool = None
+
 
 class BasePoolExecutor(BaseExecutor):
     """
@@ -32,7 +38,14 @@ class BasePoolExecutor(BaseExecutor):
             else:
                 self._run_job_success(job.id, f.result())
 
-        f = self._pool.submit(run_job, job, job._jobstore_alias, run_times, self._logger.name)
+        # https://github.com/agronholm/apscheduler/issues/362
+        try:
+            f = self._pool.submit(run_job, job, job._jobstore_alias, run_times, self._logger.name)
+        except BrokenProcessPool:
+            self._logger.warning('Process pool is broken; replacing pool with a fresh instance')
+            self._pool = self._pool.__class__(self._pool._max_workers)
+            f = self._pool.submit(run_job, job, job._jobstore_alias, run_times, self._logger.name)
+
         f.add_done_callback(callback)
 
     def shutdown(self, wait=True):

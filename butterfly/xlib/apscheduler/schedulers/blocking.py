@@ -14,11 +14,19 @@ class BlockingScheduler(BaseScheduler):
     _event = None
 
     def start(self, *args, **kwargs):
-        self._event = Event()
+        """
+        start scheduler
+        """
+        # https://github.com/agronholm/apscheduler/issues/441
+        if self._event is None or self._event.is_set():
+            self._event = Event()
         super(BlockingScheduler, self).start(*args, **kwargs)
         self._main_loop()
 
     def shutdown(self, wait=True):
+        """
+        shutdown scheduler
+        """
         super(BlockingScheduler, self).shutdown(wait)
         self._event.set()
 
@@ -30,4 +38,7 @@ class BlockingScheduler(BaseScheduler):
             wait_seconds = self._process_jobs()
 
     def wakeup(self):
+        """
+        wakeup
+        """
         self._event.set()

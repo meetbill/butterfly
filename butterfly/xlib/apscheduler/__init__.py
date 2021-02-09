@@ -1,7 +1,47 @@
 # coding=utf8
 """
 # Description:
-    apscheduler: 3.6.3
+    基于 2.1.2 开发(2020-12-2)
+    基于 3.6.3 开发(2020-12-25)
+        # Removed
+        ## 执行器
+        apscheduler/executors/tornado.py
+        apscheduler/executors/twisted.py
+        apscheduler/executors/gevent.py
+        apscheduler/executors/asyncio.py
+        apscheduler/executors/base_py3.py
+        ## 调度器
+        apscheduler/schedulers/tornado.py
+        apscheduler/schedulers/twisted.py
+        apscheduler/schedulers/qt.py
+        apscheduler/schedulers/asyncio.py
+        apscheduler/schedulers/gevent.py
+        ## 作业存储
+        apscheduler/jobstores/rethinkdb.py
+        apscheduler/jobstores/zookeeper.py
+        apscheduler/jobstores/mongodb.py
+        apscheduler/jobstores/sqlalchemy.py
+        apscheduler/jobstores/redis.py
+
+        ## other
+        timezone
+
+        # Changed
+        apscheduler/util.py
+            datetime_to_utc_timestamp => datetime_to_timestamp
+            utc_timestamp_to_datetime => timestamp_to_datetime
+
+        # Added
+        apscheduler/models
+        apscheduler/manager
+    3.7.0(2021-02-09)
+        合并 3.7.0 部分代码
+            * https://github.com/agronholm/apscheduler/issues/362
+            * https://github.com/agronholm/apscheduler/issues/466
+            * https://github.com/agronholm/apscheduler/issues/441
+            * https://github.com/agronholm/apscheduler/issues/441
+            * https://github.com/agronholm/apscheduler/pull/416
+            * https://github.com/agronholm/apscheduler/pull/363
 
 +scheduler(new thread)--------------------------------------------------------------------------------------+
 |+job manager---------------+       + _main_loop-----------------------------------------------------------+|
@@ -42,35 +82,4 @@
                                     | +----------------------------------------------+ |
                                     +--------------------------------------------------+
 
-# Removed
-## 执行器
-apscheduler/executors/tornado.py
-apscheduler/executors/twisted.py
-apscheduler/executors/gevent.py
-apscheduler/executors/asyncio.py
-apscheduler/executors/base_py3.py
-## 调度器
-apscheduler/schedulers/tornado.py
-apscheduler/schedulers/twisted.py
-apscheduler/schedulers/qt.py
-apscheduler/schedulers/asyncio.py
-apscheduler/schedulers/gevent.py
-## 作业存储
-apscheduler/jobstores/rethinkdb.py
-apscheduler/jobstores/zookeeper.py
-apscheduler/jobstores/mongodb.py
-apscheduler/jobstores/sqlalchemy.py
-apscheduler/jobstores/redis.py
-
-## other
-timezone
-
-# Changed
-apscheduler/util.py
-  datetime_to_utc_timestamp => datetime_to_timestamp
-  utc_timestamp_to_datetime => timestamp_to_datetime
-
-# Added
-apscheduler/models
-apscheduler/manager
 """

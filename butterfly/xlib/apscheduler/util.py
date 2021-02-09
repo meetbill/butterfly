@@ -7,6 +7,7 @@ from functools import partial
 from inspect import isclass, ismethod
 import re
 import time
+import sys
 
 from xlib.util import six
 
@@ -296,7 +297,11 @@ def check_callable_args(func, args, kwargs):
     has_varargs = has_var_kwargs = False
 
     try:
-        sig = signature(func)
+        # https://github.com/agronholm/apscheduler/pull/363
+        if sys.version_info >= (3, 5):
+            sig = signature(func, follow_wrapped=False)
+        else:
+            sig = signature(func)
     except ValueError:
         # signature() doesn't work against every kind of callable
         return
