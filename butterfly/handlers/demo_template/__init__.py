@@ -12,9 +12,11 @@
     --------------- modify acc.log field
     v1.0.3 : 2021-02-08
     --------------- modify acc.log field
+    v1.0.4 : 2021-02-11
+    --------------- (1) 适配日志中 params 含有空格情况; (2) 跳过不符合条件的日志
 """
 __info = "demo"
-__version = "1.0.3"
+__version = "1.0.4"
 
 import os
 import json
@@ -50,8 +52,8 @@ def log_pattern():
         r'stat:(?P<STAT>\S+)',          # status    eg.:200(careful, can be 'OK'/'ERR')
         r'user:(?P<USER>\S+)',          # username  eg.:meetbill (or -)
         r'talk:(?P<TALK>\S*)',          # talk      eg.:ceshi1=404.443,ceshi2=101.594
-        r'params:(?P<PARAMS>\S*)',      # params    eg.:str_info=hello
-        r'error_msg:(?P<ERROR_MSG>.*)',  # error_msg eg.:API Processing Exception
+        r'params:(?P<PARAMS>.*)',       # params    eg.:str_info=hello, 有可能有空格
+        r'error_msg:(?P<ERROR_MSG>.*)', # error_msg eg.:API Processing Exception, 有可能有空格
         r'res:(?P<RES>.*)',             # result    eg.:ceshi2=5.4,ceshi1=5.3
     ]
     return re.compile(r'\s+'.join(parts) + r'\s*\Z')
@@ -102,6 +104,7 @@ def analysis_log(infile):
             maxseekpoint = (filesize // blocksize)
             fhandler.seek((maxseekpoint - 1) * blocksize)
 
+        # 截取后的第一行可能不完整
         for line in fhandler.readlines()[1:]:
             m = pattern.match(line)
             """
@@ -124,7 +127,10 @@ def analysis_log(infile):
                     'RES': 'ceshi2=5.4,ceshi1=5.3',
                 }
             """
-            res = m.groupdict()
+            try:
+                res = m.groupdict()
+            except BaseException:
+                continue
 
             # 不将报表请求记录在日常访问中
             if res["PATH"].startswith("/report") or res["PATH"] == "/favicon.ico":
