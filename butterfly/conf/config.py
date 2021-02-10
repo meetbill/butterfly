@@ -48,4 +48,4 @@ JWT_TOKEN_TTL = 28800       # default 8 hours
 
 # Scheduler
 scheduler_name="Scheduler1" # Scheduler name, Used to perform historical queries
-scheduler_store="none"      # ("none"/"mysql"/"memory") ; if set none, the schedule is not run
+scheduler_store="memory"    # ("mysql"/"memory")

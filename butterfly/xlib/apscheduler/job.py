@@ -299,5 +299,7 @@ class Job(object):
         else:
             status = 'pending'
 
-        return u'job_id={job_id} job_name={job_name} job_trigger={job_trigger} job_status={job_status}'.format(
-                job_id=self.id, job_name=self.name, job_trigger=self.trigger, job_status=status)
+        return (u'job_jobstore={job_jobstore} job_id={job_id} job_name={job_name} '
+                 'job_trigger={job_trigger} job_status={job_status}'.format(
+                    job_jobstore=self._jobstore_alias, job_id=self.id, job_name=self.name,
+                    job_trigger=self.trigger, job_status=status))

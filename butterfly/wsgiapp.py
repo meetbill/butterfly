@@ -8,7 +8,6 @@ from xlib import httpgateway
 from conf import logger_conf
 from conf import config
 from xlib import urls
-from xlib.apscheduler import manager
 
 # ********************************************************
 # * Route                                                *
@@ -20,15 +19,6 @@ route.autoload_handler("handlers")
 # route.addapi("/ping", apidemo.ping, True, True)
 apicube = route.get_route()
 
-# ********************************************************
-# * Schedule                                             *
-# ********************************************************
-if config.scheduler_store != "none":
-    scheduler = manager.Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
-    scheduler.start()
-else:
-    scheduler = None
-
 # 用于处理 application 中 environ
 wsgigw = httpgateway.WSGIGateway(
     httpgateway.get_func_name,
@@ -36,8 +26,7 @@ wsgigw = httpgateway.WSGIGateway(
     logger_conf.acclog,
     apicube,
     config.STATIC_PATH,
-    config.STATIC_PREFIX,
-    scheduler
+    config.STATIC_PREFIX
 )
 
 

@@ -15,6 +15,7 @@ from xlib import retstat
 from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 from xlib.db import peewee
 from xlib.db import shortcuts
+from xlib.apscheduler import manager
 
 __info = "ruqi"
 __version = "1.0.1"
@@ -27,7 +28,7 @@ def get_jobs(req, job_id=None, job_name=None, page_index=None, page_size=15):
     """
     isinstance(req, Request)
     jobs_result = {}
-    jobs = req.scheduler.get_jobs(job_id, job_name, page_index, page_size)
+    jobs = manager.scheduler.get_jobs(job_id, job_name, page_index, page_size)
     jobs_result["data"] = jobs
     return retstat.OK, jobs_result, [(__info, __version)]
 
@@ -50,7 +51,7 @@ def add_job(req, job_trigger, job_id, job_name, cmd, rule):
         status, content, headers
     """
     isinstance(req, Request)
-    is_success, err_msg = req.scheduler.add_job(job_trigger, job_id, job_name, cmd, rule)
+    is_success, err_msg = manager.scheduler.add_job(job_trigger, job_id, job_name, cmd, rule)
     if is_success:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -69,7 +70,7 @@ def remove_job(req, job_id):
         status, content, headers
     """
     isinstance(req, Request)
-    is_success, err_msg = req.scheduler.remove_job(job_id)
+    is_success, err_msg = manager.scheduler.remove_job(job_id)
     if is_success:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -88,7 +89,7 @@ def pause_job(req, job_id):
         status, content, headers
     """
     isinstance(req, Request)
-    is_success, err_msg = req.scheduler.pause_job(job_id)
+    is_success, err_msg = manager.scheduler.pause_job(job_id)
     if is_success:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -107,7 +108,7 @@ def resume_job(req, job_id):
         status, content, headers
     """
     isinstance(req, Request)
-    is_success, err_msg = req.scheduler.resume_job(job_id)
+    is_success, err_msg = manager.scheduler.resume_job(job_id)
     if is_success:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -160,7 +161,7 @@ def status(req):
         status, content, headers
     """
     isinstance(req, Request)
-    data = req.scheduler.status()
+    data = manager.scheduler.status()
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 
@@ -174,5 +175,5 @@ def wakeup(req):
         status, content, headers
     """
     isinstance(req, Request)
-    req.scheduler.wakeup()
+    manager.scheduler.wakeup()
     return retstat.OK, {}, [(__info, __version)]

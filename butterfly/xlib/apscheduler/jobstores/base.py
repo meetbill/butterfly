@@ -118,7 +118,7 @@ class BaseJobStore(six.with_metaclass(ABCMeta)):
         """
 
     @abstractmethod
-    def update_job(self, job):
+    def update_job(self, job, extra_update=False):
         """
         Replaces the job in the store with the given newer version.
 

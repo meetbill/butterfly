@@ -45,7 +45,7 @@ class MemoryJobStore(BaseJobStore):
         self._jobs.insert(index, (job, timestamp))
         self._jobs_index[job.id] = (job, timestamp)
 
-    def update_job(self, job):
+    def update_job(self, job, extra_update=False):
         old_job, old_timestamp = self._jobs_index.get(job.id, (None, None))
         if old_job is None:
             raise JobLookupError(job.id)

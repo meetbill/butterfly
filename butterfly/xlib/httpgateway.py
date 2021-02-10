@@ -56,7 +56,6 @@ class Request(object):
         error_str   : (String)
         init_tm     : (Float) time.time()
         _tm         : (Float)
-        scheduler   : (Object)
 
     """
 
@@ -80,7 +79,6 @@ class Request(object):
         self.init_tm = time.time()
         self._tm = self.init_tm
         self.username = "-"
-        self.scheduler = None
 
     def log(self, logger, logline):
         """butterfly req log
@@ -133,7 +131,6 @@ class WSGIGateway(object):
         _uuid64: (Object)
         _static_path: (String) static path
         _static_prefix: (String) static prefix
-        _scheduler: (Object) scheduler object
     """
 
     def __init__(self,
@@ -142,8 +139,7 @@ class WSGIGateway(object):
                  acclog,
                  protocols,
                  static_path="",
-                 static_prefix=None,
-                 scheduler=None
+                 static_prefix=None
                  ):
         self._protocols = protocols
         self._apiname_getter = funcname_getter
@@ -153,7 +149,6 @@ class WSGIGateway(object):
         self._static_path = static_path
         self._static_prefix = static_prefix
         self._version = xlib.butterfly_version
-        self._scheduler = scheduler
 
     def process(self, wsgienv):
         """Process wsgienv
@@ -186,7 +181,6 @@ class WSGIGateway(object):
 
             funcname = self._apiname_getter(wsgienv)
             req.funcname = funcname
-            req.scheduler = self._scheduler
             protocol = self._protocols.get(funcname)
             if not protocol:
                 return self._mk_err_ret(req, 400, "API Not Found", "")

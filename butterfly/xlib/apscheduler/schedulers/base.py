@@ -493,7 +493,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
             job, jobstore = self._lookup_job(job_id, jobstore)
             job._modify(**changes)
             if jobstore:
-                self._lookup_jobstore(jobstore).update_job(job)
+                self._lookup_jobstore(jobstore).update_job(job, extra_update=True)
 
         self._dispatch_event(JobEvent(EVENT_JOB_MODIFIED, job_id, jobstore))
 
@@ -880,7 +880,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
             store.add_job(job)
         except ConflictingIdError:
             if replace_existing:
-                store.update_job(job)
+                store.update_job(job, extra_update=True)
             else:
                 raise
 

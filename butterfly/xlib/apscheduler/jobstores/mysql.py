@@ -117,16 +117,15 @@ class MySQLJobStore(BaseJobStore):
         self._fix_paused_jobs_sorting(jobs)
         return jobs
 
-    def add_job(self, job):
+    def _get_rule_by_state(self, job_state):
         """
-        添加 job
+        Args:
+            job_state
+        Returns:
+            job_trigger, job_rule
+                job_trigger: (str) cron/interval/date
+                job_rule   : (str)
         """
-        # 检查 job 是否已存在
-        _job = self.jobs_t.get_or_none(self.jobs_t.id == job.id)
-        if _job is not None:
-            raise ConflictingIdError(job.id)
-
-        job_state = job.__getstate__()
         job_rule = ""
         job_trigger = ""
         if isinstance(job_state["trigger"], cron.CronTrigger):
@@ -152,6 +151,20 @@ class MySQLJobStore(BaseJobStore):
             job_trigger = "date"
             job_rule = str(job_state["trigger"].run_date)
 
+        return job_trigger, job_rule
+
+    def add_job(self, job):
+        """
+        添加 job
+        """
+        # 检查 job 是否已存在
+        _job = self.jobs_t.get_or_none(self.jobs_t.id == job.id)
+        if _job is not None:
+            raise ConflictingIdError(job.id)
+
+        job_state = job.__getstate__()
+        job_trigger, job_rule = self._get_rule_by_state(job_state)
+
         values = {
             'id': job.id,
             'next_run_time': datetime_to_timestamp(job.next_run_time),
@@ -165,7 +178,7 @@ class MySQLJobStore(BaseJobStore):
         except BaseException:
             raise ConflictingIdError(job.id)
 
-    def update_job(self, job):
+    def update_job(self, job, extra_update=False):
         """
         save job info to database
         """
@@ -175,6 +188,13 @@ class MySQLJobStore(BaseJobStore):
             "job_lock": False,
             "u_time": datetime.datetime.now()
         }
+
+        if extra_update:
+            job_state = job.__getstate__()
+            job_trigger, job_rule = self._get_rule_by_state(job_state)
+            data["job_trigger"] = job_trigger
+            data["job_rule"] = job_rule
+
         update = self.jobs_t.update(data).where(self.jobs_t.id == job.id)
         result = update.execute()
         if result == 0:

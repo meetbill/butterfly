@@ -25,6 +25,7 @@ from xlib.util import http_util
 from xlib.db import peewee
 from xlib.db import shortcuts
 from conf import config
+from conf import logger_conf
 
 
 def run_cmd(job_id, job_name, cmd, errlog):
@@ -112,7 +113,8 @@ class Scheduler(object):
         # config
         # -----------------------------------------------------------------
         jobstores = {
-            'default': self._jobstore
+            'default': self._jobstore,
+            'memory': MemoryJobStore()
         }
         executors = {
             'default': ThreadPoolExecutor(20),
@@ -513,16 +515,11 @@ class Scheduler(object):
             is_success, err_msg = False, str(e)
         return (is_success, err_msg)
 
+scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
+scheduler.start()
 
 if __name__ == "__main__":
     import time
-    from conf import logger_conf
-
-    scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias="mysql")
-    #scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias="memory")
-
-    # start
-    scheduler.start()
 
     cmd = "bash test_scripts.sh"
 
