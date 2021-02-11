@@ -164,7 +164,11 @@ class PyJWS(object):
                 DeprecationWarning
             )
 
-        payload, signing_input, header, signature = self._load(jwt)
+        jwt_detail = self._load(jwt)
+        payload = jwt_detail["payload"]
+        signing_input = jwt_detail["signing_input"]
+        header = jwt_detail["header"]
+        signature = jwt_detail["signature"]
 
         if not verify:
             warnings.warn('The verify parameter is deprecated. '
@@ -182,12 +186,18 @@ class PyJWS(object):
         Note: The signature is not verified so the header parameters
         should not be fully trusted until signature verification is complete
         """
-        headers = self._load(jwt)[2]
+        headers = self._load(jwt)["header"]
         self._validate_headers(headers)
 
         return headers
 
     def _load(self, jwt):
+        """
+        Args:
+            jwt: json web token
+        Returns:
+            dict: jwt_detail
+        """
         if isinstance(jwt, text_type):
             jwt = jwt.encode('utf-8')
 
@@ -224,7 +234,13 @@ class PyJWS(object):
         except (TypeError, binascii.Error):
             raise DecodeError('Invalid crypto padding')
 
-        return (payload, signing_input, header, signature)
+        result = {}
+        result["payload"] = payload
+        result["signing_input"] = signing_input
+        result["header"] = header
+        result["signature"] = signature
+
+        return result
 
     def _verify_signature(self, payload, signing_input, header, signature,
                           key='', algorithms=None):

@@ -1,3 +1,9 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# Description:
+    background scheduler
+"""
 from __future__ import absolute_import
 
 from threading import Thread, Event

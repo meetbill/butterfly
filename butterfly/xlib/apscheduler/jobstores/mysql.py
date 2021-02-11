@@ -100,9 +100,12 @@ class MySQLJobStore(BaseJobStore):
     def get_next_run_time(self):
         """
         获取最近的下次执行时间, 不检查 job_lock 是否存在
+
+        # http://docs.peewee-orm.com/en/latest/peewee/query_operators.html
+        # is_null(False)  ==> is NOT NULL
         """
         row = self.jobs_t.select(self.jobs_t.next_run_time).where(
-            self.jobs_t.next_run_time != None).order_by(self.jobs_t.next_run_time).limit(1).execute()
+            self.jobs_t.next_run_time.is_null(False)).order_by(self.jobs_t.next_run_time).limit(1).execute()
         if len(row) == 1:
             result_dict = shortcuts.model_to_dict(row[0])
             return timestamp_to_datetime(result_dict["next_run_time"])
@@ -251,12 +254,14 @@ class MySQLJobStore(BaseJobStore):
         result = update.execute()
         if result == 0:
             self._logger.info(
-                "[module=apscheduler sub_module=jobstore method=lock_job id={id} run_time={run_time} state=failed ]".format(
+                    ("[module=apscheduler sub_module=jobstore method=lock_job "
+                     "id={id} run_time={run_time} state=failed ]").format(
                     id=job_id, run_time=next_run_time_datetime))
             return False
         else:
             self._logger.info(
-                "[module=apscheduler sub_module=jobstore method=lock_job id={id} run_time={run_time} state=success ]".format(
+                    ("[module=apscheduler sub_module=jobstore method=lock_job "
+                     "id={id} run_time={run_time} state=success ]").format(
                     id=job_id, run_time=next_run_time_datetime))
             return True
 

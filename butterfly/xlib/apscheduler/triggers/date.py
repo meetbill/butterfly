@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: date.py
+# Description:
+    一次性延迟执行任务
+"""
 from datetime import datetime
 
 from xlib.apscheduler.triggers.base import BaseTrigger
@@ -20,6 +27,15 @@ class DateTrigger(BaseTrigger):
             self.run_date = datetime.now()
 
     def get_next_fire_time(self, previous_fire_time, now):
+        """
+        计算任务对象下次要运行的时间。
+
+        Args:
+            previous_fire_time: 上次运行时间
+            now: 当前时间
+        Returns:
+            下次要运行的时间
+        """
         return self.run_date if previous_fire_time is None else None
 
     def __getstate__(self):

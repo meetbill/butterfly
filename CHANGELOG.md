@@ -3,6 +3,19 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+
+## [1.1.7] - 2021-02-11
+### Added
+
+- 添加【五行】app，用于实现配置类/监控类数据存储，可配合状态机实现更强大功能
+- 添加 demo_async_job, 演示如何发起异步任务
+
+### Changed
+
+- 配置: 支持 MySQL/Redis 多实例支持
+- 日志: access 日志字段变更, 更方便进行日志监控
+- apscheduler: Merge part of apscheduler-3.7.0 code
+
 ## [1.1.6] - 2021-01-09
 ### Fixed
 

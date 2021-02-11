@@ -92,7 +92,8 @@ class PyJWT(PyJWS):
                 DeprecationWarning
             )
 
-        payload, _, _, _ = self._load(jwt)
+        jwt_detail = self._load(jwt)
+        payload = jwt_detail["payload"]
 
         if options is None:
             options = {'verify_signature': verify}

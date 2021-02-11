@@ -90,7 +90,7 @@ class Deque(Sequence):
 
     """
 
-    def __init__(self, iterable=(), directory=None):
+    def __init__(self, iterable=None, directory=None):
         """Initialize deque instance.
 
         If directory is None then temporary directory created. The directory
@@ -100,12 +100,15 @@ class Deque(Sequence):
         :param directory: deque directory (default None)
 
         """
+        if iterable is None:
+            iterable = ()
+
         self._cache = Cache(directory, eviction_policy='none')
         with self.transact():
             self.extend(iterable)
 
     @classmethod
-    def fromcache(cls, cache, iterable=()):
+    def fromcache(cls, cache, iterable=None):
         """Initialize deque using `cache`.
 
         >>> cache = Cache()
@@ -124,6 +127,9 @@ class Deque(Sequence):
         :return: initialized Deque
 
         """
+        if iterable is None:
+            iterable = ()
+
         # pylint: disable=no-member,protected-access
         self = cls.__new__(cls)
         self._cache = cache
@@ -823,7 +829,7 @@ class Index(MutableMapping):
         """
         return self._cache.peekitem(last, retry=True)
 
-    def pop(self, key, default=ENOVAL):
+    def pop(self, key, default=None):
         """Remove corresponding item for `key` from index and return value.
 
         If `key` is missing then return `default`. If `default` is `ENOVAL`
@@ -847,6 +853,9 @@ class Index(MutableMapping):
         :raises KeyError: if key is not found and default is ENOVAL
 
         """
+        if default is None:
+            default = ENOVAL
+
         _cache = self._cache
         value = _cache.pop(key, default=default, retry=True)
         if value is ENOVAL:
@@ -918,7 +927,7 @@ class Index(MutableMapping):
         """
         return self._cache.push(value, prefix, side, retry=True)
 
-    def pull(self, prefix=None, default=(None, None), side='front'):
+    def pull(self, prefix=None, default=None, side='front'):
         """Pull key and value item pair from `side` of queue in index.
 
         When prefix is None, integer keys are used. Otherwise, string keys are
@@ -956,6 +965,9 @@ class Index(MutableMapping):
         :return: key and value item pair or default if queue is empty
 
         """
+        if default is None:
+            default=(None, None)
+
         return self._cache.pull(prefix, default, side, retry=True)
 
     def clear(self):

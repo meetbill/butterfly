@@ -1,8 +1,18 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: combining.py
+# Description:
+    复合触发器
+"""
 from xlib.apscheduler.triggers.base import BaseTrigger
 from xlib.apscheduler.util import obj_to_ref, ref_to_obj
 
 
 class BaseCombiningTrigger(BaseTrigger):
+    """
+    BaseCombiningTrigger
+    """
     __slots__ = ('triggers', 'jitter')
 
     def __init__(self, triggers, jitter=None):
@@ -51,6 +61,15 @@ class AndTrigger(BaseCombiningTrigger):
     __slots__ = ()
 
     def get_next_fire_time(self, previous_fire_time, now):
+        """
+        计算任务对象下次要运行的时间。
+
+        Args:
+            previous_fire_time: 上次运行时间
+            now: 当前时间
+        Returns:
+            下次要运行的时间
+        """
         while True:
             fire_times = [trigger.get_next_fire_time(previous_fire_time, now)
                           for trigger in self.triggers]
@@ -83,6 +102,15 @@ class OrTrigger(BaseCombiningTrigger):
     __slots__ = ()
 
     def get_next_fire_time(self, previous_fire_time, now):
+        """
+        计算任务对象下次要运行的时间。
+
+        Args:
+            previous_fire_time: 上次运行时间
+            now: 当前时间
+        Returns:
+            下次要运行的时间
+        """
         fire_times = [trigger.get_next_fire_time(previous_fire_time, now)
                       for trigger in self.triggers]
         fire_times = [fire_time for fire_time in fire_times if fire_time is not None]

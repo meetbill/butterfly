@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: date.py
+# Description:
+    基于间隔的执行
+"""
 from datetime import timedelta, datetime
 from math import ceil
 
@@ -38,6 +45,15 @@ class IntervalTrigger(BaseTrigger):
         self.jitter = jitter
 
     def get_next_fire_time(self, previous_fire_time, now):
+        """
+        计算任务对象下次要运行的时间。
+
+        Args:
+            previous_fire_time: 上次运行时间
+            now: 当前时间
+        Returns:
+            下次要运行的时间
+        """
         if previous_fire_time:
             next_fire_time = previous_fire_time + self.interval
         elif self.start_date > now:
