@@ -38,6 +38,7 @@ from xlib.db import peewee
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
 from handlers.wuxing.libs import item
+from handlers.wuxing.libs import cache
 
 
 __info = "wuxing"
@@ -186,17 +187,41 @@ def instance_create(req, namespace, instance_name, section_name, section_version
         return retstat.ERR_INSTANCE_IS_EXIST, {}, [(__info, __version)]
 
     # 获取模板
-    section_data = section_model.get_or_none(section_model.namespace == namespace,
-                                             section_model.section_name == section_name,
-                                             section_model.section_version == section_version
-                                             )
-    if section_data is None:
-        return retstat.ERR_SECTION_IS_NOT_EXIST, {}, [(__info, __version)]
+    # 检查是否有缓存
+    cache_key = "{prefix}@{namespace}@{section_name}@{section_version}".format(
+        prefix="wuxing_section",
+        namespace=namespace,
+        section_name=section_name,
+        section_version=section_version
+    )
+    req.log_res.add("cache_key=cache:{cache_key}".format(cache_key=cache_key))
+    section_dict = cache.Cache.get(req, cache_key)
 
-    if not section_data.is_enabled:
-        return retstat.ERR_SECTION_IS_NOT_ENABLED, {}, [(__info, __version)]
+    if section_dict is not None:
+        section_template_dict = section_dict["section_template"]
+        section_md5 = section_dict["section_md5"]
+    else:
+        req.start_timming()
+        section_data = section_model.get_or_none(section_model.namespace == namespace,
+                                                 section_model.section_name == section_name,
+                                                 section_model.section_version == section_version
+                                                 )
+        if section_data is None:
+            return retstat.ERR_SECTION_IS_NOT_EXIST, {}, [(__info, __version)]
 
-    section_template_dict = json.loads(section_data.section_template)
+        if not section_data.is_enabled:
+            return retstat.ERR_SECTION_IS_NOT_ENABLED, {}, [(__info, __version)]
+
+        section_template_dict = json.loads(section_data.section_template)
+        section_md5 = section_data.section_md5
+        req.timming("mysql_cost")
+
+        # 写入缓存, 缓存 1 个小时
+        section_dict = {}
+        section_dict["section_template"] = section_template_dict
+        section_dict["section_md5"] = section_data.section_md5
+        cache.Cache.set(req, cache_key, section_dict, 3600)
+
     for item_name in section_template_dict.keys():
         item_dict = section_template_dict[item_name]
         item_type = item_dict["a1"]
@@ -224,7 +249,7 @@ def instance_create(req, namespace, instance_name, section_name, section_version
         instance_template=template_str,
         section_name=section_name,
         section_version=section_version,
-        section_md5=section_data.section_md5,
+        section_md5=section_md5,
     )
     return retstat.OK, {}, [(__info, __version)]
 
