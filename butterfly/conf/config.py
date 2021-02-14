@@ -36,7 +36,9 @@ DATABASES = {
 # eg2:"redis://@localhost:6379/0?socket_timeout=2&socket_connect_timeout=1&retry_on_timeout=true"
 """
 CACHES = {
-    "default": "redis://@localhost:6379/0"
+    "default": "redis://@localhost:6379/0",
+    # wuxing 连接超时 100ms, 读写超时 200ms
+    #"wuxing": "redis://@localhost:6379/0?socket_timeout=0.2&socket_connect_timeout=0.1&retry_on_timeout=false"
     }
 
 # Local Cache
