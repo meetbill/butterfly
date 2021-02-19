@@ -518,7 +518,20 @@ class Scheduler(object):
 scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
 scheduler.start()
 
+original_scheduler = scheduler._scheduler
+
 if __name__ == "__main__":
+    """
+    # 使用原生 scheduler 进行添加任务, 用于启动时设置某些任务定时执行, 比如定时执行发送心跳任务
+    interval_cron_dict = {}
+    interval_cron_dict["seconds"] = 900
+    interval_trigger = IntervalTrigger(seconds=interval_cron_dict["seconds"],)
+    original_scheduler.add_job(
+            func=func,
+            trigger=interval_trigger,
+            jobstore = "memory"
+            )
+    """
     import time
 
     cmd = "bash test_scripts.sh"
