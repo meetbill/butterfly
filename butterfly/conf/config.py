@@ -37,8 +37,10 @@ DATABASES = {
 """
 CACHES = {
     "default": "redis://@localhost:6379/0",
-    # wuxing 连接超时 100ms, 读写超时 200ms
+    # 连接超时 100ms, 读写超时 200ms, 作为 cache 使用
     #"wuxing": "redis://@localhost:6379/0?socket_timeout=0.2&socket_connect_timeout=0.1&retry_on_timeout=false"
+    # 连接超时 500ms, 读写超时 2000ms, 作为消息队列使用
+    #"baichuan": "redis://@localhost:6379/0?socket_timeout=2&socket_connect_timeout=0.2&retry_on_timeout=false"
     }
 
 # Local Cache
