@@ -1,14 +1,22 @@
 # coding:utf8
 """
 (1) 路由处理及 wsgigw 定义
-(2) 根据配置文件配置，进行启动 baichuan worker
+(2) 根据配置文件配置，进行启动【百川】worker
 """
 import threading
+import Queue as queue
 
 from xlib import httpgateway
 from conf import logger_conf
 from conf import config
 from xlib import urls
+
+# for baichuan worker
+from xlib.mq import worker
+from xlib import db
+from xlib.apscheduler import manager
+from xlib.apscheduler.triggers.interval import IntervalTrigger
+from xlib.util import concurrent
 
 # ********************************************************
 # * Route                                                *
@@ -34,13 +42,6 @@ wsgigw = httpgateway.WSGIGateway(
 # ********************************************************
 # * Baichuan                                             *
 # ********************************************************
-from xlib.mq import worker
-from xlib import db
-from xlib.apscheduler import manager
-from xlib.apscheduler.triggers.interval import IntervalTrigger
-import Queue as queue
-from xlib.util import concurrent
-
 if "baichuan" in db.my_caches.keys():
     class BoundedThreadPoolExecutor(concurrent.ThreadPoolExecutor):
         """
@@ -86,6 +87,8 @@ if "baichuan" in db.my_caches.keys():
     worker_main = threading.Thread(target=worker.work)
     worker_main.start()
 
+# 将调度程序进行启动
+manager.scheduler.start()
 
 def application(environ, start_response):
     """

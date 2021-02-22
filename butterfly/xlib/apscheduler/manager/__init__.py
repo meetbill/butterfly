@@ -515,9 +515,10 @@ class Scheduler(object):
             is_success, err_msg = False, str(e)
         return (is_success, err_msg)
 
+# scheduler 为【如期】scheduler，常用于在分布式系统中单独作为定时使用, 使用 mysql jobstore 时，可以高可用
 scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
-scheduler.start()
-
+# original_scheduler 为原生 apscheduler scheduler 接口，使用时选择 memory 作为 jobstore
+# 如果进程在启动时有需要定时执行某函数的需求时，可以使用 original_scheduler 进行添加
 original_scheduler = scheduler._scheduler
 
 if __name__ == "__main__":
