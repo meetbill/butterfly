@@ -26,6 +26,8 @@ from xlib.db import peewee
 from xlib.db import shortcuts
 from conf import config
 from conf import logger_conf
+from xlib import db
+from xlib.mq import Queue
 
 
 def run_cmd(job_id, job_name, cmd, errlog):
@@ -90,6 +92,65 @@ def run_http(job_id, job_name, cmd, errlog):
         "cmd_output": str(cmd_result.output())[:4096],
         "scheduler_name": config.scheduler_name,
         "cmd_cost": float(cmd_result.cost)
+    }
+    try:
+        RuqiJobsHistory.create(**values)
+    except BaseException:
+        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+            job_id=job_id, exception_info=traceback.format_exc()))
+
+
+def run_mq(job_id, job_name, cmd, errlog):
+    """
+    执行消息到消息队列
+    Args:
+        job_id  : (Str) job_id
+        job_name: (Str) job_name
+        cmd     : (Str) {topic}#{msg_data}#{msg_id}
+                : '/demo_api/ping'
+                : '/demo_api/hello#{"str_info":"hello"}'
+                : '/demo_api/hello#{"str_info":"hello"}#ceshi_msg_id'
+        errlog  : (object) errlog logger
+    """
+    # cmd
+    cmd_list = cmd.split("#")
+    if len(cmd_list) == 1:
+        topic = cmd_list[0]
+        msg_data = '{}'
+        msg_id = None
+    elif len(cmd_list) == 3:
+        topic = cmd_list[0]
+        msg_data = cmd_list[1]
+        msg_id = cmd_list[2]
+    else:
+        topic = cmd_list[0]
+        msg_data = cmd_list[1]
+        msg_id = None
+
+    if msg_id is not None:
+        msg_id = str(msg_id)
+
+    try:
+        baichuan_connection = db.my_caches["baichuan"]
+        mq_queue = Queue(topic, connection=baichuan_connection)
+        msg_obj = mq_queue.enqueue(msg_data, msg_id=msg_id)
+        msg_id = msg_obj.id
+        cmd_is_success = True
+    except BaseException:
+        cmd_is_success = False
+        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+            job_id=job_id, exception_info=traceback.format_exc()))
+
+    values = {
+        "job_id": job_id,
+        "job_name": job_name,
+        "cmd": cmd,
+        "cmd_is_success": cmd_is_success,
+        # 设置的在数据库中最多存储 4096 字节
+        # http_util 默认会将 json 转为 dict
+        "cmd_output": msg_id,
+        "scheduler_name": config.scheduler_name,
+        "cmd_cost": 0
     }
     try:
         RuqiJobsHistory.create(**values)
@@ -318,6 +379,8 @@ class Scheduler(object):
 
         if cmd.startswith("http"):
             func = run_http
+        elif cmd.startswith("/"):
+            func = run_mq
         else:
             if not self._check_cmd(cmd):
                 return (False, "(scripts) Cmd does not meet expectations")
@@ -514,6 +577,7 @@ class Scheduler(object):
         except BaseException as e:
             is_success, err_msg = False, str(e)
         return (is_success, err_msg)
+
 
 # scheduler 为【如期】scheduler，常用于在分布式系统中单独作为定时使用, 使用 mysql jobstore 时，可以高可用
 scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
