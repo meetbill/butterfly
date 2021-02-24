@@ -85,6 +85,7 @@ if "baichuan" in db.my_caches.keys():
 
     # 启动单独线程进行单独拉取队列中任务
     worker_main = threading.Thread(target=worker.work)
+    worker_main.setDaemon(True)
     worker_main.start()
 
 # 将调度程序进行启动
