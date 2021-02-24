@@ -1,3 +1,13 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# Author: wangbin34(meetbill)
+# Created Time : 2021-02-24 21:05:21
+
+# File Name: registry.py
+# Description:
+
+"""
 from datetime import datetime
 
 from xlib.mq.compat import as_text
@@ -126,6 +136,7 @@ class StartedMsgRegistry(BaseRegistry):
                 try:
                     msg = self.msg_class.fetch(msg_id, connection=self.connection)
                     msg.set_status(MsgStatus.FAILED)
+                    msg.exc_info = "Moved to FailedMsgRegistry at {now}".format(now=datetime.now())
                     msg.save(include_meta=False)
                     msg.cleanup(ttl=-1)
                     failed_msg_registry.add(msg, msg.failure_ttl)
