@@ -36,13 +36,6 @@ import xlib
 from conf import config
 
 addr_host, addr_port = config.SERVER_LISTEN_ADDR
-
-try:
-    from setproctitle import setproctitle as setprocname
-except ImportError:
-    def setprocname(*args, **kwargs):  # noqa
-        pass
-
 logger = logging.getLogger(__name__)
 
 
@@ -180,7 +173,6 @@ class Worker(object):
         self.default_worker_ttl = default_worker_ttl
 
         self._state = 'starting'
-        self._is_horse = False
         self._horse_pid = 0
         self._stop_requested = False
         self.log = logger
@@ -219,18 +211,6 @@ class Worker(object):
     def key(self):
         """Returns the worker's Redis hash key."""
         return self.redis_worker_namespace_prefix + self.name
-
-    @property
-    def is_horse(self):
-        """Returns whether or not this is the worker or the work horse."""
-        return self._is_horse
-
-    def procline(self, message):
-        """Changes the current procname for the process.
-
-        This can be used to make `ps -ef` output more readable.
-        """
-        setprocname('rq: {0}'.format(message))
 
     def register_birth(self):
         """Registers its own birth."""
@@ -449,29 +429,6 @@ class Worker(object):
         msg.cleanup(result_ttl, remove_from_queue=False)
         started_msg_registry.remove(msg)
 
-    def handle_exception(self, msg, *exc_info):
-        """Walks the exception handler stack to delegate exception handling."""
-        exc_string = Worker._get_safe_exception_string(
-            traceback.format_exception_only(*exc_info[:2]) + traceback.format_exception(*exc_info)
-        )
-        self.log.error(exc_string, exc_info=True, extra={
-            'data': msg.data,
-            'queue': msg.origin,
-            'msg_id': msg.id,
-        })
-
-        for handler in self._exc_handlers:
-            self.log.debug('Invoking exception handler %s', handler)
-            fallthrough = handler(msg, *exc_info)
-
-            # Only handlers with explicit return values should disable further
-            # exc handling, so interpret a None return value as True.
-            if fallthrough is None:
-                fallthrough = True
-
-            if not fallthrough:
-                break
-
     @staticmethod
     def _get_safe_exception_string(exc_strings):
         """Ensure list of exception strings is decoded on Python 2 and joined as one string safely."""
@@ -573,30 +530,23 @@ class Worker(object):
             req = httpgateway.Request(reqid, wsgienv, ip)
             protocol = self.apicube[queue.name]
             httpstatus, headers, content = protocol(req)
+            # acclog
             self._mk_ret(req, httpstatus, headers, content)
+            msg.ended_at = utcnow()
 
-            msg.ended_at = utcnow()
-            # Pickle the result in the same try-except block since we need
-            # to use the same exc handling when pickling fails
-            msg._result = content
-            self.handle_msg_success(msg=msg,
-                                    queue=queue,
-                                    started_msg_registry=started_msg_registry)
-        except:  # NOQA
-            self.log.error(
-                'worker exe msg exception {exception_info}'.format(
-                    exception_info=traceback.format_exc()))
-            msg.ended_at = utcnow()
-            exc_info = sys.exc_info()
-            exc_string = self._get_safe_exception_string(
-                traceback.format_exception(*exc_info)
-            )
-            self.handle_msg_failure(msg=msg, exc_string=exc_string,
-                                    started_msg_registry=started_msg_registry)
-            self.handle_exception(msg, *exc_info)
+            # content is a set
+            msg._result = content[0]
+
+            if req.log_ret_code == "OK":
+                self.log.info('%s: %s (%s)', msg.origin, 'Msg OK', msg.id)
+                self.handle_msg_success(msg=msg, queue=queue, started_msg_registry=started_msg_registry)
+            else:
+                self.log.error('%s: %s (%s)', msg.origin, 'Msg ERROR', msg.id)
+                exc_string = "None"
+                self.handle_msg_failure(msg=msg, exc_string=exc_string, started_msg_registry=started_msg_registry)
+        except BaseException:
+            self.log.error('worker exe msg exception {exception_info}'.format(exception_info=traceback.format_exc()))
             return False
-
-        self.log.info('%s: %s (%s)', msg.origin, 'Msg OK', msg.id)
         return True
 
     def executor_callback(self, task):
