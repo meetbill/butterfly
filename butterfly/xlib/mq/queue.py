@@ -174,13 +174,13 @@ class Queue(object):
 
     @property
     def started_msg_registry(self):
-        """Returns this queue's FailedMsgRegistry."""
+        """Returns this queue's StartedMsgRegistry."""
         from xlib.mq.registry import StartedMsgRegistry
         return StartedMsgRegistry(queue=self, msg_class=self.msg_class)
 
     @property
     def finished_msg_registry(self):
-        """Returns this queue's FailedMsgRegistry."""
+        """Returns this queue's FinishedMsgRegistry."""
         from xlib.mq.registry import FinishedMsgRegistry
         return FinishedMsgRegistry(queue=self)
 

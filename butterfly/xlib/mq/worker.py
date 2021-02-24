@@ -557,38 +557,11 @@ class Worker(object):
         """
 
         started_msg_registry = queue.started_msg_registry
-        msg.started_at = utcnow()
-        msg.set_status(MsgStatus.STARTED)
-
-        ip = msg.ip
-        reqid = msg.get_id()
-        data = json.loads(msg.data)
-        QUERY_STRING = urllib.urlencode(data)
-        wsgienv = {
-            "PATH_INFO": queue.name,
-            "QUERY_STRING": QUERY_STRING,
-            "REQUEST_METHOD": "GET"
-        }
-        req = httpgateway.Request(reqid, wsgienv, ip)
-        protocol = self.apicube[queue.name]
-        httpstatus, headers, content = protocol(req)
-        self._mk_ret(req, httpstatus, headers, content)
-
-        msg.ended_at = utcnow()
-        # Pickle the result in the same try-except block since we need
-        # to use the same exc handling when pickling fails
-        msg._result = content
-        self.handle_msg_success(msg=msg,
-                                queue=queue,
-                                started_msg_registry=started_msg_registry)
-        self.log.info('%s: %s (%s)', msg.origin, 'Msg OK', msg.id)
-        return True
-
         try:
             msg.started_at = utcnow()
             msg.set_status(MsgStatus.STARTED)
 
-            ip = "baichuan_worker"
+            ip = msg.ip
             reqid = msg.get_id()
             data = json.loads(msg.data)
             QUERY_STRING = urllib.urlencode(data)
@@ -610,6 +583,9 @@ class Worker(object):
                                     queue=queue,
                                     started_msg_registry=started_msg_registry)
         except:  # NOQA
+            self.log.error(
+                'worker exe msg exception {exception_info}'.format(
+                    exception_info=traceback.format_exc()))
             msg.ended_at = utcnow()
             exc_info = sys.exc_info()
             exc_string = self._get_safe_exception_string(
