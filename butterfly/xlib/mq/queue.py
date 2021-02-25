@@ -339,13 +339,16 @@ class Queue(object):
             end
             return v
         '''
+        # 设置 ttl 为 1 小时, 即在正在处理队列中的时间
+        ttl = 3600
+
         connection = connection
         key_template = 'mq:wip:{{{0}}}'
         for queue in queues:
             queue_key = queue.key
             queue_name = queue.name
             queue_wip_key = key_template.format(queue_name)
-            score = current_timestamp()
+            score = current_timestamp() + ttl
 
             keys_args_list = [queue_key, queue_wip_key, score]
             blob = connection.eval(lua, 2, *keys_args_list)
