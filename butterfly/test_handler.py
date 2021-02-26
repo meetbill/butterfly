@@ -7,13 +7,11 @@
 # File Name: test_handler.py
 # Description:
   用于编写 handlers 时，测试 handlers 的输出
-
-# 注意
-  如果进行调试时，有些资源已经在使用，则可能会出错，如 crontab 中使用的 example.db
 """
 
 import os
 import sys
+import logging
 
 # ********************************************************
 # * Third lib                                            *
@@ -22,17 +20,23 @@ if os.path.exists('third'):
     cur_path = os.path.split(os.path.realpath(__file__))[0]
     sys.path.insert(0, os.path.join(cur_path, 'third'))
 
-from conf import logger_conf
 from xlib import urls
 from xlib import httpgateway
 from xlib import uuid64
-from conf import config
-from xlib.apscheduler import manager
+from xlib import logger
+
+# ********************************************************
+# * Logger                                               *
+# ********************************************************
+logger.init_log("logs/dev/dev_common.log", level=logging.DEBUG)
+errlog = logger.LoggerBase("logs/dev/dev_err.log", False, 1024 * 1024 * 2, 0)
+initlog = logger.LoggerBase("logs/dev/dev_init.log", False, 1024 * 1024 * 2, 0)
+
 
 # ********************************************************
 # * Route                                                *
 # ********************************************************
-route = urls.Route(logger_conf.initlog, logger_conf.errlog)
+route = urls.Route(initlog, errlog)
 # 自动将 handlers 目录加 package 自动注册
 route.autoload_handler("handlers")
 # 手动添加注册(访问 /ping ,则会自动转到 apidemo.ping)
@@ -44,22 +48,14 @@ if __name__ == "__main__":
 
     # 封装 req
     ip = "0.0.0.0"
-    reqid = uuid64.UUID64().gen()
+    reqid = "DEV_{reqid}".format(reqid=uuid64.UUID64().gen())
     wsgienv = {"PATH_INFO": "/echo"}
     req = httpgateway.Request(reqid, wsgienv, ip)
-
-    # ********************************************************
-    # * Schedule(不进行启动)
-    # ********************************************************
-    if config.scheduler_store != "none":
-        scheduler = manager.Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
-        req.scheduler = scheduler
 
     import inspect
     if len(sys.argv) < 2:
         print("Usage:")
-        func_list = apicube.keys()
-        func_list.sort()
+        func_list = sorted(apicube.keys())
         for url in func_list:
             func = apicube[url]._func
             # ArgSpec(args=['req', 'str_info'], varargs=None, keywords=None, defaults=None)
