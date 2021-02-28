@@ -4,6 +4,17 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.1.8] - 2021-02-28
+### Added
+
+- 服务：添加【百川】app，开启百川后 butterfly 服务将自动消费 MQ 中的消息
+- 服务：优化【五行】app，增加五行数据缓存功能
+
+### Changed
+
+- 日志：talk、params、res 的分割符由`,`改为`;`
+- 调试：test_handler.py 执行过程中的 logging 日志移动至 logs/dev 目录
+
 ## [1.1.7] - 2021-02-11
 ### Added
 
