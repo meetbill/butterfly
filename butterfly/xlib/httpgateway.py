@@ -234,9 +234,10 @@ class WSGIGateway(object):
             headers.append(("x-cost", cost_str))
             if req.error_str:
                 headers.append(("x-reason", req.error_str))
-            talk_str = ",".join("%s=%.3f" % (k, v) for k, v in req.log_talk.iteritems())
-            # 这里的参数有可能是带 = 的 URL, 如果需要根据日志进行取参数时，需要仅对第一个 = 进行分割处理
-            log_params_str = ",".join("%s=%s" % (k, v) for k, v in req.log_params.iteritems())
+            talk_str = ";".join("%s=%.3f" % (k, v) for k, v in req.log_talk.iteritems())
+            # 这里的参数有可能是带 "=" 的 URL, 如果需要根据日志进行取参数时，需要仅对第一个 "=" 进行分割处理
+            ## 考虑到参数中有可能会出现",", 故多个 item 之间改为使用 ";" 进行分割
+            log_params_str = ";".join("%s=%s" % (k, v) for k, v in req.log_params.iteritems())
             self._acclog.log(("{ip}\t{reqid}\t{method}\t{funcname}\tcost:{cost}\t"
                              "stat:{ret_code}\tuser:{username}\ttalk:{talk}\t"
                              "params:{log_params}\terror_msg:{error}\tres:{res}".format
@@ -250,7 +251,7 @@ class WSGIGateway(object):
                               talk=talk_str,
                               log_params=log_params_str,
                               error=req.error_str,
-                              res=",".join(req.log_res))))
+                              res=";".join(req.log_res))))
         except BaseException:
             try:
                 self._errlog.log(
