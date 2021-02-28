@@ -6,6 +6,7 @@
 
 # File Name: cache.py
 # Description:
+    实际存储在 redis 中的 key 会加 "cache:" 前缀
 
 """
 from xlib import db
@@ -22,6 +23,10 @@ class Cache(object):
         _cache = __wuxing_db.cache()
     else:
         _cache = None
+
+    _del_log_template = "<{key}>del={status}"
+    _set_log_template = "<{key}>set={status}"
+    _get_log_template = "<{key}>get={status}"
 
     @classmethod
     def set(cls, subreq, key, value, timeout=None):
@@ -45,16 +50,17 @@ class Cache(object):
         subreq.start_timming()
         try:
             result = cls._cache.set(key, value, timeout)
+            subreq.log_res.add(cls._set_log_template.format(key=key, status="OK"))
             subreq.timming("redis_set_cost")
             return result
         except exceptions.TimeoutError as e:
             # 连接超时: "Timeout connecting to server"
             if "connecting" in e.message:
-                subreq.log_res.add("set_error=connection_timeout")
+                subreq.log_res.add(cls._set_log_template.format(key=key, status="connection_timeout"))
             else:
-                subreq.log_res.add("set_error=write_timeout")
+                subreq.log_res.add(cls._set_log_template.format(key=key, status="write_timeout"))
         except exceptions.ConnectionError:
-            subreq.log_res.add("set_error=connection_error")
+            subreq.log_res.add(cls._set_log_template.format(key=key, status="connection_error"))
 
         subreq.timming("redis_set_cost")
         return False
@@ -79,16 +85,17 @@ class Cache(object):
         subreq.start_timming()
         try:
             result = cls._cache.get(key)
+            subreq.log_res.add(cls._get_log_template.format(key=key, status="OK"))
             subreq.timming("redis_get_cost")
             return result
         except exceptions.TimeoutError as e:
             # 连接超时: "Timeout connecting to server"
             if "connecting" in e.message:
-                subreq.log_res.add("set_error=connection_timeout")
+                subreq.log_res.add(cls._get_log_template.format(key=key, status="connection_timeout"))
             else:
-                subreq.log_res.add("set_error=read_timeout")
+                subreq.log_res.add(cls._get_log_template.format(key=key, status="read_timeout"))
         except exceptions.ConnectionError:
-            subreq.log_res.add("set_error=connection_error")
+            subreq.log_res.add(cls._get_log_template.format(key=key, status="connection_error"))
 
         subreq.timming("redis_get_cost")
         return None
@@ -104,7 +111,7 @@ class Cache(object):
         """
         if cls._cache is None:
             subreq.log_res.add("cache=false")
-            return None
+            return False
         else:
             connection_kwargs = cls._cache.database.connection_pool.connection_kwargs
             addr = "{host}:{port}".format(host=connection_kwargs["host"], port=connection_kwargs["port"])
@@ -113,19 +120,20 @@ class Cache(object):
         subreq.start_timming()
         try:
             result = cls._cache.delete(key)
-            subreq.timming("redis_delete_cost")
+            subreq.log_res.add(cls._del_log_template.format(key=key, status="OK"))
+            subreq.timming("redis_del_cost")
             return result
         except exceptions.TimeoutError as e:
             # 连接超时: "Timeout connecting to server"
             if "connecting" in e.message:
-                subreq.log_res.add("set_error=connection_timeout")
+                subreq.log_res.add(cls._del_log_template.format(key=key, status="connection_timeout"))
             else:
-                subreq.log_res.add("set_error=read_timeout")
+                subreq.log_res.add(cls._del_log_template.format(key=key, status="delete_timeout"))
         except exceptions.ConnectionError:
-            subreq.log_res.add("set_error=connection_error")
+            subreq.log_res.add(cls._del_log_template.format(key=key, status="connection_error"))
 
-        subreq.timming("redis_delete_cost")
-        return None
+        subreq.timming("redis_del_cost")
+        return False
 
 
 if __name__ == "__main__":

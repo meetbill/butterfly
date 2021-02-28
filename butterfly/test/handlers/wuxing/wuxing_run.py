@@ -76,7 +76,6 @@ def test_section_create():
     assert stat == retstat.ERR_SECTION_CREATE_FAILED
 
 
-
 def test_section_item_add():
     """
     section 添加 item
@@ -312,7 +311,7 @@ def test_instance_list():
     assert stat == retstat.OK
 
     # get extra item
-    extra_items="b|qn_failover:s|resource_name"
+    extra_items = "b|qn_failover:s|resource_name"
     stat, data, header_list = wuxing.instance_list(req, namespace, section_name, extra_items=extra_items)
     """
     data:
@@ -334,7 +333,7 @@ def test_instance_list():
         }
     }
     """
-    for instance_data in  data["data"]["list"]:
+    for instance_data in data["data"]["list"]:
         for extra_item in extra_items.split(":"):
             assert extra_item in instance_data.keys()
 
@@ -595,6 +594,7 @@ def test_section_delete():
     stat, data, header_list = wuxing.section_delete(req, namespace, section_name, section_version)
     assert stat == retstat.ERR_SECTION_IS_NOT_EXIST
 
+
 def main():
     xlib.db.my_databases["default"].connect()
     model_list = [
@@ -655,6 +655,7 @@ def main():
     # section delete
     print("section delete----------------------------------")
     test_section_delete()
+
 
 if __name__ == "__main__":
     import sys

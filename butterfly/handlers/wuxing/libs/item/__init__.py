@@ -23,7 +23,7 @@ from xlib.db import peewee
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
 from handlers.wuxing.libs import common_map
-from handlers.wuxing.libs import cache
+from handlers.wuxing.libs.item import item_cache
 
 
 __info = "wuxing"
@@ -196,31 +196,14 @@ def item_get(req, item_id, item_type):
             data: {"data":{"item_value": item_value, "u_time": u_time}}
     """
     isinstance(req, Request)
-    item_model = model.WuxingInstanceItem
 
-    # 检查是否有缓存
-    cache_key = "{prefix}@{item_id}".format(
-        prefix="wuxing_item",
-        item_id=item_id
-    )
-    item_dict = cache.Cache.get(req, cache_key)
-    if item_dict is not None:
-        return retstat.OK, {"data": item_dict}, [(__info, __version)]
-
-    # 从数据库中获取
-    instance_data = item_model.get_or_none(item_model.id == item_id)
-    if instance_data is None:
+    item_data = item_cache.ItemCache.get(req, item_id, item_type)
+    if item_data is None:
         return retstat.ERR_ITEM_IS_NOT_FOUND, {}, [(__info, __version)]
 
-    instance_data_dict = shortcuts.model_to_dict(instance_data)
-    value_field = common_map.value_field_map[item_type]
-    item_value = instance_data_dict[value_field]
-    u_time = instance_data_dict["u_time"]
-
-    # 写入缓存, 缓存 300s
-    data = {"item_value": item_value, "u_time": u_time}
-    cache.Cache.set(req, cache_key, data, 300)
-
+    data = {}
+    data["item_value"] = item_data["item_value"]
+    data["u_time"] = item_data["u_time"]
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 
@@ -249,8 +232,7 @@ def item_update(req, item_id, item_type, item_value):
             item_id=item_id, item_value=new_value, cmd="update", user=op_user)
 
         # 清理 cache
-        cache_key = "{prefix}@{item_id}".format(prefix="wuxing_item", item_id=item_id)
-        cache.Cache.delete(req, cache_key)
+        item_cache.ItemCache.delete(req, item_id)
         return retstat.OK, {}, [(__info, __version)]
     else:
         return retstat.ERR, {}, [(__info, __version)]
@@ -300,9 +282,7 @@ def item_delete(req, item_id):
     effect_count = item_model.delete_by_id(int(item_id))
     if effect_count:
         # 清理 cache
-        cache_key = "{prefix}@{item_id}".format(prefix="wuxing_item", item_id=item_id)
-        cache.Cache.delete(req, cache_key)
-
+        item_cache.ItemCache.delete(req, item_id)
         return retstat.OK, {"data": {}}, [(__info, __version)]
     else:
         return retstat.ERR_ITEM_DELETE_FAILED, {"data": {}}, [(__info, __version)]

@@ -25,6 +25,7 @@ ip = "127.0.0.1"
 wsgienv = {}
 req = httpgateway.Request(reqid, wsgienv, ip)
 
+
 def test_instance_create():
     namespace = "group_qingnang"
     section_name = "group_appid"
@@ -50,6 +51,7 @@ def test_instance_create():
     stat, data, header_list = wuxing.instance_create(req, namespace, instance_name, section_name, section_version)
     assert stat == retstat.OK
 
+
 def test_instance_update():
     time.sleep(3)
     namespace = "group_qingnang"
@@ -59,6 +61,7 @@ def test_instance_update():
 
     stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value)
     assert stat == retstat.OK
+
 
 def test_item_list():
     """
@@ -71,8 +74,8 @@ def test_item_list():
 
     # 测试 item_value 搜索
     stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name",
-            item_value_operator="=", item_value="common"
-            )
+                                               item_value_operator="=", item_value="common"
+                                               )
     assert len(data["data"]["list"]) == 1
 
     # 测试 start_time 检索条件
@@ -80,21 +83,26 @@ def test_item_list():
     start_time_datetime = now_time_datetime + datetime.timedelta(seconds=-1)
     start_time = start_time_datetime.strftime("%Y%m%d%H%M%S")
     stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name",
-            start_time=start_time)
+                                               start_time=start_time)
     assert len(data["data"]["list"]) == 1
     assert data["data"]["list"][0]["instance_name"] == "3002"
 
     # 测试排序检索
-    stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name", sort="instance_name")
+    stat, data, header_list = wuxing.item_list(
+        req, namespace, section_name, item_name="s|resource_name", sort="instance_name")
     assert data["data"]["list"][0]["instance_name"] == "3001"
-    stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name", sort="-instance_name")
+    stat, data, header_list = wuxing.item_list(
+        req, namespace, section_name, item_name="s|resource_name", sort="-instance_name")
     assert data["data"]["list"][0]["instance_name"] == "3003"
 
     # 排序字段可以是 {item_name}
-    stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name", sort="s|resource_name")
+    stat, data, header_list = wuxing.item_list(
+        req, namespace, section_name, item_name="s|resource_name", sort="s|resource_name")
     assert data["data"]["list"][0]["item_value"] == "common"
-    stat, data, header_list = wuxing.item_list(req, namespace, section_name, item_name="s|resource_name", sort="-s|resource_name")
+    stat, data, header_list = wuxing.item_list(
+        req, namespace, section_name, item_name="s|resource_name", sort="-s|resource_name")
     assert data["data"]["list"][0]["item_value"] == "common_ssd"
+
 
 def main():
 
@@ -106,6 +114,7 @@ def main():
 
     print("item list---------------------------------------")
     test_item_list()
+
 
 if __name__ == "__main__":
     import sys

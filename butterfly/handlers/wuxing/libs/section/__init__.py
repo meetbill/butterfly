@@ -38,6 +38,7 @@ from xlib.db import peewee
 from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
 from handlers.wuxing.libs import common_map
+from handlers.wuxing.libs.section import section_cache
 
 
 __info = "wuxing"
@@ -184,6 +185,7 @@ def section_item_add(req, namespace, section_name, section_version, item_name,
                                                            section_model.section_version == section_version,
                                                            section_model.u_time == section_object.u_time).execute()
 
+    section_cache.SectionCache.delete(req, namespace, section_name, section_version)
     if effect_count:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -235,6 +237,7 @@ def section_item_delete(req, namespace, section_name, section_version, item_name
                                                            section_model.section_version == section_version,
                                                            section_model.u_time == section_object.u_time).execute()
 
+    section_cache.SectionCache.delete(req, namespace, section_name, section_version)
     if effect_count:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -247,25 +250,22 @@ def section_get(req, namespace, section_name, section_version):
     获取 section 模板配置
     """
     isinstance(req, Request)
-    section_model = model.WuxingSection
-    section_object = section_model.get_or_none(section_model.namespace == namespace,
-                                               section_model.section_name == section_name,
-                                               section_model.section_version == section_version
-                                               )
-    if section_object is None:
+
+    # 获取数据
+    section_data = section_cache.SectionCache.get(req, namespace, section_name, section_version)
+    if section_data is None:
         return retstat.ERR_SECTION_IS_NOT_EXIST, {}, [(__info, __version)]
 
     data = {}
     data["section_template"] = {}
-    section_template_dict = json.loads(section_object.section_template)
+    section_template_dict = section_data["section_template_dict"]
     for item_name in section_template_dict.keys():
         data["section_template"][item_name] = {}
         data["section_template"][item_name]["item_type"] = section_template_dict[item_name]["a1"]
         data["section_template"][item_name]["item_default"] = section_template_dict[item_name]["a2"]
         data["section_template"][item_name]["item_description"] = section_template_dict[item_name]["a3"]
 
-    data["is_enabled"] = section_object.is_enabled
-
+    data["is_enabled"] = section_data["is_enabled"]
     return retstat.OK, {"data": data}, [(__info, __version)]
 
 
@@ -276,12 +276,10 @@ def section_enable(req, namespace, section_name, section_version):
     """
     isinstance(req, Request)
     section_model = model.WuxingSection
-    section_object = section_model.get_or_none(section_model.namespace == namespace,
-                                               section_model.section_name == section_name,
-                                               section_model.section_version == section_version
-                                               )
-    if section_object is None:
+    section_data = section_cache.SectionCache.get(req, namespace, section_name, section_version)
+    if section_data is None:
         return retstat.ERR_SECTION_IS_NOT_EXIST, {}, [(__info, __version)]
+
     update_data = {}
     update_data[section_model.is_enabled] = True
 
@@ -289,6 +287,7 @@ def section_enable(req, namespace, section_name, section_version):
                                                            section_model.section_name == section_name,
                                                            section_model.section_version == section_version).execute()
 
+    section_cache.SectionCache.delete(req, namespace, section_name, section_version)
     if effect_count:
         return retstat.OK, {}, [(__info, __version)]
     else:
@@ -311,6 +310,7 @@ def section_delete(req, namespace, section_name, section_version):
 
     # 删除此实例
     effect_count = section_object.delete_instance()
+    section_cache.SectionCache.delete(req, namespace, section_name, section_version)
     if effect_count:
         return retstat.OK, {}, [(__info, __version)]
     else:

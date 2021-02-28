@@ -52,7 +52,8 @@ def test_instance_create():
     section_version = "1.0.1"
     instance_name = "2525"
     items_data = {"s|master_region", "bj"}
-    stat, data, header_list = wuxing.instance_create(req, namespace, instance_name, section_name, section_version, items_data)
+    stat, data, header_list = wuxing.instance_create(
+        req, namespace, instance_name, section_name, section_version, items_data)
     assert stat == retstat.OK
 
 
@@ -71,7 +72,7 @@ def test_instance_list():
     assert stat == retstat.OK
 
     # get extra item
-    extra_items = "b|qn_failover:s|resource_name"
+    extra_items = "b|qn_failover,s|resource_name"
     stat, data, header_list = wuxing.instance_list(req, namespace, section_name, extra_items=extra_items)
     """
     data:
@@ -94,7 +95,7 @@ def test_instance_list():
     }
     """
     for instance_data in data["data"]["list"]:
-        for extra_item in extra_items.split(":"):
+        for extra_item in extra_items.split(","):
             assert extra_item in instance_data.keys()
 
 
@@ -157,15 +158,17 @@ def test_instance_get():
     assert stat == retstat.OK
     demo_data = {
         'data': {
-            'item_value': True,
-            u'item_name': u'b|qn_failover',
-            u'item_type': u'bool',
-            u'item_description': u'qn failover switch'
+            u'b|qn_failover': {
+                'item_value': True,
+                u'item_name': u'b|qn_failover',
+                u'item_type': u'bool',
+                u'item_description': u'qn failover switch'
+            },
         }
     }
     # 去掉返回值中的 u_time
-    assert data["data"].pop("u_time")
-    assert data["data"].pop("item_id")
+    assert data["data"]["b|qn_failover"].pop("u_time")
+    assert data["data"]["b|qn_failover"].pop("item_id")
     assert data == demo_data
 
 
@@ -189,15 +192,17 @@ def test_instance_update_item():
     assert stat == retstat.OK
     demo_data = {
         'data': {
-            'item_value': False,
-            u'item_name': u'b|qn_failover',
-            u'item_type': u'bool',
-            u'item_description': u'qn failover switch'
+            "b|qn_failover": {
+                'item_value': False,
+                u'item_name': u'b|qn_failover',
+                u'item_type': u'bool',
+                u'item_description': u'qn failover switch'
+            }
         }
     }
     # 去掉返回值中的 u_time
-    assert data["data"].pop("u_time")
-    assert data["data"].pop("item_id")
+    assert data["data"]["b|qn_failover"].pop("u_time")
+    assert data["data"]["b|qn_failover"].pop("item_id")
     assert data == demo_data
 
     # ERR_ITEM_IS_NOT_EXIST
@@ -342,6 +347,7 @@ def test_instance_delete():
     instance_name = "2525"
     stat, data, header_list = wuxing.instance_delete(req, namespace, instance_name)
     assert stat == retstat.OK
+
 
 def main():
     # instance create
