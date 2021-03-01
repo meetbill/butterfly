@@ -78,7 +78,13 @@ if __name__ == "__main__":
         url = sys.argv[1]
         func = apicube[url]._func
         args = sys.argv[2:]
-        args.insert(0, req)
+        args_list = []
+        for args_item in args:
+            if args_item.lower() == "none":
+                args_list.append(None)
+            else:
+                args_list.append(args_item)
+        args_list.insert(0, req)
         try:
             @pysnooper.snoop(thread_info=True, depth=2)
             def main():
@@ -86,7 +92,7 @@ if __name__ == "__main__":
                 test main
                 此函数用于 pysnooper 输出 debug 信息
                 """
-                return func(*args)
+                return func(*args_list)
 
             result = main()
             print("=============================================================")
