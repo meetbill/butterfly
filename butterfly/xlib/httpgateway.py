@@ -54,6 +54,7 @@ class Request(object):
         log_ret     : (Dict)
         funcname    : (String)
         error_str   : (String)
+        error_detail: (String)
         init_tm     : (Float) time.time()
         _tm         : (Float)
 
@@ -76,6 +77,7 @@ class Request(object):
         self.log_res = set()
         self.funcname = ""
         self.error_str = ""
+        self.error_detail = ""
         self.init_tm = time.time()
         self._tm = self.init_tm
         self.username = "-"
@@ -236,22 +238,22 @@ class WSGIGateway(object):
                 headers.append(("x-reason", req.error_str))
             talk_str = ";".join("%s=%.3f" % (k, v) for k, v in req.log_talk.iteritems())
             # 这里的参数有可能是带 "=" 的 URL, 如果需要根据日志进行取参数时，需要仅对第一个 "=" 进行分割处理
-            ## 考虑到参数中有可能会出现",", 故多个 item 之间改为使用 ";" 进行分割
+            # 考虑到参数中有可能会出现",", 故多个 item 之间改为使用 ";" 进行分割
             log_params_str = ";".join("%s=%s" % (k, v) for k, v in req.log_params.iteritems())
             self._acclog.log(("{ip}\t{reqid}\t{method}\t{funcname}\tcost:{cost}\t"
-                             "stat:{ret_code}\tuser:{username}\ttalk:{talk}\t"
-                             "params:{log_params}\terror_msg:{error}\tres:{res}".format
-                             (ip=req.ip,
-                              reqid=req.reqid,
-                              method=req.wsgienv.get("REQUEST_METHOD"),
-                              funcname=req.funcname,
-                              cost=cost_str,
-                              ret_code=req.log_ret_code,
-                              username=req.username,
-                              talk=talk_str,
-                              log_params=log_params_str,
-                              error=req.error_str,
-                              res=";".join(req.log_res))))
+                              "stat:{ret_code}\tuser:{username}\ttalk:{talk}\t"
+                              "params:{log_params}\terror_msg:{error}\tres:{res}".format
+                              (ip=req.ip,
+                               reqid=req.reqid,
+                               method=req.wsgienv.get("REQUEST_METHOD"),
+                               funcname=req.funcname,
+                               cost=cost_str,
+                               ret_code=req.log_ret_code,
+                               username=req.username,
+                               talk=talk_str,
+                               log_params=log_params_str,
+                               error=req.error_str,
+                               res=";".join(req.log_res))))
         except BaseException:
             try:
                 self._errlog.log(

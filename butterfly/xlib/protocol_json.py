@@ -122,6 +122,7 @@ class Protocol(object):
             status, headders, content
         """
         req.error_str = err_msg
+        req.error_detail = log_msg
         if log_msg:
             req.log(self._errlog, log_msg)
 

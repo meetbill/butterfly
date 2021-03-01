@@ -542,7 +542,7 @@ class Worker(object):
                 self.handle_msg_success(msg=msg, queue=queue, started_msg_registry=started_msg_registry)
             else:
                 self.log.error('%s: %s (%s)', msg.origin, 'Msg ERROR', msg.id)
-                exc_string = "None"
+                exc_string = self._get_safe_exception_string(req.error_detail)
                 self.handle_msg_failure(msg=msg, exc_string=exc_string, started_msg_registry=started_msg_registry)
         except BaseException:
             self.log.error('worker exe msg exception {exception_info}'.format(exception_info=traceback.format_exc()))
