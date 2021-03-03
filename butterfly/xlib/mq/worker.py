@@ -22,8 +22,7 @@ except ImportError:
 from xlib.mq import worker_registration
 from xlib.mq.compat import as_text, string_types
 
-from xlib.mq.defaults import (DEFAULT_RESULT_TTL,
-                              DEFAULT_WORKER_TTL)
+from xlib.mq import defaults
 from xlib.mq.msg import Msg, MsgStatus
 from xlib.mq.queue import Queue
 from xlib.mq.registry import FailedMsgRegistry, StartedMsgRegistry, clean_registries
@@ -133,9 +132,9 @@ class Worker(object):
 
         return worker
 
-    def __init__(self, queues, name=None, default_result_ttl=DEFAULT_RESULT_TTL,
+    def __init__(self, queues, name=None, default_result_ttl=None,
                  connection=None, exc_handler=None, exception_handlers=None,
-                 default_worker_ttl=DEFAULT_WORKER_TTL, msg_class=None,
+                 default_worker_ttl=None, msg_class=None,
                  queue_class=None,
                  prepare_for_work=True,
                  acclog=None, errlog=None,
@@ -169,8 +168,15 @@ class Worker(object):
         self.validate_queues()
         self._exc_handlers = []
 
-        self.default_result_ttl = default_result_ttl
-        self.default_worker_ttl = default_worker_ttl
+        if default_result_ttl is None:
+            self.default_result_ttl = defaults.DEFAULT_RESULT_TTL
+        else:
+            self.default_result_ttl = default_result_ttl
+
+        if default_worker_ttl is None:
+            self.default_worker_ttl = defaults.DEFAULT_WORKER_TTL
+        else:
+            self.default_worker_ttl = default_worker_ttl
 
         self._state = 'starting'
         self._horse_pid = 0
@@ -575,15 +581,21 @@ class Worker(object):
 
                 result = self.queue_class.dequeue_any(
                     self.queues, connection=self.connection, msg_class=self.msg_class)
-                if result is not None:
-                    msg, queue = result
-                    msg.set_status(MsgStatus.STARTED)
-                    self.connection.hset(msg.key, 'started_at', utcformat(utcnow()))
 
-                    task = self.pool.submit(self.perform_msg, msg=msg, queue=queue)
-                    task.add_done_callback(self.executor_callback)
-                else:
+                if result is None:
                     time.sleep(5)
+                    continue
+
+                if result == defaults.RATE_LIMITED:
+                    time.sleep(0.02)
+                    continue
+
+                msg, queue = result
+                msg.set_status(MsgStatus.STARTED)
+                self.connection.hset(msg.key, 'started_at', utcformat(utcnow()))
+
+                task = self.pool.submit(self.perform_msg, msg=msg, queue=queue)
+                task.add_done_callback(self.executor_callback)
             except BaseException:
                 self.log.error(
                     'worker get msg exception {exception_info}'.format(

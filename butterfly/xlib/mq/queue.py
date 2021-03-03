@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import uuid
+import random
 
 from xlib.mq.compat import as_text, string_types, total_ordering
 from xlib.mq.exceptions import NoSuchMsgError, UnpickleError
@@ -65,6 +66,9 @@ class Queue(object):
             if isinstance(msg_class, string_types):
                 msg_class = import_attribute(msg_class)
             self.msg_class = msg_class
+
+        # allows 30 events every 1 seconds
+        self.rate_limit = self.connection.rate_limit(name, limit=30, per=1)
 
     def __len__(self):
         return self.count
@@ -331,6 +335,11 @@ class Queue(object):
         |       list                     set
         |mq:queue:{queue_name} ==> mq:wip:{queue_name}
         +-----------------------------------------------
+
+        Returns:
+            None:（无数据）
+            'RATE_LIMITED':（限流中）
+            queue_key, blob: 队列 key 和 msg_id
         """
         lua = '''
             local v = redis.call("lpop", KEYS[1])
@@ -339,14 +348,24 @@ class Queue(object):
             end
             return v
         '''
-        # 设置 ttl 为 1 小时, 即在正在处理队列中的时间
+        # 设置 ttl 为 1 小时，即在正在处理队列中的时间
         ttl = 3600
+        rate_limit_count = 0
 
         connection = connection
         key_template = 'mq:wip:{{{0}}}'
+
+        # 将列表随机打乱, 以免一直在处理单个队列
+        random.shuffle(queues)
         for queue in queues:
             queue_key = queue.key
             queue_name = queue.name
+
+            # 进行限流获取
+            if queue.rate_limit.limit('worker'):
+                rate_limit_count = rate_limit_count + 1
+                continue
+
             queue_wip_key = key_template.format(queue_name)
             score = current_timestamp() + ttl
 
@@ -354,7 +373,10 @@ class Queue(object):
             blob = connection.eval(lua, 2, *keys_args_list)
             if blob is not None:
                 return queue_key, blob
-        return None
+        if rate_limit_count > 0:
+            return defaults.RATE_LIMITED
+        else:
+            return None
 
     @classmethod
     def dequeue_any(cls, queues, connection=None, msg_class=None):
@@ -368,14 +390,15 @@ class Queue(object):
 
         See the documentation of cls.lpop for the interpretation of timeout.
 
-        从队列中获取任务, 并将任务同时加到正在处理 zset 中
+        从队列中获取任务，并将任务同时加到正在处理 zset 中
         """
         msg_class = backend_class(cls, 'msg_class', override=msg_class)
 
         while True:
             result = cls.lpop(queues, connection=connection)
-            if result is None:
-                return None
+            if result is None or result == defaults.RATE_LIMITED:
+                return result
+
             queue_key, msg_id = map(as_text, result)
             queue = cls.from_queue_key(queue_key,
                                        connection=connection,
