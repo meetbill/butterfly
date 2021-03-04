@@ -4,6 +4,15 @@ Changelog
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
 
+## [1.1.9] - 2021-03-05
+
+### Changed
+- 服务：【百川】1. 添加 worker 消费限流; 2.worker 每次消费时，将多个队列进行随机打乱再进行消费; 3.handler 处理异常时可以将异常信息进行存储到 mq 中
+- 调试：参数支持传 None
+
+### Fixed
+- 服务：【五行】handler 库中使用了 instance package, 此目录被 git 忽略, 修改忽略规则
+
 ## [1.1.8] - 2021-02-28
 ### Added
 
