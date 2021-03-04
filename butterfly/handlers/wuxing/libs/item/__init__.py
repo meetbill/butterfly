@@ -85,9 +85,12 @@ def item_list(req, namespace=None, section_name=None, instance_name=None,
         item_value          : (str) item_value
         start_time          : (str) example: 20210124194805
         end_time            : (str) example: 20210124195005
-        sort                : (str) {item_name}/-{item_name}  或者 instance_name, u_time
-                            :       如果是 {item_name}/-{item_name} ，应该转换为 item_value_bool/item_value_int/
-                                    item_value_string/item_value_float
+        sort                : (str)
+                                    "item_value"/"-item_value", 若要以 value 排序，则 item_name 不为 None
+                                    "instance_name"/"-instance_name"
+                                    "u_time"/"-u_time"
+                                    "c_time"/"-c_time"
+
                                     如果 sort 值是 "-" 开头，则是以降序进行排序
         page_index          : (int) 页数
         page_size           : (int) 每页显示条数
@@ -145,10 +148,10 @@ def item_list(req, namespace=None, section_name=None, instance_name=None,
             desc = True
 
         # 如果排序字段是 instance_name/u_time 则直接从 item_model 中进行获取 field 对象
-        if sort in ["instance_name", "u_time"]:
+        if sort in ["instance_name", "u_time", "c_time"]:
             model_sort_field = getattr(item_model, sort)
 
-        if sort == item_name:
+        if sort == "item_value" and item_name is not None:
             item_prefix = item_name[:2]
             item_type = common_map.item_type_map[item_prefix]
             model_sort_field = common_map.value_field_model_map[item_type]

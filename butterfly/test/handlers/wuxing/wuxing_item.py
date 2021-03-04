@@ -97,10 +97,10 @@ def test_item_list():
 
     # 排序字段可以是 {item_name}
     stat, data, header_list = wuxing.item_list(
-        req, namespace, section_name, item_name="s|resource_name", sort="s|resource_name")
+        req, namespace, section_name, item_name="s|resource_name", sort="item_value")
     assert data["data"]["list"][0]["item_value"] == "common"
     stat, data, header_list = wuxing.item_list(
-        req, namespace, section_name, item_name="s|resource_name", sort="-s|resource_name")
+        req, namespace, section_name, item_name="s|resource_name", sort="-item_value")
     assert data["data"]["list"][0]["item_value"] == "common_ssd"
 
 
