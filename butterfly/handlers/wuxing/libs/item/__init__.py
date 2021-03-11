@@ -42,6 +42,9 @@ def get_value_by_modeltype(modeltype, value_old):
     if modeltype == "string" and isinstance(value_old, str):
         return value_old
 
+    if modeltype == "text" and isinstance(value_old, str):
+        return value_old
+
     if modeltype == "bool" and isinstance(value_old, bool):
         return value_old
 
@@ -52,6 +55,8 @@ def get_value_by_modeltype(modeltype, value_old):
         return value_old
 
     # 如果期望类型与传的类型不一致，则进行强制转换类型
+    if modeltype == "text":
+        return str(value_old)
     if modeltype == "string":
         return str(value_old)
     if modeltype == "int":

@@ -304,6 +304,12 @@ def test_instance_update_section():
                 u'item_name': u's|vip_list',
                 u'item_type': u'string',
                 u'item_description': u'vip list'
+            },
+            u't|service_log': {
+                "item_name": "t|service_log",
+                "item_default": "-",
+                'item_type': 'text',
+                "item_description": "log"
             }
         }
     }

@@ -98,6 +98,8 @@ class WuxingInstanceItem(xlib.db.BaseModel):
     item_value_float = DoubleField(null=True, index=True)
     item_value_int = IntegerField(null=True, index=True)
     item_value_string = CharField(max_length=128, null=True, index=True)
+    # 此 value 没有索引
+    item_value_text = CharField(max_length=20000, null=True)
     user = CharField(max_length=32, default="-")
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
     u_time = DateTimeField(column_name="u_time", default=datetime.now, index=True)
@@ -184,6 +186,23 @@ class WuxingHistoryString(xlib.db.BaseModel):
         table_name = 'wuxing_history_string'
 
 
+class WuxingHistoryText(xlib.db.BaseModel):
+    """
+    五行表结构, Text 历史数据
+    """
+    # If none of the fields are initialized with primary_key=True,
+    # an auto-incrementing primary key will automatically be created and named 'id'.
+    # 命名空间(如 group_config/service_config/group_attr/service_attr/host_attr)
+    id = AutoField(primary_key=True)
+    item_id = IntegerField(index=True)
+    item_value = CharField(max_length=20000)
+    cmd = CharField(max_length=8)
+    user = CharField(max_length=32, default="-")
+    c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
+
+    class Meta(object):
+        table_name = 'wuxing_history_text'
+
 if __name__ == "__main__":
     xlib.db.my_databases["default"].connect()
     model_list = [
@@ -193,7 +212,9 @@ if __name__ == "__main__":
         WuxingHistoryBool,
         WuxingHistoryFloat,
         WuxingHistoryInt,
-        WuxingHistoryString]
+        WuxingHistoryString,
+        WuxingHistoryText,
+        ]
 
     # xlib.db.my_databases["default"].drop_tables(model_list)
     xlib.db.my_databases["default"].create_tables(model_list)

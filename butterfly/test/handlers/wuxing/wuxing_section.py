@@ -176,6 +176,11 @@ def test_section_item_add():
             "item_name": "s|vip_list",
             "item_default": "-",
             "item_description": "vip list"
+        },
+        {
+            "item_name": "t|service_log",
+            "item_default": "-",
+            "item_description": "log"
         }
     ]
     for item in item_list:

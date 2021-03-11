@@ -19,20 +19,12 @@ from xlib.middleware import funcattr
 from xlib.db import shortcuts
 from xlib.db import peewee
 
-from handlers.wuxing.models import model
 from handlers.wuxing.libs import retstat
+from handlers.wuxing.libs import common_map
 
 
 __info = "wuxing"
 __version = "1.0.1"
-
-
-modelhistory_map = {
-    "bool": model.WuxingHistoryBool,
-    "int": model.WuxingHistoryInt,
-    "float": model.WuxingHistoryFloat,
-    "string": model.WuxingHistoryString,
-}
 
 
 @funcattr.api
@@ -47,10 +39,10 @@ def item_history_list(req, item_type, item_id, page_index=1, page_size=10):
         page_size       : (int) 每页显示条数
     """
     isinstance(req, Request)
-    if item_type not in modelhistory_map.keys():
+    if item_type not in common_map.modelhistory_map.keys():
         return retstat.ERR_ITEM_TYPE_NOT_FOUND, {}, [__info, __version]
 
-    item_history_model = modelhistory_map[item_type]
+    item_history_model = common_map.modelhistory_map[item_type]
     data = {}
     data_list = []
 

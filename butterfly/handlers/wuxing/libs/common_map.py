@@ -15,7 +15,8 @@ item_type_map = {
     "i|": "int",
     "s|": "string",
     "f|": "float",
-    "b|": "bool"
+    "b|": "bool",
+    "t|": "text",
 }
 
 # 根据 item_type 获取存储 item 值 field
@@ -24,6 +25,7 @@ value_field_model_map = {
     "int": model.WuxingInstanceItem.item_value_int,
     "float": model.WuxingInstanceItem.item_value_float,
     "string": model.WuxingInstanceItem.item_value_string,
+    "text": model.WuxingInstanceItem.item_value_text,
 }
 
 # 根据 item_type 获取转换方法
@@ -32,6 +34,7 @@ modeltype_map = {
     "int": int,
     "float": float,
     "string": str,
+    "text": str,
 }
 
 # 根据 item_type 获取存储 item 值 field
@@ -40,6 +43,7 @@ value_field_map = {
     "int": "item_value_int",
     "float": "item_value_float",
     "string": "item_value_string",
+    "text": "item_value_text",
 }
 
 # 根据 item_type 获取 item 历史表 model
@@ -48,4 +52,5 @@ modelhistory_map = {
     "int": model.WuxingHistoryInt,
     "float": model.WuxingHistoryFloat,
     "string": model.WuxingHistoryString,
+    "text": model.WuxingHistoryText,
 }

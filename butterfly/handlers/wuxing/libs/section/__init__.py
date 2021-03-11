@@ -143,7 +143,7 @@ def section_item_add(req, namespace, section_name, section_version, item_name,
     section_model = model.WuxingSection
 
     item_prefix = item_name[:2]
-    if item_prefix not in ["i|", "s|", "f|", "b|"]:
+    if item_prefix not in ["i|", "s|", "f|", "b|", "t|"]:
         return retstat.ERR_SECTION_ITEM_TYPE_FAILED, {}, [(__info, __version)]
 
     item_type = common_map.item_type_map[item_prefix]
