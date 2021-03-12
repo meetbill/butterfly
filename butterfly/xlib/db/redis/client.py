@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: client.py
+# Description:
+
+"""
 from __future__ import unicode_literals
 from itertools import chain
 import datetime
@@ -29,7 +35,9 @@ EMPTY_RESPONSE = 'EMPTY_RESPONSE'
 
 
 def list_or_args(keys, args):
+    """
     # returns a single new list combining keys and args
+    """
     try:
         iter(keys)
         # a string or bytes instance can be iterated, but indicates

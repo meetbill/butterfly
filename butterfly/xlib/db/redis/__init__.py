@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: w.py
+# Description:
+
+"""
 from xlib.db.redis.client import Redis, StrictRedis
 from xlib.db.redis.connection import (
     BlockingConnectionPool,
@@ -25,6 +31,9 @@ from xlib.db.redis.exceptions import (
 
 
 def int_or_str(value):
+    """
+    If the data type is int, the int data is returned
+    """
     try:
         return int(value)
     except ValueError:

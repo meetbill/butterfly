@@ -396,12 +396,18 @@ class Connection(object):
     __del__ = _force_close
 
     def autocommit(self, value):
+        """
+        Autocommit
+        """
         self.autocommit_mode = bool(value)
         current = self.get_autocommit()
         if value != current:
             self._send_autocommit_mode()
 
     def get_autocommit(self):
+        """
+        get autocommit flag
+        """
         return bool(self.server_status &
                     SERVER_STATUS.SERVER_STATUS_AUTOCOMMIT)
 
@@ -482,6 +488,9 @@ class Connection(object):
         return self.escape(obj, self.encoders)
 
     def escape_string(self, s):
+        """
+        Escape special characters in string
+        """
         if (self.server_status &
                 SERVER_STATUS.SERVER_STATUS_NO_BACKSLASH_ESCAPES):
             return s.replace("'", "''")
@@ -519,8 +528,10 @@ class Connection(object):
         else:
             self.commit()
 
-    # The following methods are INTERNAL USE ONLY (called from Cursor)
     def query(self, sql, unbuffered=False):
+        """
+        This methods are INTERNAL USE ONLY (called from Cursor)
+        """
         # if DEBUG:
         #     print("DEBUG: sending query:", sql)
         if isinstance(sql, text_type) and not (JYTHON or IRONPYTHON):
@@ -533,13 +544,22 @@ class Connection(object):
         return self._affected_rows
 
     def next_result(self, unbuffered=False):
+        """
+        Read next result
+        """
         self._affected_rows = self._read_query_result(unbuffered=unbuffered)
         return self._affected_rows
 
     def affected_rows(self):
+        """
+        Returns the number of record rows affected by the previous MySQL operation.
+        """
         return self._affected_rows
 
     def kill(self, thread_id):
+        """
+        kill thread_id
+        """
         arg = struct.pack('<I', thread_id)
         self._execute_command(COMMAND.COM_PROCESS_KILL, arg)
         return self._read_ok_packet()
@@ -568,7 +588,9 @@ class Connection(object):
                 raise
 
     def set_charset(self, charset):
+        """
         # Make sure charset is supported.
+        """
         encoding = charset_by_name(charset).encoding
 
         self._execute_command(COMMAND.COM_QUERY, "SET NAMES %s" % self.escape(charset))
@@ -577,6 +599,9 @@ class Connection(object):
         self.encoding = encoding
 
     def connect(self, sock=None):
+        """
+        connect
+        """
         self._closed = False
         try:
             if sock is None:
@@ -664,13 +689,16 @@ class Connection(object):
         self._write_bytes(data)
         self._next_seq_id = (self._next_seq_id + 1) % 256
 
-    def _read_packet(self, packet_type=MysqlPacket):
+    def _read_packet(self, packet_type=None):
         """Read an entire "mysql packet" in its entirety from the network
         and return a MysqlPacket type that represents the results.
 
         :raise OperationalError: If the connection to the MySQL server is lost.
         :raise InternalError: If the packet sequence number is wrong.
         """
+        if packet_type is None:
+            packet_type = MysqlPacket
+
         buff = b''
         while True:
             packet_header = self._read_bytes(4)
@@ -756,6 +784,9 @@ class Connection(object):
         return result.affected_rows
 
     def insert_id(self):
+        """
+        Returns the ID automatically generated in the last query
+        """
         if self._result:
             return self._result.insert_id
         else:
@@ -918,7 +949,8 @@ class Connection(object):
             except AttributeError:
                 if plugin_name != b'dialog':
                     raise err.OperationalError(2059, "Authentication plugin '%s'"
-                                               " not loaded: - %r missing authenticate method" % (plugin_name, type(handler)))
+                                               " not loaded: - %r missing authenticate method" % (
+                                                   plugin_name, type(handler)))
         if plugin_name == b"caching_sha2_password":
             return _auth.caching_sha2_password_auth(self, auth_packet)
         elif plugin_name == b"sha256_password":
@@ -950,7 +982,8 @@ class Connection(object):
                                                    " not loaded: - %r missing prompt method" % (plugin_name, handler))
                     except TypeError:
                         raise err.OperationalError(2061, "Authentication plugin '%s'"
-                                                   " %r didn't respond with string. Returned '%r' to prompt %r" % (plugin_name, handler, resp, prompt))
+                                                   " %r didn't respond with string. Returned '%r' to prompt %r" % (
+                                                       plugin_name, handler, resp, prompt))
                 else:
                     raise err.OperationalError(
                         2059, "Authentication plugin '%s' (%r) not configured" %
@@ -977,22 +1010,34 @@ class Connection(object):
                 handler = plugin_class(self)
             except TypeError:
                 raise err.OperationalError(2059, "Authentication plugin '%s'"
-                                           " not loaded: - %r cannot be constructed with connection object" % (plugin_name, plugin_class))
+                                           " not loaded: - %r cannot be constructed with connection object" % (
+                                               plugin_name, plugin_class))
         else:
             handler = None
         return handler
 
-    # _mysql support
     def thread_id(self):
+        """
+        # _mysql support
+        """
         return self.server_thread_id[0]
 
     def character_set_name(self):
+        """
+        Returns the default character set for a database connection
+        """
         return self.charset
 
     def get_host_info(self):
+        """
+        Returns the MySQL server host name and connection type.
+        """
         return self.host_info
 
     def get_proto_info(self):
+        """
+        Returns the MySQL protocol version.
+        """
         return self.protocol_version
 
     def _get_server_information(self):
@@ -1061,6 +1106,9 @@ class Connection(object):
                 self._auth_plugin_name = data[i:server_end].decode('utf-8')
 
     def get_server_info(self):
+        """
+        Returns the MySQL server version.
+        """
         return self.server_version
 
     Warning = err.Warning
@@ -1076,6 +1124,9 @@ class Connection(object):
 
 
 class MySQLResult(object):
+    """
+    MySQLResult class
+    """
 
     def __init__(self, connection):
         """
@@ -1098,6 +1149,9 @@ class MySQLResult(object):
             self._finish_unbuffered_query()
 
     def read(self):
+        """
+        read
+        """
         try:
             first_packet = self.connection._read_packet()
 

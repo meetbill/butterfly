@@ -264,11 +264,17 @@ def maybe_ref(ref):
 
 if six.PY2:
     def repr_escape(string):
+        """
+        string encode
+        """
         if isinstance(string, six.text_type):
             return string.encode('ascii', 'backslashreplace')
         return string
 else:
     def repr_escape(string):
+        """
+        string encode
+        """
         return string
 
 
