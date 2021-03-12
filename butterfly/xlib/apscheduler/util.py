@@ -21,15 +21,6 @@ try:
 except ImportError:
     TIMEOUT_MAX = 4294967  # Maximum value accepted by Event.wait() on Windows
 
-try:
-    from asyncio import iscoroutinefunction
-except ImportError:
-    try:
-        from trollius import iscoroutinefunction
-    except ImportError:
-        def iscoroutinefunction(func):
-            return False
-
 __all__ = ('asint', 'asbool', 'convert_to_datetime', 'datetime_to_timestamp',
            'timestamp_to_datetime', 'timedelta_seconds', 'datetime_ceil', 'get_callable_name',
            'obj_to_ref', 'ref_to_obj', 'maybe_ref', 'repr_escape', 'check_callable_args',
@@ -79,7 +70,6 @@ def asbool(obj):
     return bool(obj)
 
 
-
 _DATE_REGEX = re.compile(
     r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'
     r'(?:[ T](?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2})'
@@ -112,6 +102,7 @@ def convert_to_datetime(input):
         values = dict(values)
         return datetime(**values)
     raise TypeError('Unsupported input type: %s' % type(input))
+
 
 def datetime_to_timestamp(timeval):
     """
@@ -162,6 +153,9 @@ def datetime_ceil(dateval):
 
 
 def datetime_repr(dateval):
+    """
+    time format
+    """
     return dateval.strftime('%Y-%m-%d %H:%M:%S %Z') if dateval else 'None'
 
 
@@ -367,12 +361,3 @@ def check_callable_args(func, args, kwargs):
         raise ValueError(
             'The target callable does not accept the following keyword arguments: %s' %
             ', '.join(unmatched_kwargs))
-
-
-def iscoroutinefunction_partial(f):
-    while isinstance(f, partial):
-        f = f.func
-
-    # The asyncio version of iscoroutinefunction includes testing for @coroutine
-    # decorations vs. the inspect version which does not.
-    return iscoroutinefunction(f)

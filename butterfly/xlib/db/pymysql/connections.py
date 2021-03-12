@@ -1,7 +1,14 @@
+# coding=utf8
+"""
+# File Name: connection.py
+# Description:
+    mysql connection manager
+
 # Python implementation of the MySQL client-server protocol
 # http://dev.mysql.com/doc/internals/en/client-server-protocol.html
 # Error codes:
 # http://dev.mysql.com/doc/refman/5.5/en/error-messages-client.html
+"""
 from __future__ import print_function
 from ._compat import PY2, range_type, text_type, str_type, JYTHON, IRONPYTHON
 
@@ -94,11 +101,16 @@ MAX_PACKET_LEN = 2 ** 24 - 1
 
 
 def pack_int24(n):
+    """
+    pack_int24
+    """
     return struct.pack('<I', n)[:3]
 
 
-# https://dev.mysql.com/doc/internals/en/integer.html#packet-Protocol::LengthEncodedInteger
 def lenenc_int(i):
+    """
+    # https://dev.mysql.com/doc/internals/en/integer.html#packet-Protocol::LengthEncodedInteger
+    """
     if (i < 0):
         raise ValueError("Encoding %d is less than 0 - no representation in LengthEncodedInteger" % i)
     elif (i < 0xfb):
@@ -184,7 +196,7 @@ class Connection(object):
                  database=None, port=0, unix_socket=None,
                  charset='', sql_mode=None,
                  read_default_file=None, conv=None, use_unicode=None,
-                 client_flag=0, cursorclass=Cursor, init_command=None,
+                 client_flag=0, cursorclass=None, init_command=None,
                  connect_timeout=10, ssl=None, read_default_group=None,
                  compress=None, named_pipe=None,
                  autocommit=False, db=None, passwd=None, local_infile=False,
@@ -288,7 +300,10 @@ class Connection(object):
 
         self.client_flag = client_flag
 
-        self.cursorclass = cursorclass
+        if cursorclass is None:
+            self.cursorclass = Cursor
+        else:
+            self.cursorclass = cursorclass
 
         self._result = None
         self._affected_rows = 0

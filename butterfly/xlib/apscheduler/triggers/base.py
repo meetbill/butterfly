@@ -1,3 +1,10 @@
+# coding=utf8
+"""
+# File Name: base.py
+# Description:
+    BaseTrigger
+
+"""
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta
 import random
