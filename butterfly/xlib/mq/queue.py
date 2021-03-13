@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: queue.py
+# Description:
+
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -14,11 +20,17 @@ from xlib.mq import defaults
 
 
 def compact(lst):
+    """
+    compact
+    """
     return [item for item in lst if item is not None]
 
 
 @total_ordering
 class Queue(object):
+    """
+    Queue class
+    """
     msg_class = Msg
     DEFAULT_TIMEOUT = 180  # Default timeout seconds.
     redis_queue_namespace_prefix = defaults.REDIS_QUEUE_NAMESPACE_PREFIX
@@ -31,6 +43,9 @@ class Queue(object):
         connection = connection
 
         def to_queue(queue_key):
+            """
+            Returns Queue instance
+            """
             return cls.from_queue_key(as_text(queue_key),
                                       connection=connection,
                                       msg_class=msg_class)
@@ -132,6 +147,13 @@ class Queue(object):
         return self.count == 0
 
     def fetch_msg(self, msg_id):
+        """
+        Fetch msg
+        Args:
+            msg_id: (string)
+        Returns:
+            msg object
+        """
         try:
             msg = self.msg_class.fetch(msg_id, connection=self.connection)
         except NoSuchMsgError:
@@ -219,8 +241,13 @@ class Queue(object):
     def create_msg(self, data, timeout=None,
                    result_ttl=None, ttl=None, failure_ttl=None,
                    description=None, msg_id=None,
-                   meta=None, status=MsgStatus.QUEUED):
-        """Creates a msg based on parameters given."""
+                   meta=None, status=None):
+        """
+        Creates a msg based on parameters given.
+        """
+        if status is None:
+            status=MsgStatus.QUEUED
+
         timeout = parse_timeout(timeout)
 
         if timeout is None:

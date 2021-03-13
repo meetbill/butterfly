@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: database.py
+# Description:
+
+"""
 from functools import wraps
 import glob
 import os
@@ -37,20 +43,32 @@ from xlib.db.redisorm.streams import TimeSeries
 
 
 class TransactionLocal(threading.local):
+    """
+    TransactionLocal
+    """
     def __init__(self, **kwargs):
         super(TransactionLocal, self).__init__(**kwargs)
         self.pipes = []
 
     @property
     def pipe(self):
+        """
+        pipe
+        """
         if len(self.pipes):
             return self.pipes[-1]
 
     def commit(self):
+        """
+        Commit
+        """
         pipe = self.pipes.pop()
         return pipe.execute()
 
     def abort(self):
+        """
+        Abort
+        """
         pipe = self.pipes.pop()
         pipe.reset()
 
@@ -99,6 +117,9 @@ class Database(Redis):
         return self.xpending(key, group)
 
     def get_transaction(self):
+        """
+        Get transaction
+        """
         with self._transaction_lock:
             local = self._transaction_local
             local.pipes.append(self.pipeline())
@@ -135,9 +156,17 @@ class Database(Redis):
             local.abort()
 
     def atomic(self):
+        """
+        Atomic
+        """
         return _Atomic(self)
 
     def init_scripts(self, script_dir=None):
+        """
+        Init scripts
+        Args:
+            script_dir: (String)
+        """
         self._scripts = {}
         if not script_dir:
             script_dir = os.path.join(os.path.dirname(__file__), 'scripts')
@@ -201,9 +230,15 @@ class Database(Redis):
         return self.__mapping.get(self.type(key), self.__getitem__)(key)
 
     def hash_exists(self, key):
+        """
+        Check key exists
+        """
         return self.exists(key)
 
     def autocomplete(self, namespace='autocomplete', **kwargs):
+        """
+        Return Autocomplete object
+        """
         return Autocomplete(self, namespace, **kwargs)
 
     def cache(self, name='cache', default_timeout=3600):
@@ -430,11 +465,17 @@ class Database(Redis):
 
 
 class _Atomic(object):
+    """
+    _Atomic
+    """
     def __init__(self, db):
         self.db = db
 
     @property
     def pipe(self):
+        """
+        pipe
+        """
         return self.db._transaction_local.pipe
 
     def __enter__(self):
@@ -448,12 +489,18 @@ class _Atomic(object):
             self.commit(False)
 
     def commit(self, begin_new=True):
+        """
+        commit
+        """
         ret = self.db.commit_transaction()
         if begin_new:
             self.db.get_transaction()
         return ret
 
     def clear(self, begin_new=True):
+        """
+        clear
+        """
         self.db.clear_transaction()
         if begin_new:
             self.db.get_transaction()

@@ -276,6 +276,9 @@ def _check_system_limits():
 
 
 class ProcessPoolExecutor(_base.Executor):
+    """
+    ProcessPoolExecutor Class
+    """
     def __init__(self, max_workers=None):
         """Initializes a new ProcessPoolExecutor instance.
 
@@ -311,9 +314,14 @@ class ProcessPoolExecutor(_base.Executor):
         self._pending_work_items = {}
 
     def _start_queue_management_thread(self):
-        # When the executor gets lost, the weakref callback will wake up
-        # the queue management thread.
-        def weakref_cb(_, q=self._result_queue):
+        def weakref_cb(_, q=None):
+            """
+            # When the executor gets lost, the weakref callback will wake up
+            # the queue management thread.
+            """
+            if q is None:
+                q = self._result_queue
+
             q.put(None)
         if self._queue_management_thread is None:
             self._queue_management_thread = threading.Thread(
@@ -338,6 +346,9 @@ class ProcessPoolExecutor(_base.Executor):
             self._processes.add(p)
 
     def submit(self, fn, *args, **kwargs):
+        """
+        submit fn
+        """
         with self._shutdown_lock:
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
@@ -357,6 +368,9 @@ class ProcessPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def shutdown(self, wait=True):
+        """
+        Shutdown
+        """
         with self._shutdown_lock:
             self._shutdown_thread = True
         if self._queue_management_thread:

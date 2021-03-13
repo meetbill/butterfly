@@ -1,3 +1,10 @@
+# coding=utf8
+"""
+# File Name: fts.py
+# Description:
+    Full-text Search(全文检索)
+
+"""
 from xlib.db.redisorm.query import Executor
 from xlib.db.redisorm.query import OP_MATCH
 from xlib.db.redisorm.query import parse
@@ -32,6 +39,9 @@ class Index(object):
         self.members = self.db.Set('fts.%s' % self.name)
 
     def get_key(self, word):
+        """
+        get key
+        """
         return self.db.ZSet('fts.%s.%s' % (self.name, word))
 
     def _get_hash(self, document_id):
@@ -106,10 +116,16 @@ class Index(object):
         self.add(key, content, **metadata)
 
     def get_index(self, op):
+        """
+        Get index
+        """
         assert op == OP_MATCH
         return self
 
     def db_value(self, value):
+        """
+        Return value
+        """
         return value
 
     def _search(self, query):

@@ -770,9 +770,15 @@ _add_doc(iterlists,
 
 if PY3:
     def b(s):
+        """
+        byte
+        """
         return s.encode("latin-1")
 
     def u(s):
+        """
+        unicode
+        """
         return s
     unichr = chr
     import struct
@@ -796,18 +802,30 @@ if PY3:
         _assertNotRegex = "assertNotRegex"
 else:
     def b(s):
+        """
+        byte
+        """
         return s
     # Workaround for standalone backslash
 
     def u(s):
+        """
+        unicode
+        """
         return unicode(s.replace(r'\\', r'\\\\'), "unicode_escape")
     unichr = unichr
     int2byte = chr
 
     def byte2int(bs):
+        """
+        byte2int
+        """
         return ord(bs[0])
 
     def indexbytes(buf, i):
+        """
+        indexbytes
+        """
         return ord(buf[i])
     iterbytes = functools.partial(itertools.imap, ord)
     import StringIO
@@ -821,18 +839,30 @@ _add_doc(u, """Text literal""")
 
 
 def assertCountEqual(self, *args, **kwargs):
+    """
+    assertCountEqual
+    """
     return getattr(self, _assertCountEqual)(*args, **kwargs)
 
 
 def assertRaisesRegex(self, *args, **kwargs):
+    """
+    assertRaisesRegex
+    """
     return getattr(self, _assertRaisesRegex)(*args, **kwargs)
 
 
 def assertRegex(self, *args, **kwargs):
+    """
+    assertRegex
+    """
     return getattr(self, _assertRegex)(*args, **kwargs)
 
 
 def assertNotRegex(self, *args, **kwargs):
+    """
+    assertNotRegex
+    """
     return getattr(self, _assertNotRegex)(*args, **kwargs)
 
 
@@ -840,6 +870,9 @@ if PY3:
     exec_ = getattr(moves.builtins, "exec")
 
     def reraise(tp, value, tb=None):
+        """
+        Reraise
+        """
         try:
             if value is None:
                 value = tp()
@@ -880,6 +913,9 @@ if sys.version_info[:2] > (3,):
 """)
 else:
     def raise_from(value, from_value):
+        """
+        raise
+        """
         raise value
 
 
@@ -891,9 +927,13 @@ if sys.version_info[0:2] < (3, 4):
     # attribute on ``wrapper`` object and it doesn't raise an error if any of
     # the attributes mentioned in ``assigned`` and ``updated`` are missing on
     # ``wrapped`` object.
-    def _update_wrapper(wrapper, wrapped,
-                        assigned=functools.WRAPPER_ASSIGNMENTS,
-                        updated=functools.WRAPPER_UPDATES):
+    def _update_wrapper(wrapper, wrapped, assigned=None, updated=None):
+        if assigned is None:
+            assigned=functools.WRAPPER_ASSIGNMENTS
+
+        if updated is None:
+            updated=functools.WRAPPER_UPDATES
+
         for attr in assigned:
             try:
                 value = getattr(wrapped, attr)
@@ -907,8 +947,12 @@ if sys.version_info[0:2] < (3, 4):
         return wrapper
     _update_wrapper.__doc__ = functools.update_wrapper.__doc__
 
-    def wraps(wrapped, assigned=functools.WRAPPER_ASSIGNMENTS,
-              updated=functools.WRAPPER_UPDATES):
+    def wraps(wrapped, assigned=None, updated=None):
+        if assigned is None:
+            assigned=functools.WRAPPER_ASSIGNMENTS
+
+        if updated is None:
+            updated=functools.WRAPPER_UPDATES
         return functools.partial(_update_wrapper, wrapped=wrapped,
                                  assigned=assigned, updated=updated)
     wraps.__doc__ = functools.wraps.__doc__
@@ -923,6 +967,9 @@ def with_metaclass(meta, *bases):
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
     class Metaclass(type):
+        """
+        Metaclass
+        """
 
         def __new__(cls, name, this_bases, d):
             if sys.version_info[:2] >= (3, 7):

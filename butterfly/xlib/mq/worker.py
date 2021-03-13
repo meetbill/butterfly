@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# coding=utf8
+"""
+# File Name: worker.py
+# Description:
+
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -38,30 +43,16 @@ addr_host, addr_port = config.SERVER_LISTEN_ADDR
 logger = logging.getLogger(__name__)
 
 
-class StopRequested(Exception):
-    pass
-
-
 def compact(l):
+    """
+    compact
+    """
     return [x for x in l if x is not None]
 
 
 _signames = dict((getattr(signal, signame), signame)
                  for signame in dir(signal)
                  if signame.startswith('SIG') and '_' not in signame)
-
-
-def signal_name(signum):
-    try:
-        if sys.version_info[:2] >= (3, 5):
-            return signal.Signals(signum).name
-        else:
-            return _signames[signum]
-
-    except KeyError:
-        return 'SIG_UNKNOWN'
-    except ValueError:
-        return 'SIG_UNKNOWN'
 
 
 WorkerStatus = enum(
@@ -74,6 +65,9 @@ WorkerStatus = enum(
 
 
 class Worker(object):
+    """
+    Worker class
+    """
     redis_worker_namespace_prefix = 'mq:worker:'
     redis_workers_keys = worker_registration.REDIS_WORKER_KEYS
     queue_class = Queue
@@ -101,6 +95,9 @@ class Worker(object):
 
     @classmethod
     def all_keys(cls, connection=None, queue=None):
+        """
+        Returns all_keys
+        """
         return [as_text(key) for key in get_keys(queue=queue, connection=connection)]
 
     @classmethod
@@ -270,6 +267,9 @@ class Worker(object):
             return utcparse(as_text(shutdown_requested_timestamp))
 
     def set_state(self, state):
+        """
+        Set state
+        """
         self._state = state
         self.connection.hset(self.key, 'state', state)
 
@@ -282,6 +282,9 @@ class Worker(object):
         self.set_state(state)
 
     def get_state(self):
+        """
+        Get state
+        """
         return self._state
 
     def _get_state(self):
@@ -313,9 +316,10 @@ class Worker(object):
 
     def run_maintenance_tasks(self):
         """
-        进行每 15 分钟一次的定时清理
         Runs periodic maintenance tasks, these include:
         1. Cleaning registries
+
+        Operate every 15 minutes
         """
         self.clean_registries()
 
@@ -337,17 +341,20 @@ class Worker(object):
 
     def heartbeat(self):
         """
-        每分钟进行更新一次心跳
-
         Specifies a new worker timeout, typically by extending the
         expiration time of the worker, effectively making this a "heartbeat"
         to not expire the worker until the timeout passes.
+
+        One heartbeat per minute
         """
         timeout = 120
         self.connection.expire(self.key, timeout)
         self.connection.hset(self.key, 'last_heartbeat', utcformat(utcnow()))
 
     def refresh(self):
+        """
+        Update data from redis
+        """
         data = self.connection.hmget(
             self.key, 'queues', 'state', 'last_heartbeat',
             'birth', 'failed_msg_count', 'successful_msg_count',
@@ -383,12 +390,21 @@ class Worker(object):
                            for queue in queues.split(',')]
 
     def increment_failed_msg_count(self):
+        """
+        Incr failed msg count
+        """
         self.connection.hincrby(self.key, 'failed_msg_count', 1)
 
     def increment_successful_msg_count(self):
+        """
+        Incr successful msg count
+        """
         self.connection.hincrby(self.key, 'successful_msg_count', 1)
 
     def increment_total_working_time(self, msg_execution_time):
+        """
+        incr total working time
+        """
         self.connection.hincrbyfloat(self.key, 'total_working_time', msg_execution_time.total_seconds())
 
     def handle_msg_failure(self, msg, started_msg_registry=None,
@@ -420,6 +436,9 @@ class Worker(object):
             self.increment_total_working_time(msg.ended_at - msg.started_at)
 
     def handle_msg_success(self, msg, queue, started_msg_registry):
+        """
+        Handle msg success
+        """
         self.log.debug('Handling successful execution of msg %s', msg.id)
         self.increment_successful_msg_count()
         self.increment_total_working_time(msg.ended_at - msg.started_at)
@@ -557,7 +576,7 @@ class Worker(object):
 
     def executor_callback(self, task):
         """
-        记录 task 执行异常
+        Record task execution exception
         """
         logging.info("called worker callback function")
         task_exception = task.exception()

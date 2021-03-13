@@ -65,10 +65,16 @@ def timestamp_to_datetime(response):
 
 
 def string_keys_to_dict(key_string, callback):
+    """
+    string to dict
+    """
     return dict.fromkeys(key_string.split(), callback)
 
 
 def dict_merge(*dicts):
+    """
+    merge dict
+    """
     merged = {}
     for d in dicts:
         merged.update(d)
@@ -133,6 +139,9 @@ def parse_info(response):
     response = nativestr(response)
 
     def get_value(value):
+        """
+        get value
+        """
         if ',' not in value or '=' not in value:
             try:
                 if '.' in value:
@@ -206,6 +215,9 @@ SENTINEL_STATE_TYPES = {
 
 
 def parse_sentinel_state(item):
+    """
+    parse sentinel state
+    """
     result = pairs_to_dict_typed(item, SENTINEL_STATE_TYPES)
     flags = set(result['flags'].split(','))
     for name, flag in (('is_master', 'master'), ('is_slave', 'slave'),
@@ -218,10 +230,16 @@ def parse_sentinel_state(item):
 
 
 def parse_sentinel_master(response):
+    """
+    SENTINEL MASTER command
+    """
     return parse_sentinel_state(imap(nativestr, response))
 
 
 def parse_sentinel_masters(response):
+    """
+    SENTINEL MASTERS command
+    """
     result = {}
     for item in response:
         state = parse_sentinel_state(imap(nativestr, item))
@@ -230,14 +248,23 @@ def parse_sentinel_masters(response):
 
 
 def parse_sentinel_slaves_and_sentinels(response):
+    """
+    SENTINEL SENTINELS or SENTINEL SLAVES
+    """
     return [parse_sentinel_state(imap(nativestr, item)) for item in response]
 
 
 def parse_sentinel_get_master(response):
+    """
+    SENTINEL GET-MASTER-ADDR-BY-NAME command
+    """
     return response and (response[0], int(response[1])) or None
 
 
 def nativestr_if_bytes(value):
+    """
+    If value is byte type, convert to str
+    """
     return nativestr(value) if isinstance(value, bytes) else value
 
 
@@ -261,6 +288,9 @@ def pairs_to_dict(response, decode_keys=False, decode_string_values=False):
 
 
 def pairs_to_dict_typed(response, type_info):
+    """
+    pairs to dict
+    """
     it = iter(response)
     result = {}
     for key, value in izip(it, it):
@@ -299,18 +329,30 @@ def sort_return_tuples(response, **options):
 
 
 def int_or_none(response):
+    """
+    Returns
+        int or none
+    """
     if response is None:
         return None
     return int(response)
 
 
 def nativestr_or_none(response):
+    """
+    Returns:
+        str or none
+    """
     if response is None:
         return None
     return nativestr(response)
 
 
 def parse_stream_list(response):
+    """
+    Returns:
+        list
+    """
     if response is None:
         return None
     data = []
@@ -323,20 +365,32 @@ def parse_stream_list(response):
 
 
 def pairs_to_dict_with_nativestr_keys(response):
+    """
+    pairs to dict
+    """
     return pairs_to_dict(response, decode_keys=True)
 
 
 def parse_list_of_dicts(response):
+    """
+    parse list of dicts
+    """
     return list(imap(pairs_to_dict_with_nativestr_keys, response))
 
 
 def parse_xclaim(response, **options):
+    """
+    XCLAIM command
+    """
     if options.get('parse_justid', False):
         return response
     return parse_stream_list(response)
 
 
 def parse_xinfo_stream(response):
+    """
+    XINFO STREAM command
+    """
     data = pairs_to_dict(response, decode_keys=True)
     first = data['first-entry']
     if first is not None:
@@ -348,12 +402,18 @@ def parse_xinfo_stream(response):
 
 
 def parse_xread(response):
+    """
+    XREAD XREADGROUP command
+    """
     if response is None:
         return []
     return [[r[0], parse_stream_list(r[1])] for r in response]
 
 
 def parse_xpending(response, **options):
+    """
+    XPENDING command
+    """
     if options.get('parse_detail', False):
         return parse_xpending_range(response)
     consumers = [{'name': n, 'pending': long(p)} for n, p in response[3] or []]
@@ -366,21 +426,35 @@ def parse_xpending(response, **options):
 
 
 def parse_xpending_range(response):
+    """
+    parse xpending range
+    """
     k = ('message_id', 'consumer', 'time_since_delivered', 'times_delivered')
     return [dict(izip(k, r)) for r in response]
 
 
 def float_or_none(response):
+    """
+    Returns:
+        float or none
+    """
     if response is None:
         return None
     return float(response)
 
 
 def bool_ok(response):
+    """
+    Returns:
+        bool
+    """
     return nativestr(response) == 'OK'
 
 
 def parse_zadd(response, **options):
+    """
+    ZADD command
+    """
     if response is None:
         return None
     if options.get('as_score'):
@@ -389,6 +463,9 @@ def parse_zadd(response, **options):
 
 
 def parse_client_list(response, **options):
+    """
+    CLIENT LIST command
+    """
     clients = []
     for c in nativestr(response).splitlines():
         # Values might contain '='
@@ -397,21 +474,33 @@ def parse_client_list(response, **options):
 
 
 def parse_config_get(response, **options):
+    """
+    CONFIG GET command
+    """
     response = [nativestr(i) if i is not None else None for i in response]
     return response and pairs_to_dict(response) or {}
 
 
 def parse_scan(response, **options):
+    """
+    SSCAN or SCAN command
+    """
     cursor, r = response
     return long(cursor), r
 
 
 def parse_hscan(response, **options):
+    """
+    HSCAN command
+    """
     cursor, r = response
     return long(cursor), r and pairs_to_dict(r) or {}
 
 
 def parse_zscan(response, **options):
+    """
+    ZSCAN command
+    """
     score_cast_func = options.get('score_cast_func', float)
     cursor, r = response
     it = iter(r)
@@ -419,6 +508,9 @@ def parse_zscan(response, **options):
 
 
 def parse_slowlog_get(response, **options):
+    """
+    SLOWLOG GET command
+    """
     space = ' ' if options.get('decode_responses', False) else b' '
     return [{
         'id': item[0],
@@ -429,6 +521,9 @@ def parse_slowlog_get(response, **options):
 
 
 def parse_cluster_info(response, **options):
+    """
+    CLUSTER INFO command
+    """
     response = nativestr(response)
     return dict(line.split(':') for line in response.splitlines() if line)
 
@@ -452,6 +547,9 @@ def _parse_node_line(line):
 
 
 def parse_cluster_nodes(response, **options):
+    """
+    CLUSTER NODES or CLUSTER SLAVES command
+    """
     response = nativestr(response)
     raw_lines = response
     if isinstance(response, basestring):
@@ -460,6 +558,9 @@ def parse_cluster_nodes(response, **options):
 
 
 def parse_georadius_generic(response, **options):
+    """
+    GEORADIUS or GEORADIUSBYMEMBER command
+    """
     if options['store'] or options['store_dist']:
         # `store` and `store_diff` cant be combined
         # with other command arguments.
@@ -491,16 +592,25 @@ def parse_georadius_generic(response, **options):
 
 
 def parse_pubsub_numsub(response, **options):
+    """
+    PUBSUB NUMSUB command
+    """
     return list(zip(response[0::2], response[1::2]))
 
 
 def parse_client_kill(response, **options):
+    """
+    CLIENT KILL command
+    """
     if isinstance(response, (long, int)):
         return int(response)
     return nativestr(response) == 'OK'
 
 
 def parse_acl_getuser(response, **options):
+    """
+    ACL GETUSER command
+    """
     if response is None:
         return None
     data = pairs_to_dict(response, decode_keys=True)
@@ -877,9 +987,15 @@ class Redis(object):
         return PubSub(self.connection_pool, **kwargs)
 
     def monitor(self):
+        """
+        Return a Monitor object.
+        """
         return Monitor(self.connection_pool)
 
     def client(self):
+        """
+        Returns self
+        """
         return self.__class__(connection_pool=self.connection_pool,
                               single_connection_client=True)
 
@@ -893,6 +1009,9 @@ class Redis(object):
         self.close()
 
     def close(self):
+        """
+        close connection
+        """
         conn = self.connection
         if conn:
             self.connection = None
@@ -2206,7 +2325,7 @@ class Redis(object):
                 yield item
 
     def zscan(self, name, cursor=0, match=None, count=None,
-              score_cast_func=float):
+              score_cast_func=None):
         """
         Incrementally return lists of elements in a sorted set. Also return a
         cursor indicating the scan position.
@@ -2217,6 +2336,9 @@ class Redis(object):
 
         ``score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         pieces = [name, cursor]
         if match is not None:
             pieces.extend([b'MATCH', match])
@@ -2226,7 +2348,7 @@ class Redis(object):
         return self.execute_command('ZSCAN', *pieces, **options)
 
     def zscan_iter(self, name, match=None, count=None,
-                   score_cast_func=float):
+                   score_cast_func=None):
         """
         Make an iterator using the ZSCAN command so that the client doesn't
         need to remember the cursor position.
@@ -2237,6 +2359,9 @@ class Redis(object):
 
         ``score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         cursor = '0'
         while cursor != 0:
             cursor, data = self.zscan(name, cursor=cursor, match=match,
@@ -2782,7 +2907,7 @@ class Redis(object):
         return self.execute_command('BZPOPMIN', *keys)
 
     def zrange(self, name, start, end, desc=False, withscores=False,
-               score_cast_func=float):
+               score_cast_func=None):
         """
         Return a range of values from sorted set ``name`` between
         ``start`` and ``end`` sorted in ascending order.
@@ -2796,6 +2921,9 @@ class Redis(object):
 
         ``score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         if desc:
             return self.zrevrange(name, start, end, withscores,
                                   score_cast_func)
@@ -2841,7 +2969,7 @@ class Redis(object):
         return self.execute_command(*pieces)
 
     def zrangebyscore(self, name, min, max, start=None, num=None,
-                      withscores=False, score_cast_func=float):
+                      withscores=False, score_cast_func=None):
         """
         Return a range of values from the sorted set ``name`` with scores
         between ``min`` and ``max``.
@@ -2854,6 +2982,9 @@ class Redis(object):
 
         `score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         if (start is not None and num is None) or \
                 (num is not None and start is None):
             raise DataError("``start`` and ``num`` must both be specified")
@@ -2905,7 +3036,7 @@ class Redis(object):
         return self.execute_command('ZREMRANGEBYSCORE', name, min, max)
 
     def zrevrange(self, name, start, end, withscores=False,
-                  score_cast_func=float):
+                  score_cast_func=None):
         """
         Return a range of values from sorted set ``name`` between
         ``start`` and ``end`` sorted in descending order.
@@ -2917,6 +3048,9 @@ class Redis(object):
 
         ``score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         pieces = ['ZREVRANGE', name, start, end]
         if withscores:
             pieces.append(b'WITHSCORES')
@@ -2927,7 +3061,7 @@ class Redis(object):
         return self.execute_command(*pieces, **options)
 
     def zrevrangebyscore(self, name, max, min, start=None, num=None,
-                         withscores=False, score_cast_func=float):
+                         withscores=False, score_cast_func=None):
         """
         Return a range of values from the sorted set ``name`` with scores
         between ``min`` and ``max`` in descending order.
@@ -2940,6 +3074,9 @@ class Redis(object):
 
         ``score_cast_func`` a callable used to cast the score return value
         """
+        if score_cast_func is None:
+            score_cast_func = float
+
         if (start is not None and num is None) or \
                 (num is not None and start is None):
             raise DataError("``start`` and ``num`` must both be specified")
@@ -3970,18 +4107,27 @@ class Pipeline(Redis):
         return response
 
     def raise_first_error(self, commands, response):
+        """
+        Raise first error
+        """
         for i, r in enumerate(response):
             if isinstance(r, ResponseError):
                 self.annotate_exception(r, i + 1, commands[i][0])
                 raise r
 
     def annotate_exception(self, exception, number, command):
+        """
+        Annotate exception
+        """
         cmd = ' '.join(imap(safe_unicode, command))
         msg = 'Command # %d (%s) of pipeline caused error: %s' % (
             number, cmd, safe_unicode(exception.args[0]))
         exception.args = (msg,) + exception.args[1:]
 
     def parse_response(self, connection, command_name, **options):
+        """
+        Parse response
+        """
         result = Redis.parse_response(
             self, connection, command_name, **options)
         if command_name in self.UNWATCH_COMMANDS:
@@ -3991,7 +4137,9 @@ class Pipeline(Redis):
         return result
 
     def load_scripts(self):
+        """
         # make sure all scripts that are about to be run on this pipeline exist
+        """
         scripts = list(self.scripts)
         immediate = self.immediate_execute_command
         shas = [s.sha for s in scripts]

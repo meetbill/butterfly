@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: containers.py
+# Description:
+
+"""
 import hashlib
 import operator
 import struct
@@ -23,6 +29,9 @@ from xlib.db.redisorm.utils import safe_decode_list
 
 
 def chainable_method(fn):
+    """
+    chainable_method decorator
+    """
     @wraps(fn)
     def inner(self, *args, **kwargs):
         fn(self, *args, **kwargs)
@@ -31,8 +40,14 @@ def chainable_method(fn):
 
 
 class Sortable(object):
+    """
+    Sortable class
+    """
     def sort(self, pattern=None, limit=None, offset=None, get_pattern=None,
              ordering=None, alpha=True, store=None):
+        """
+        sort
+        """
         if limit or offset:
             offset = offset or 0
         return self.database.sort(
@@ -124,6 +139,9 @@ class Hash(Container):
             return self.database.hget(self.key, item)
 
     def get(self, key, fallback=None):
+        """
+        Get value
+        """
         val = self.database.hget(self.key, key)
         return val if val is not None else fallback
 
@@ -306,6 +324,9 @@ class List(Sortable, Container):
         return self.database.rpush(self.key, *value)
 
     def insert(self, value, pivot, where):
+        """
+        Insert
+        """
         return self.database.linsert(self.key, where, pivot, value)
 
     def insert_before(self, value, key):
@@ -350,6 +371,9 @@ class List(Sortable, Container):
             return ret[1]
 
     def move_tail(self, key):
+        """
+        remove tail
+        """
         return self.database.rpoplpush(self.key, key)
 
     def as_list(self, decode=False):
@@ -724,6 +748,9 @@ class ZSet(Sortable, Container):
 
     def range_by_score(self, low, high, start=None, num=None,
                        with_scores=False, reverse=False):
+        """
+        Return a range of members in a sorted set, by score
+        """
         if reverse:
             fn = self.database.zrevrangebyscore
             low, high = high, low
@@ -765,6 +792,9 @@ class ZSet(Sortable, Container):
         return self.database.zremrangebyscore(self.key, low, high)
 
     def remove_by_lex(self, low, high):
+        """
+        Remove elements from the ZSet by lex
+        """
         return self.database.zremrangebylex(self.key, low, high)
 
     def incr(self, key, incr_by=1.):

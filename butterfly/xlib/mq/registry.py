@@ -89,14 +89,12 @@ class BaseRegistry(object):
         time if unspecified.
         """
         score = timestamp if timestamp is not None else current_timestamp()
-        return [as_text(msg_id) for msg_id in
-                self.connection.zrangebyscore(self.key, 0, score)]
+        return [as_text(msg_id) for msg_id in self.connection.zrangebyscore(self.key, 0, score)]
 
     def get_msg_ids(self, start=0, end=-1):
         """Returns list of all msg ids."""
         self.cleanup()
-        return [as_text(msg_id) for msg_id in
-                self.connection.zrange(self.key, start, end)]
+        return [as_text(msg_id) for msg_id in self.connection.zrange(self.key, start, end)]
 
     def get_queue(self):
         """Returns Queue object associated with this registry."""

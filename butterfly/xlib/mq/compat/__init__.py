@@ -1,16 +1,15 @@
+#!/usr/bin/python
+# coding=utf8
+"""
+# File Name: compat.py
+# Description:
+
+"""
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import sys
-
-
-def is_python_version(*versions):
-    for version in versions:
-        if (sys.version_info[0] == version[0] and
-                sys.version_info >= version):
-            return True
-    return False
 
 
 try:
@@ -51,6 +50,9 @@ if not PY2:
     string_types = (str,)
 
     def as_text(v):
+        """
+        unicode
+        """
         if v is None:
             return None
         elif isinstance(v, bytes):
@@ -61,10 +63,16 @@ if not PY2:
             raise ValueError('Unknown type %r' % type(v))
 
     def decode_redis_hash(h):
+        """
+        Decode redis hash to dict
+        """
         return dict((as_text(k), h[k]) for k in h)
 else:
     # Python 2.x
     def text_type(v):
+        """
+        unicode
+        """
         try:
             return unicode(v)  # noqa
         except Exception:
@@ -73,6 +81,9 @@ else:
     string_types = (str, unicode)  # noqa
 
     def as_text(v):
+        """
+        unicode
+        """
         if v is None:
             return None
         elif isinstance(v, str):
@@ -83,6 +94,9 @@ else:
             raise Exception("Input cannot be decoded into literal thing.")
 
     def decode_redis_hash(h):
+        """
+        decode redis hash
+        """
         return h
 
 
@@ -94,13 +108,25 @@ except ImportError:
     from datetime import timedelta, tzinfo
 
     class UTC(tzinfo):
+        """
+        UTC class
+        """
         def utcoffset(self, dt):
+            """
+            utcoffset
+            """
             return timedelta(0)
 
         def tzname(self, dt):
+            """
+            Return tzname
+            """
             return "UTC"
 
         def dst(self, dt):
+            """
+            dst
+            """
             return timedelta(0)
 
     utc = UTC()

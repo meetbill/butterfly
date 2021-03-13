@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: query.py
+# Description:
+
+"""
 import re
 from collections import deque
 
@@ -22,6 +28,9 @@ FTS = set([OP_MATCH])
 
 
 class Lexer(object):
+    """
+    Lexer class
+    """
     def __init__(self, query, default_conjunction='AND'):
         self.query = query
         self.default_conjunction = default_conjunction

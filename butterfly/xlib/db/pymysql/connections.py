@@ -1337,6 +1337,9 @@ class MySQLResult(object):
 
 
 class LoadLocalFile(object):
+    """
+    LoadLocalFile class
+    """
     def __init__(self, filename, connection):
         self.filename = filename
         self.connection = connection

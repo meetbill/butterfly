@@ -67,12 +67,21 @@ class _Waiter(object):
         self.finished_futures = []
 
     def add_result(self, future):
+        """
+        Add result
+        """
         self.finished_futures.append(future)
 
     def add_exception(self, future):
+        """
+        Add exception
+        """
         self.finished_futures.append(future)
 
     def add_cancelled(self, future):
+        """
+        Add cancelled
+        """
         self.finished_futures.append(future)
 
 
@@ -84,16 +93,25 @@ class _AsCompletedWaiter(_Waiter):
         self.lock = threading.Lock()
 
     def add_result(self, future):
+        """
+        add result
+        """
         with self.lock:
             super(_AsCompletedWaiter, self).add_result(future)
             self.event.set()
 
     def add_exception(self, future):
+        """
+        Add exception
+        """
         with self.lock:
             super(_AsCompletedWaiter, self).add_exception(future)
             self.event.set()
 
     def add_cancelled(self, future):
+        """
+        Add cancelled
+        """
         with self.lock:
             super(_AsCompletedWaiter, self).add_cancelled(future)
             self.event.set()
@@ -103,14 +121,23 @@ class _FirstCompletedWaiter(_Waiter):
     """Used by wait(return_when=FIRST_COMPLETED)."""
 
     def add_result(self, future):
+        """
+        Add result
+        """
         super(_FirstCompletedWaiter, self).add_result(future)
         self.event.set()
 
     def add_exception(self, future):
+        """
+        Add exception
+        """
         super(_FirstCompletedWaiter, self).add_exception(future)
         self.event.set()
 
     def add_cancelled(self, future):
+        """
+        Add cancelled
+        """
         super(_FirstCompletedWaiter, self).add_cancelled(future)
         self.event.set()
 
@@ -131,10 +158,16 @@ class _AllCompletedWaiter(_Waiter):
                 self.event.set()
 
     def add_result(self, future):
+        """
+        Add result
+        """
         super(_AllCompletedWaiter, self).add_result(future)
         self._decrement_pending_calls()
 
     def add_exception(self, future):
+        """
+        add exception
+        """
         super(_AllCompletedWaiter, self).add_exception(future)
         if self.stop_on_exception:
             self.event.set()
@@ -142,6 +175,9 @@ class _AllCompletedWaiter(_Waiter):
             self._decrement_pending_calls()
 
     def add_cancelled(self, future):
+        """
+        Add cancelled
+        """
         super(_AllCompletedWaiter, self).add_cancelled(future)
         self._decrement_pending_calls()
 
@@ -644,9 +680,11 @@ class Executor(object):
 
         fs = [self.submit(fn, *args) for args in itertools.izip(*iterables)]
 
-        # Yield must be hidden in closure so that the futures are submitted
-        # before the first iterator value is required.
         def result_iterator():
+            """
+            # Yield must be hidden in closure so that the futures are submitted
+            # before the first iterator value is required.
+            """
             try:
                 # reverse to keep finishing order
                 fs.reverse()

@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: autocomplete.py
+# Description:
+    自动补全
+"""
 import json
 import re
 
@@ -55,6 +61,9 @@ class Autocomplete(object):
             self._stopwords = set()
 
     def tokenize_title(self, phrase, stopwords=True):
+        """
+        tokenize title
+        """
         if isinstance(phrase, bytes):
             phrase = decode(phrase)
         phrase = re.sub('[^a-z0-9_\-\s]', '', phrase.lower())
@@ -64,6 +73,9 @@ class Autocomplete(object):
             return phrase.split()
 
     def score_token(self, token):
+        """
+        score token
+        """
         l = len(token)
         a = ord('a') - 2
         score = 0
@@ -80,14 +92,25 @@ class Autocomplete(object):
         return score
 
     def substrings(self, w):
+        """
+        Substrings
+        """
         for i in range(1, len(w)):
             yield w[:i]
         yield w
 
     def object_key(self, obj_id, obj_type):
+        """
+        Returns:
+            object key
+        """
         return '%s\x01%s' % (obj_id, obj_type or '')
 
     def word_key(self, word):
+        """
+        Returns:
+            word key
+        """
         return '%s:s:%s' % (self.namespace, word)
 
     def store(self, obj_id, title=None, data=None, obj_type=None):
@@ -301,6 +324,9 @@ class Autocomplete(object):
             yield result
 
     def get_cache_key(self, phrases, boosts):
+        """
+        get cache key
+        """
         if boosts:
             boost_key = '|'.join(sorted(
                 '%s:%s' % (k, v) for k, v in boosts.items()))

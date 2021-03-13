@@ -1,3 +1,10 @@
+# coding=utf8
+"""
+# File Name: models.py
+# Description:
+    ORM model
+
+"""
 from copy import deepcopy
 import datetime
 import json
@@ -92,16 +99,25 @@ class Field(Node):
         raise NotImplementedError
 
     def db_value(self, value):
+        """
+        db_value for save
+        """
         if self._coerce:
             return self._coerce(value)
         return value
 
     def python_value(self, value):
+        """
+        Python value
+        """
         if self._coerce:
             return self._coerce(value)
         return value
 
     def add_to_class(self, model_class, name):
+        """
+        Add to class
+        """
         self.model_class = model_class
         self.name = name
         setattr(model_class, name, self)
@@ -115,6 +131,9 @@ class Field(Node):
         instance._data[self.name] = value
 
     def get_index(self, op):
+        """
+        Get index
+        """
         indexes = self.get_indexes()
         for index in indexes:
             if op in index.operations:
@@ -134,6 +153,9 @@ class Field(Node):
 
 class _ScalarField(Field):
     def get_indexes(self):
+        """
+        get indexes
+        """
         return [AbsoluteIndex(self), ContinuousIndex(self)]
 
 
@@ -142,6 +164,9 @@ class IntegerField(_ScalarField):
     _coerce = int
 
     def db_value(self, value):
+        """
+        db value
+        """
         return 0 if value is None else int(value)
 
 
@@ -162,12 +187,18 @@ class FloatField(_ScalarField):
     _coerce = float
 
     def db_value(self, value):
+        """
+        db value
+        """
         return 0. if value is None else float(value)
 
 
 class ByteField(Field):
     """Store arbitrary bytes."""
     def db_value(self, value):
+        """
+        db value
+        """
         if isinstance(value, unicode_type):
             value = value.encode('utf-8')
         elif value is None:
@@ -204,12 +235,21 @@ class TextField(Field):
         self._index = self._index or self._fts
 
     def db_value(self, value):
+        """
+        db value
+        """
         return b'' if value is None else encode(value)
 
     def python_value(self, value):
+        """
+        Python value
+        """
         return decode(value)
 
     def get_indexes(self):
+        """
+        get indexes
+        """
         indexes = super(TextField, self).get_indexes()
         if self._fts:
             indexes.append(FullTextIndex(
@@ -224,9 +264,15 @@ class TextField(Field):
 class BooleanField(Field):
     """Store boolean values."""
     def db_value(self, value):
+        """
+        db value
+        """
         return '1' if value else '0'
 
     def python_value(self, value):
+        """
+        Python value
+        """
         return decode(value) == '1'
 
 
@@ -237,9 +283,15 @@ class UUIDField(Field):
         super(UUIDField, self).__init__(**kwargs)
 
     def db_value(self, value):
+        """
+        db value
+        """
         return encode(value.hex if value is not None else '')
 
     def python_value(self, value):
+        """
+        Python value
+        """
         return uuid.UUID(decode(value)) if value else None
 
     def _generate_key(self):
@@ -249,6 +301,9 @@ class UUIDField(Field):
 class DateTimeField(_ScalarField):
     """Store Python datetime objects."""
     def db_value(self, value):
+        """
+        db value
+        """
         if value is None:
             return 0.
 
@@ -257,6 +312,9 @@ class DateTimeField(_ScalarField):
         return timestamp + micro
 
     def python_value(self, value):
+        """
+        Python value
+        """
         if not value:
             return None
         elif isinstance(value, (basestring_type, int, float)):
@@ -268,11 +326,17 @@ class DateTimeField(_ScalarField):
 class DateField(DateTimeField):
     """Store Python date objects."""
     def db_value(self, value):
+        """
+        db value
+        """
         if value is None:
             return 0.
         return time.mktime(value.timetuple())
 
     def python_value(self, value):
+        """
+        Python value
+        """
         if not value:
             return None
         elif isinstance(value, (basestring_type, int, float)):
@@ -284,18 +348,30 @@ class DateField(DateTimeField):
 class JSONField(Field):
     """Store arbitrary JSON data."""
     def db_value(self, value):
+        """
+        db value
+        """
         return encode(json.dumps(value))
 
     def python_value(self, value):
+        """
+        Python value
+        """
         return json.loads(decode(value))
 
 
 class PickledField(Field):
     """Store arbitrary Python objects."""
     def db_value(self, value):
+        """
+        db value
+        """
         return pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
 
     def python_value(self, value):
+        """
+        Python value
+        """
         return pickle.loads(value)
 
 
@@ -373,6 +449,9 @@ class Query(object):
         return '%s%s' % (self._base_key, separator.join(map(str, parts)))
 
     def get_primary_hash_key(self, primary_key):
+        """
+        get primary hash key
+        """
         pk_field = self.model_class._fields[self.model_class._primary_key]
         return self.make_key('id', pk_field.db_value(primary_key))
 
@@ -381,6 +460,9 @@ class Query(object):
 
 
 class BaseIndex(object):
+    """
+    BaseIndex class
+    """
     operations = None
 
     def __init__(self, field):
@@ -389,32 +471,56 @@ class BaseIndex(object):
         self.query_helper = self.field.model_class._query
 
     def field_value(self, instance):
+        """
+        Return field value
+        """
         return self.field.db_value(getattr(instance, self.field.name))
 
     def get_key(self, instance, value):
+        """
+        Get key
+        """
         raise NotImplementedError
 
     def store_instance(self, key, instance, value):
+        """
+        Store instance
+        """
         raise NotImplementedError
 
     def delete_instance(self, key, instance, value):
+        """
+        Delete instance
+        """
         raise NotImplementedError
 
     def save(self, instance):
+        """
+        Save
+        """
         value = self.field_value(instance)
         key = self.get_key(value)
         self.store_instance(key, instance, value)
 
     def remove(self, instance):
+        """
+        Remove
+        """
         value = self.field_value(instance)
         key = self.get_key(value)
         self.delete_instance(key, instance, value)
 
 
 class AbsoluteIndex(BaseIndex):
+    """
+    AbsoluteIndex class
+    """
     operations = ABSOLUTE
 
     def get_key(self, value):
+        """
+        Get key
+        """
         key = self.query_helper.make_key(
             self.field.name,
             'absolute',
@@ -422,33 +528,54 @@ class AbsoluteIndex(BaseIndex):
         return self._database_.Set(key)
 
     def store_instance(self, key, instance, value):
+        """
+        Store instance
+        """
         key.add(instance.get_hash_id())
 
     def delete_instance(self, key, instance, value):
+        """
+        Delete instance
+        """
         key.remove(instance.get_hash_id())
         if len(key) == 0:
             key.clear()
 
 
 class ContinuousIndex(BaseIndex):
+    """
+    ContinuousIndex class
+    """
     operations = CONTINUOUS
 
     def get_key(self, value):
+        """
+        Get key
+        """
         key = self.query_helper.make_key(
             self.field.name,
             'continuous')
         return self._database_.ZSet(key)
 
     def store_instance(self, key, instance, value):
+        """
+        Store instance
+        """
         key[instance.get_hash_id()] = value
 
     def delete_instance(self, key, instance, value):
+        """
+        Delete instance
+        """
         del key[instance.get_hash_id()]
         if len(key) == 0:
             key.clear()
 
 
 class FullTextIndex(BaseIndex):
+    """
+    FullTextIndex class
+    """
     operations = FTS
 
     def __init__(self, field, stemmer=True, metaphone=False,
@@ -461,6 +588,9 @@ class FullTextIndex(BaseIndex):
             min_word_length=min_word_length)
 
     def get_key(self, value):
+        """
+        Get key
+        """
         key = self.query_helper.make_key(
             self.field.name,
             'fts',
@@ -468,12 +598,18 @@ class FullTextIndex(BaseIndex):
         return self._database_.ZSet(key)
 
     def store_instance(self, key, instance, value):
+        """
+        Store instance
+        """
         hash_id = instance.get_hash_id()
         for word, score in self.tokenizer.tokenize(value).items():
             key = self.get_key(word)
             key[hash_id] = -score
 
     def delete_instance(self, key, instance, value):
+        """
+        Delete instance
+        """
         hash_id = instance.get_hash_id()
         for word in self.tokenizer.tokenize(value):
             key = self.get_key(word)
@@ -483,6 +619,9 @@ class FullTextIndex(BaseIndex):
 
 
 class BaseModel(type):
+    """
+    BaseModel class
+    """
     def __new__(cls, name, bases, attrs):
         if not bases:
             return super(BaseModel, cls).__new__(cls, name, bases, attrs)
@@ -647,6 +786,9 @@ class Model(_with_metaclass(BaseModel)):
             return None
 
     def get_hash_id(self):
+        """
+        Get hash id
+        """
         return self._query.get_primary_hash_key(self.get_id())
 
     def _get_data_dict(self):

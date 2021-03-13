@@ -1,5 +1,9 @@
-# -*- coding: utf-8 -*-
-# flake8: noqa
+# coding=utf8
+"""
+# File Name: w.py
+# Description:
+    mq
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

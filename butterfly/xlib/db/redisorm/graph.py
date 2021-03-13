@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: graph.py
+# Description:
+    类似图数据库
+"""
 # Hexastore.
 import itertools
 import json
@@ -104,6 +110,9 @@ class Graph(object):
                 del self._z[key]
 
     def keys_for_values(self, s, p, o):
+        """
+        keys for values
+        """
         parts = [
             ('spo', s, p, o),
             ('pos', p, o, s),
@@ -112,6 +121,9 @@ class Graph(object):
             yield '::'.join(part)
 
     def keys_for_query(self, s=None, p=None, o=None):
+        """
+        keys for query
+        """
         parts = []
         key = lambda parts: '::'.join(parts)
 
@@ -234,6 +246,9 @@ class Graph(object):
 
 
 class Variable(object):
+    """
+    Variable class
+    """
     __slots__ = ['name']
 
     def __init__(self, name):
