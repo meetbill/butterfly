@@ -169,8 +169,7 @@ class Queue(object):
             end = offset + (length - 1)
         else:
             end = length
-        return [as_text(msg_id) for msg_id in
-                self.connection.lrange(self.key, start, end)]
+        return [as_text(msg_id) for msg_id in self.connection.lrange(self.key, start, end)]
 
     def get_msgs(self, offset=0, length=-1):
         """Returns a slice of msgs in the queue."""
@@ -310,20 +309,30 @@ class Queue(object):
         msg_id = kwargs.pop('msg_id', None)
         at_front = kwargs.pop('at_front', False)
         meta = kwargs.pop('meta', None)
-        return (data, timeout, description, result_ttl, ttl, failure_ttl,
-                msg_id, at_front, meta)
+
+        result_data = {
+                "data": data,
+                "timeout": timeout,
+                "description": description,
+                "result_ttl": result_ttl,
+                "ttl": ttl,
+                "failure_ttl": failure_ttl,
+                "msg_id": msg_id,
+                "at_front": at_front,
+                "meta": meta
+                }
+        return result_data
 
     def enqueue(self, data, *args, **kwargs):
         """Creates a msg to represent the delayed function call and enqueues it."""
 
-        (data, timeout, description, result_ttl, ttl, failure_ttl,
-         msg_id, at_front, meta) = Queue.parse_args(data, *args, **kwargs)
+        result_data = Queue.parse_args(data, *args, **kwargs)
 
         return self.enqueue_call(
-            data=data, timeout=timeout,
-            result_ttl=result_ttl, ttl=ttl, failure_ttl=failure_ttl,
-            description=description, msg_id=msg_id,
-            at_front=at_front, meta=meta
+            data=result_data["data"], timeout=result_data["timeout"],
+            result_ttl=result_data["result_ttl"], ttl=result_data["ttl"], failure_ttl=result_data["failure_ttl"],
+            description=result_data["description"], msg_id=result_data["msg_id"],
+            at_front=result_data["at_front"], meta=result_data["meta"]
         )
 
     def enqueue_msg(self, msg, at_front=False):
@@ -364,9 +373,9 @@ class Queue(object):
         +-----------------------------------------------
 
         Returns:
-            None:（无数据）
-            'RATE_LIMITED':（限流中）
-            queue_key, blob: 队列 key 和 msg_id
+            None: none
+            'RATE_LIMITED': rate limit
+            queue_key, blob: queue key and  msg_id
         """
         lua = '''
             local v = redis.call("lpop", KEYS[1])
@@ -417,7 +426,7 @@ class Queue(object):
 
         See the documentation of cls.lpop for the interpretation of timeout.
 
-        从队列中获取任务，并将任务同时加到正在处理 zset 中
+        Get the task from the queue and add it to the processing Zset at the same time
         """
         msg_class = backend_class(cls, 'msg_class', override=msg_class)
 

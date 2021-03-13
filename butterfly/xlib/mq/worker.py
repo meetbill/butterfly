@@ -86,11 +86,11 @@ class Worker(object):
             connection = connection
 
         worker_keys = get_keys(queue=queue, connection=connection)
-        workers = [cls.find_by_key(as_text(key),
-                                   connection=connection,
-                                   msg_class=msg_class,
-                                   queue_class=queue_class)
-                   for key in worker_keys]
+        workers = []
+        for key in worker_keys:
+            workers.append(cls.find_by_key(as_text(key), connection=connection,
+                msg_class=msg_class, queue_class=queue_class))
+
         return compact(workers)
 
     @classmethod
@@ -152,16 +152,15 @@ class Worker(object):
         self.queue_class = backend_class(self, 'queue_class', override=queue_class)
         self.version = xlib.butterfly_version
         self.python_version = sys.version
-
-        queues = [self.queue_class(name=q,
-                                   connection=connection,
-                                   msg_class=self.msg_class)
-                  if isinstance(q, string_types) else q
-                  for q in ensure_list(queues)]
-
         self.name = name or "{hostname}:{addr_port}:{pid}".format(
             hostname=self.hostname, addr_port=addr_port, pid=self.pid)
-        self.queues = queues
+        queues_list = []
+        for q in ensure_list(queues):
+            if isinstance(q, string_types):
+                queues_list.append(self.queue_class(name=q, connection=connection, msg_class=self.msg_class))
+            else:
+                queues_list.append(q)
+        self.queues = queues_list
         self.validate_queues()
         self._exc_handlers = []
 
@@ -384,10 +383,9 @@ class Worker(object):
             self.total_working_time = float(as_text(total_working_time))
 
         if queues:
-            self.queues = [self.queue_class(queue,
-                                            connection=self.connection,
-                                            msg_class=self.msg_class)
-                           for queue in queues.split(',')]
+            self.queues = []
+            for queue in queues.split(','):
+                self.queues.append(self.queue_class(queue, connection=self.connection, msg_class=self.msg_class))
 
     def increment_failed_msg_count(self):
         """

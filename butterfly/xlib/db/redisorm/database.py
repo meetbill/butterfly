@@ -420,14 +420,23 @@ class Database(Redis):
             separate thread.
         """
         def decorator(fn):
+            """
+            decorator
+            """
             _channels = channels or []
             _patterns = patterns or []
 
             @wraps(fn)
             def inner():
+                """
+                inner func
+                """
                 pubsub = self.pubsub()
 
                 def listen():
+                    """
+                    for pubsub
+                    """
                     for channel in _channels:
                         pubsub.subscribe(channel)
                     for pattern in _patterns:

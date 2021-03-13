@@ -388,9 +388,9 @@ class _ContainerField(Field):
     def _get_container(self, instance):
         return self.container_class(
             self.model_class._database_,
-            self.__key__(instance))
+            self._key_(instance))
 
-    def __key__(self, instance):
+    def _key_(self, instance):
         return self.model_class._query.make_key(
             'container',
             self.name,
@@ -432,6 +432,9 @@ class ZSetField(_ContainerField):
 
 
 class Query(object):
+    """
+    Query class
+    """
     def __init__(self, model_class):
         self.model_class = model_class
 
@@ -456,6 +459,9 @@ class Query(object):
         return self.make_key('id', pk_field.db_value(primary_key))
 
     def all_index(self):
+        """
+        all_index
+        """
         return self.model_class._database_.Set(self.make_key('all'))
 
 
@@ -682,7 +688,9 @@ class BaseModel(type):
         return model_class
 
 
-def _with_metaclass(meta, base=object):
+def _with_metaclass(meta, base=None):
+    if base is None:
+        base = object
     return meta("NewBase", (base,), {'_database_': None,
                                      '_namespace_': None})
 

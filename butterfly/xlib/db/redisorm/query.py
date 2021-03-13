@@ -36,14 +36,26 @@ class Lexer(object):
         self.default_conjunction = default_conjunction
 
         def yield_symbol(symbol_type):
+            """
+            yield_symbol
+            """
             def callback(scanner, token):
+                """
+                callback func
+                """
                 return (symbol_type, token)
             return callback
 
         def yield_string(scanner, token):
+            """
+            yield_string
+            """
             return ('STRING', token[1:-1].lower())
 
         def yield_simple_string(scanner, token):
+            """
+            yield_simple_string
+            """
             return ('STRING', token.lower())
 
         self.scanner = re.Scanner([
@@ -60,6 +72,9 @@ class Lexer(object):
         ], re.U)
 
     def lex(self):
+        """
+        lex
+        """
         symbols, _ = self.scanner.scan(self.query)
         last = None
         for (symbol, sval) in symbols:
@@ -75,6 +90,9 @@ class BaseSymbol(object):
     __slots__ = []
 
     def code(self):
+        """
+        code
+        """
         raise NotImplementedError
 
 
@@ -95,26 +113,38 @@ class Leaf(BaseSymbol):
         self.value = value
 
     def code(self):
+        """
+        code
+        """
         return lambda f, s: Expression(f, OP_MATCH, self.value)
 
 
 class And(Symbol):
+    """
+    And class
+    """
     def code(self):
-        return lambda f, s: Expression(
-            self.left.code()(f, s),
-            OP_AND,
-            self.right.code()(f, s))
+        """
+        code
+        """
+        return lambda f, s: Expression(self.left.code()(f, s), OP_AND, self.right.code()(f, s))
 
 
 class Or(Symbol):
+    """
+    Or class
+    """
     def code(self):
-        return lambda f, s: Expression(
-            self.left.code()(f, s),
-            OP_OR,
-            self.right.code()(f, s))
+        """
+        code
+        """
+        return lambda f, s: Expression(self.left.code()(f, s), OP_OR, self.right.code()(f, s))
 
 
 class Parser(object):
+    """
+    Parser class
+    """
     def __init__(self, lexer):
         self.lexer = lexer
         self.symbol_stream = lexer.lex()
@@ -123,6 +153,9 @@ class Parser(object):
         self.finished = False
 
     def get_symbol(self):
+        """
+        get symbol
+        """
         try:
             self.current, self.sval = next(self.symbol_stream)
         except StopIteration:
@@ -130,6 +163,9 @@ class Parser(object):
         return self.current
 
     def parse(self):
+        """
+        parse
+        """
         self._expression()
         if not self.finished:
             raise ValueError('Malformed expression: %s.' % self.lexer.query)
@@ -162,6 +198,9 @@ class Parser(object):
 
 
 def parse(s, field, default_conjunction='AND'):
+    """
+    parse
+    """
     if not s.strip():
         return None
     lexer = Lexer(s, default_conjunction=default_conjunction)
@@ -171,23 +210,41 @@ def parse(s, field, default_conjunction='AND'):
 
 
 class Node(object):
+    """
+    Node class
+    """
     def __init__(self):
         self._ordering = None
 
     def desc(self):
+        """
+        desc
+        """
         return Desc(self)
 
     def between(self, low, high):
+        """
+        between
+        """
         return Expression(self, OP_BETWEEN, (low, high))
 
     def match(self, term):
+        """
+        match
+        """
         return Expression(self, OP_MATCH, term)
 
     def search(self, search_query, default_conjunction=OP_AND):
+        """
+        search
+        """
         return parse(search_query, self, default_conjunction)
 
     def _e(op, inv=False):
         def inner(self, rhs):
+            """
+            inner
+            """
             if inv:
                 return Expression(rhs, op, self)
             return Expression(self, op, rhs)
@@ -205,11 +262,17 @@ class Node(object):
 
 
 class Desc(Node):
+    """
+    Desc class
+    """
     def __init__(self, node):
         self.node = node
 
 
 class Expression(Node):
+    """
+    Expression class
+    """
     def __init__(self, lhs, op, rhs):
         self.lhs = lhs
         self.op = op
@@ -245,14 +308,23 @@ class Executor(object):
         }
 
     def execute(self, expression):
+        """
+        execute
+        """
         op = expression.op
         return self._mapping[op](expression.lhs, expression.rhs)
 
     def execute_eq(self, lhs, rhs):
+        """
+        eq
+        """
         index = lhs.get_index(OP_EQ)
         return index.get_key(lhs.db_value(rhs))
 
     def execute_ne(self, lhs, rhs):
+        """
+        ne
+        """
         all_set = lhs.model_class._query.all_index()
         index = lhs.get_index(OP_NE)
         exclude_set = index.get_key(lhs.db_value(rhs))
@@ -270,36 +342,54 @@ class Executor(object):
         return tmp_set
 
     def execute_between(self, lhs, rhs):
+        """
+        between
+        """
         index = lhs.get_index(OP_BETWEEN)
         low, high = map(lhs.db_value, rhs)
         zset = index.get_key(None)  # No value necessary.
         return self._zset_score_filter(zset, low, high)
 
     def execute_lte(self, lhs, rhs):
+        """
+        lte
+        """
         index = lhs.get_index(OP_LTE)
         db_value = lhs.db_value(rhs)
         zset = index.get_key(db_value)
         return self._zset_score_filter(zset, float('-inf'), db_value)
 
     def execute_gte(self, lhs, rhs):
+        """
+        gte
+        """
         index = lhs.get_index(OP_GTE)
         db_value = lhs.db_value(rhs)
         zset = index.get_key(db_value)
         return self._zset_score_filter(zset, db_value, float('inf'))
 
     def execute_lt(self, lhs, rhs):
+        """
+        lt
+        """
         index = lhs.get_index(OP_LTE)
         db_value = lhs.db_value(rhs)
         zset = index.get_key(db_value)
         return self._zset_score_filter(zset, float('-inf'), '(%s' % db_value)
 
     def execute_gt(self, lhs, rhs):
+        """
+        gt
+        """
         index = lhs.get_index(OP_GTE)
         db_value = lhs.db_value(rhs)
         zset = index.get_key(db_value)
         return self._zset_score_filter(zset, '(%s' % db_value, float('inf'))
 
     def execute_match(self, lhs, rhs):
+        """
+        match
+        """
         index = lhs.get_index(OP_MATCH)
         db_value = lhs.db_value(rhs)
         words = index.tokenizer.tokenize(db_value)
@@ -339,7 +429,13 @@ class Executor(object):
         return tmp_set
 
     def execute_or(self, lhs, rhs):
+        """
+        or
+        """
         return self._combine_sets(lhs, rhs, 'OR')
 
     def execute_and(self, lhs, rhs):
+        """
+        and
+        """
         return self._combine_sets(lhs, rhs, 'AND')

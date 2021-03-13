@@ -30,7 +30,7 @@ def write_pid(path):
     open(path, "w").write(str(os.getpid()))
 
 
-class Base64_16(object):
+class Base64and16(object):
     """
     Base64 相关工具
 
@@ -54,9 +54,9 @@ class Base64_16(object):
         b64 ==> b16
         """
         if b64str_v[0] == "@":
-            return b64str_v[1] + base64.b16encode(Base64_16.b64_to_bin(b64str_v[2:])).lower()
+            return b64str_v[1] + base64.b16encode(Base64and16.b64_to_bin(b64str_v[2:])).lower()
         else:
-            return base64.b16encode(Base64_16.b64_to_bin(b64str_v)).lower()
+            return base64.b16encode(Base64and16.b64_to_bin(b64str_v)).lower()
 
     @staticmethod
     def b64_to_bin(b64str):

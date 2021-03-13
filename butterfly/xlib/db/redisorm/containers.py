@@ -34,6 +34,9 @@ def chainable_method(fn):
     """
     @wraps(fn)
     def inner(self, *args, **kwargs):
+        """
+        inner func
+        """
         fn(self, *args, **kwargs)
         return self
     return inner
@@ -685,6 +688,9 @@ class ZSet(Sortable, Container):
         return iter(self._scan())
 
     def iterator(self, with_scores=False, reverse=False):
+        """
+        iterator
+        """
         if with_scores and not reverse:
             return self.search(None)
         return self.range(
@@ -1550,6 +1556,9 @@ class BitFieldOperation(object):
 
     @property
     def command(self):
+        """
+        command
+        """
         return reduce(operator.add, self.operations, ('BITFIELD', self.key))
 
     def execute(self):

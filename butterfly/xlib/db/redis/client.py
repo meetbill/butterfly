@@ -14,9 +14,9 @@ import time as mod_time
 import re
 import hashlib
 from xlib.db.redis._compat import (basestring, imap, iteritems, iterkeys,
-                           itervalues, izip, long, nativestr, safe_unicode)
+                                   itervalues, izip, long, nativestr, safe_unicode)
 from xlib.db.redis.connection import (ConnectionPool, UnixDomainSocketConnection,
-                              SSLConnection)
+                                      SSLConnection)
 from xlib.db.redis.lock import Lock
 from xlib.db.redis.exceptions import (
     ConnectionError,
@@ -512,12 +512,15 @@ def parse_slowlog_get(response, **options):
     SLOWLOG GET command
     """
     space = ' ' if options.get('decode_responses', False) else b' '
-    return [{
-        'id': item[0],
-        'start_time': int(item[1]),
-        'duration': int(item[2]),
-        'command': space.join(item[3])
-    } for item in response]
+    data_list = []
+    for item in response:
+        data_list.append({'id': item[0],
+                          'start_time': int(item[1]),
+                          'duration': int(item[2]),
+                          'command': space.join(item[3])
+                          })
+
+    return data_list
 
 
 def parse_cluster_info(response, **options):
@@ -566,7 +569,7 @@ def parse_georadius_generic(response, **options):
         # with other command arguments.
         return response
 
-    if type(response) != list:
+    if not isinstance(response, list):
         response_list = [response]
     else:
         response_list = response
@@ -677,7 +680,7 @@ class Redis(object):
         string_keys_to_dict('BLPOP BRPOP', lambda r: r and tuple(r) or None),
         string_keys_to_dict(
             'SDIFF SINTER SMEMBERS SUNION',
-            lambda r: r and set(r) or set() # pylint:disable=undefined-variable
+            lambda r: r and set(r) or set()  # pylint:disable=undefined-variable
         ),
         string_keys_to_dict(
             'ZPOPMAX ZPOPMIN ZRANGE ZRANGEBYSCORE ZREVRANGE ZREVRANGEBYSCORE',
@@ -728,9 +731,7 @@ class Redis(object):
             'CONFIG SET': bool_ok,
             'DEBUG OBJECT': parse_debug_object,
             'GEOHASH': lambda r: list(map(nativestr_or_none, r)),
-            'GEOPOS': lambda r: list(map(lambda ll: (float(ll[0]),
-                                         float(ll[1]))
-                                         if ll is not None else None, r)),
+            'GEOPOS': lambda r: list(map(lambda ll: (float(ll[0]), float(ll[1])) if ll is not None else None, r)),
             'GEORADIUS': parse_georadius_generic,
             'GEORADIUSBYMEMBER': parse_georadius_generic,
             'HGETALL': lambda r: r and pairs_to_dict(r) or {},
@@ -3262,6 +3263,9 @@ class Redis(object):
         return self.execute_command('PUBSUB NUMSUB', *args)
 
     def cluster(self, cluster_arg, *args):
+        """
+        Exe cluster command
+        """
         return self.execute_command('CLUSTER %s' % cluster_arg.upper(), *args)
 
     def eval(self, script, numkeys, *keys_and_args):
@@ -3564,6 +3568,9 @@ class PubSub(object):
             pass
 
     def reset(self):
+        """
+        reset
+        """
         if self.connection:
             self.connection.disconnect()
             self.connection.clear_connect_callbacks()
@@ -3575,6 +3582,9 @@ class PubSub(object):
         self.pending_unsubscribe_patterns = set()
 
     def close(self):
+        """
+        close
+        """
         self.reset()
 
     def on_connect(self, connection):
@@ -3656,6 +3666,9 @@ class PubSub(object):
         return response
 
     def check_health(self):
+        """
+        check_health use ping
+        """
         conn = self.connection
         if conn is None:
             raise RuntimeError(
@@ -3846,6 +3859,9 @@ class PubSub(object):
 
 
 class PubSubWorkerThread(threading.Thread):
+    """
+    PubSubWorkerThread class
+    """
     def __init__(self, pubsub, sleep_time, daemon=False):
         super(PubSubWorkerThread, self).__init__()
         self.daemon = daemon
@@ -3854,6 +3870,9 @@ class PubSubWorkerThread(threading.Thread):
         self._running = threading.Event()
 
     def run(self):
+        """
+        run
+        """
         if self._running.is_set():
             return
         self._running.set()
@@ -3865,9 +3884,11 @@ class PubSubWorkerThread(threading.Thread):
         pubsub.close()
 
     def stop(self):
+        """
         # trip the flag so the run loop exits. the run loop will
         # close the pubsub connection, which disconnects the socket
         # and returns the connection to the pool.
+        """
         self._running.clear()
 
 
@@ -3927,6 +3948,9 @@ class Pipeline(Redis):
         return True
 
     def reset(self):
+        """
+        reset
+        """
         self.command_stack = []
         self.scripts = set()
         # make sure to reset the connection state in the event that we were
@@ -4216,8 +4240,14 @@ class Script(object):
             script = encoder.encode(script)
         self.sha = hashlib.sha1(script).hexdigest()
 
-    def __call__(self, keys=[], args=[], client=None):
+    def __call__(self, keys=None, args=None, client=None):
         "Execute the script, passing any required ``args``"
+        if keys is None:
+            keys = []
+
+        if args is None:
+            args = []
+
         if client is None:
             client = self.registered_client
         args = tuple(keys) + tuple(args)
@@ -4239,6 +4269,7 @@ class BitFieldOperation(object):
     """
     Command builder for BITFIELD commands.
     """
+
     def __init__(self, client, key, default_overflow=None):
         self.client = client
         self.key = key
@@ -4315,6 +4346,9 @@ class BitFieldOperation(object):
 
     @property
     def command(self):
+        """
+        command
+        """
         cmd = ['BITFIELD', self.key]
         for ops in self.operations:
             cmd.extend(ops)

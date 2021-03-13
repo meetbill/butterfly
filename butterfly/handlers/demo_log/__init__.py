@@ -48,7 +48,7 @@ def ping(req):
     isinstance(req, Request)
     req.log_params["x"] = 1
     clen = struct.unpack("i", os.urandom(4))[0] % 64 + 64
-    randstr = util.Base64_16.bin_to_b64(os.urandom(clen))
+    randstr = util.Base64and16.bin_to_b64(os.urandom(clen))
     return retstat.OK, {"randstr": randstr}, [(__info, __version)]
 
 

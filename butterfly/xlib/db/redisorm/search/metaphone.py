@@ -1,5 +1,6 @@
 #!python
 #coding= utf-8
+"""
 # This script implements the Double Metaphone algorithm (c) 1998, 1999 by
 # Lawrence Philips
 # it was translated to Python from the C source written by Kevin Atkinson
@@ -16,15 +17,24 @@
 #   as the original C source that were fixed by his careful attention and
 #   excellent communication.
 #   The script was also updated to use utf-8 rather than latin-1.
+"""
 import sys
 try:
     NNNN = unicode('N')
 
-    def decode(x): return x.decode('utf-8', 'ignore')
+    def decode(x):
+        """
+        decode
+        """
+        return x.decode('utf-8', 'ignore')
 except BaseException:
     NNNN = 'N'
 
-    def decode(x): return x
+    def decode(x):
+        """
+        decode
+        """
+        return x
 
 CCCC = 'Ç'
 VOWELS = frozenset((decode(x) for x in ('A', 'E', 'I', 'O', 'U', 'Y')))
@@ -97,7 +107,8 @@ def dm(st):
                 if pos > first and st[pos:pos + 4] == 'CHAE':
                     nxt = ('K', 'X', 2)
                 elif pos == first and (st[pos + 1:pos + 6] in ['HARAC', 'HARIS'] or
-                                       st[pos + 1:pos + 4] in ["HOR", "HYM", "HIA", "HEM"]) and st[first:first + 5] != 'CHORE':
+                                       st[pos + 1:pos + 4] in ["HOR", "HYM", "HIA", "HEM"]) \
+                        and st[first:first + 5] != 'CHORE':
                     nxt = ('K', 2)
                 # germanic, greek, or otherwise 'ch' for 'kh' sound
                 elif st[first:first + 4] in ['VAN ', 'VON '] or st[first:first + 3] == 'SCH' \
@@ -204,7 +215,7 @@ def dm(st):
                 nxt = ('KL', 'L', 2)
             # -ges-,-gep-,-gel-, -gie- at beginning
             elif pos == first and (st[pos + 1] == 'Y'
-                                   or st[pos + 1:pos + 3] in ["ES", "EP", "EB", "EL", "EY", "IB", "IL", "IN", "IE", "EI", "ER"]):
+                        or st[pos + 1:pos + 3] in ["ES", "EP", "EB", "EL", "EY", "IB", "IL", "IN", "IE", "EI", "ER"]):
                 nxt = ('K', 'J', 2)
             # -ger-,  -gy-
             elif (st[pos + 1:pos + 2] == 'ER' or st[pos + 1] == 'Y') \

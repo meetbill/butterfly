@@ -948,6 +948,9 @@ if sys.version_info[0:2] < (3, 4):
     _update_wrapper.__doc__ = functools.update_wrapper.__doc__
 
     def wraps(wrapped, assigned=None, updated=None):
+        """
+        wraps func
+        """
         if assigned is None:
             assigned=functools.WRAPPER_ASSIGNMENTS
 
@@ -991,6 +994,9 @@ def with_metaclass(meta, *bases):
 def add_metaclass(metaclass):
     """Class decorator for creating a class with a metaclass."""
     def wrapper(cls):
+        """
+        wrapper func
+        """
         orig_vars = cls.__dict__.copy()
         slots = orig_vars.get('__slots__')
         if slots is not None:
