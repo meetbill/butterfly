@@ -219,8 +219,13 @@ class Disk(object):
         :param value: value to convert
         :param bool read: True when value is file-like object
         :param key: key for item (default UNKNOWN)
-        :return: (size, mode, filename, value) tuple for Cache table
-
+        :return:
+            {
+                "size": size,
+                "mode": mode,
+                "filename": filename,
+                "value": value
+            }
         """
         if key is None:
             key = UNKNOWN
@@ -232,17 +237,17 @@ class Disk(object):
                 or (type_value in INT_TYPES
                     and -9223372036854775808 <= value <= 9223372036854775807)
                 or (type_value is float)):
-            return (0, MODE_RAW, None, value)
+            return {"size": 0, "mode": MODE_RAW, "filename": None, "value": value}
         elif type_value is BytesType:
             if len(value) < min_file_size:
-                return (0, MODE_RAW, None, sqlite3.Binary(value))
+                return {"size": 0, "mode": MODE_RAW, "filename": None, "value": sqlite3.Binary(value)}
             else:
                 filename, full_path = self.filename(key, value)
 
                 with open(full_path, 'wb') as writer:
                     writer.write(value)
 
-                return (len(value), MODE_BINARY, filename, None)
+                return {"size": len(value), "mode": MODE_BINARY, "filename": filename, "value": None}
         elif type_value is TextType:
             filename, full_path = self.filename(key, value)
 
@@ -250,7 +255,7 @@ class Disk(object):
                 writer.write(value)
 
             size = op.getsize(full_path)
-            return (size, MODE_TEXT, filename, None)
+            return {"size": size, "mode": MODE_TEXT, "filename": filename, "value": None}
         elif read:
             size = 0
             reader = ft.partial(value.read, 2 ** 22)
@@ -261,19 +266,19 @@ class Disk(object):
                     size += len(chunk)
                     writer.write(chunk)
 
-            return (size, MODE_BINARY, filename, None)
+            return {"size": size, "mode": MODE_BINARY, "filename": filename, "value": None}
         else:
             result = pickle.dumps(value, protocol=self.pickle_protocol)
 
             if len(result) < min_file_size:
-                return (0, MODE_PICKLE, None, sqlite3.Binary(result))
+                return {"size": 0, "mode": MODE_PICKLE, "filename": None, "value": sqlite3.Binary(result)}
             else:
                 filename, full_path = self.filename(key, value)
 
                 with open(full_path, 'wb') as writer:
                     writer.write(result)
 
-                return (len(result), MODE_PICKLE, filename, None)
+                return {"size": len(result), "mode": MODE_PICKLE, "filename": filename, "value": None}
 
     def fetch(self, mode, filename, value, read):
         """Convert fields `mode`, `filename`, and `value` from Cache table to
@@ -799,7 +804,11 @@ class Cache(object):
         now = time.time()
         db_key, raw = self._disk.put(key)
         expire_time = None if expire is None else now + expire
-        size, mode, filename, db_value = self._disk.store(value, read, key=key)
+        db_data = self._disk.store(value, read, key=key)
+        size = db_data["size"]
+        mode = db_data["mode"]
+        filename = db_data["filename"]
+        db_value = db_data["value"]
         columns = (expire_time, tag, size, mode, filename, db_value)
 
         # The order of SELECT, UPDATE, and INSERT is important below.
@@ -1016,7 +1025,11 @@ class Cache(object):
         now = time.time()
         db_key, raw = self._disk.put(key)
         expire_time = None if expire is None else now + expire
-        size, mode, filename, db_value = self._disk.store(value, read, key=key)
+        db_data = self._disk.store(value, read, key=key)
+        size = db_data["size"]
+        mode = db_data["mode"]
+        filename = db_data["filename"]
+        db_value = db_data["value"]
         columns = (expire_time, tag, size, mode, filename, db_value)
 
         with self._transact(retry, filename) as (sql, cleanup):
@@ -1082,7 +1095,8 @@ class Cache(object):
                     raise KeyError(key)
 
                 value = default + delta
-                columns = (None, None) + self._disk.store(value, False, key=key)
+                db_data = self._disk.store(value, False, key=key)
+                columns = (None, None) + (db_data["size"], db_data["mode"], db_data["filename"], db_data["value"])
                 self._row_insert(db_key, raw, now, columns)
                 self._cull(now, sql, cleanup)
                 return value
@@ -1094,7 +1108,8 @@ class Cache(object):
                     raise KeyError(key)
 
                 value = default + delta
-                columns = (None, None) + self._disk.store(value, False, key=key)
+                db_data = self._disk.store(value, False, key=key)
+                columns = (None, None) + (db_data["size"], db_data["mode"], db_data["filename"], db_data["value"])
                 self._row_update(rowid, now, columns)
                 self._cull(now, sql, cleanup)
                 cleanup(filename)
@@ -1456,7 +1471,11 @@ class Cache(object):
         now = time.time()
         raw = True
         expire_time = None if expire is None else now + expire
-        size, mode, filename, db_value = self._disk.store(value, read)
+        db_data = self._disk.store(value, read)
+        size = db_data["size"]
+        mode = db_data["mode"]
+        filename = db_data["filename"]
+        db_value = db_data["value"]
         columns = (expire_time, tag, size, mode, filename, db_value)
         order = {'back': 'DESC', 'front': 'ASC'}
         select = (

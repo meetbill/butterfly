@@ -3844,6 +3844,9 @@ class PubSub(object):
         return message
 
     def run_in_thread(self, sleep_time=0, daemon=False):
+        """
+        run_in_thread
+        """
         for channel, handler in iteritems(self.channels):
             if handler is None:
                 raise PubSubError("Channel: '%s' has no handler registered" %

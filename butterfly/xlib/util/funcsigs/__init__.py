@@ -251,8 +251,13 @@ class Parameter(object):
 
     empty = _empty
 
-    def __init__(self, name, kind, default=_empty, annotation=_empty,
+    def __init__(self, name, kind, default=None, annotation=None,
                  _partial_kwarg=False):
+        if default is None:
+            default = _empty
+
+        if annotation is None:
+            annotation = _empty
 
         if kind not in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD,
                         _VAR_POSITIONAL, _KEYWORD_ONLY, _VAR_KEYWORD):

@@ -986,8 +986,8 @@ def with_metaclass(meta, *bases):
             return meta(name, resolved_bases, d)
 
         @classmethod
-        def __prepare__(cls, name, this_bases):
-            return meta.__prepare__(name, bases)
+        def _prepare_(cls, name, this_bases):
+            return meta._prepare_(name, bases)
     return type.__new__(Metaclass, 'temporary_class', (), {})
 
 
@@ -1094,7 +1094,7 @@ def python_2_unicode_compatible(klass):
 # This code is at the end of this module to speed up module loading.
 # Turn this module into a package.
 __path__ = []  # required for PEP 302 and PEP 451
-__package__ = __name__  # see PEP 366 @ReservedAssignment
+_package_ = __name__  # see PEP 366 @ReservedAssignment
 if globals().get("__spec__") is not None:
     # PEP 451 @UndefinedVariable
     __spec__.submodule_search_locations = [] # pylint:disable=undefined-variable
