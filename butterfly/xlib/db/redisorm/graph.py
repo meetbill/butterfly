@@ -166,13 +166,6 @@ class Graph(object):
                 keys, p1, p2, p3 = decode(key).split('::')
                 yield dict(zip(keys, (p1, p2, p3)))
 
-    def v(self, name):
-        """
-        Create a named variable, used to construct multi-clause queries with
-        the :py:meth:`Graph.search` method.
-        """
-        return Variable(name)
-
     def search(self, *conditions):
         """
         Given a set of conditions, return all values that satisfy the

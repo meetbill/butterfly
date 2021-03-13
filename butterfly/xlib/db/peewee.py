@@ -2949,7 +2949,7 @@ class CompoundSelectQuery(SelectBase):
         返回 False/True
         """
         query = Select((self.limit(1),), (SQL('1'),)).bind(database)
-        return bool(query.scalar())
+        return bool(query.scalar(database))
 
     def _get_query_key(self):
         return (self.lhs.get_query_key(), self.rhs.get_query_key())

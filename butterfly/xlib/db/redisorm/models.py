@@ -174,7 +174,7 @@ class AutoIncrementField(IntegerField):
     """Auto-incrementing primary key field."""
     def __init__(self, *args, **kwargs):
         kwargs['primary_key'] = True
-        return super(AutoIncrementField, self).__init__(*args, **kwargs)
+        super(AutoIncrementField, self).__init__(*args, **kwargs)
 
     def _generate_key(self):
         query_helper = self.model_class._query
@@ -482,7 +482,7 @@ class BaseIndex(object):
         """
         return self.field.db_value(getattr(instance, self.field.name))
 
-    def get_key(self, instance, value):
+    def get_key(self, value):
         """
         Get key
         """

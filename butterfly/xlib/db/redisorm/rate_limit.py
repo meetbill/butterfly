@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: rate_limit.py
+# Description:
+
+"""
 import hashlib
 import pickle
 import time
@@ -5,7 +11,18 @@ from functools import wraps
 
 
 class RateLimitException(Exception):
+    """
+    RateLimitException
+    """
     pass
+
+
+def _key_function(*args, **kwargs):
+    """
+    returns a string key
+    """
+    data = pickle.dumps((args, sorted(kwargs.items())))
+    return hashlib.md5(data).hexdigest()
 
 
 class RateLimit(object):
@@ -13,6 +30,7 @@ class RateLimit(object):
     Rate limit implementation. Allows up to "limit" number of events every per
     the given number of seconds.
     """
+
     def __init__(self, database, name, limit=5, per=60, debug=False):
         """
         :param database: :py:class:`Database` instance.
@@ -80,9 +98,7 @@ class RateLimit(object):
         :raises: ``RateLimitException``.
         """
         if key_function is None:
-            def key_function(*args, **kwargs):
-                data = pickle.dumps((args, sorted(kwargs.items())))
-                return hashlib.md5(data).hexdigest()
+            key_function = _key_function
 
         def decorator(fn):
             @wraps(fn)
