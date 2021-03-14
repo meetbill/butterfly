@@ -5,6 +5,7 @@ Butterfly config
 
 SERVER_LISTEN_ADDR = ("0.0.0.0", 8585)
 SERVER_THREAD_NUM = 16
+SERVER_NAME = "Butterfly_app"
 
 # Log
 LOG_SIZE_LIMIT = 1024 * 1024 * 2
@@ -43,8 +44,8 @@ CACHES = {
     #"baichuan": "redis://@localhost:6379/0?socket_timeout=2&socket_connect_timeout=0.5&retry_on_timeout=false",
     }
 
-# Local Cache
-diskcache_dir = "data/diskcache"
+# Local data or cache
+LOCALDATA_DIR = "data"
 
 # Auth
 SECRET_KEY = None           # If it is None, a key will be randomly generated each time butterfly is started

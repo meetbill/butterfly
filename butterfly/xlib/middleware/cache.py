@@ -20,8 +20,8 @@ def generate_landing_page():
 from conf import config
 from xlib import diskcache as _dc
 
-if "diskcache_dir" in dir(config):
-    _cache = _dc.Cache(directory=config.diskcache_dir)
+if "LOCALDATA_DIR" in dir(config):
+    _cache = _dc.Cache(directory="{data_dir}/diskcache".format(data_dir=config.LOCALDATA_DIR))
 else:
     _cache = _dc.Cache()
 

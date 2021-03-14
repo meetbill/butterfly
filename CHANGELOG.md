@@ -3,6 +3,23 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.10] - 2021-03-14
+### Changed
+- 服务：【五行】(1) wuxing item 中增加 text 类型，方便记录长文本数据，此数据没有加索引; (2) item list 增加 c_time 排序
+- 服务：【百川】worker 添加 nickname 属性，用于标记此 butterfly 的服务类型, 此配置在 config.SERVER_NAME 中进行配置
+- 配置：config.diskcache_dir --> config.LOCALDATA_DIR
+- 工具：util.Base64_16 --> util.Base64and16 , 此变动影响 handler 中的 ping 函数
+
+### Added
+- 配置：增加 config.SERVER_NAME 配置，目前仅提供给百川 worker 使用
+
+### Other
+
+按照编码规范进行修改部分代码
+
+### Changed
+- 服务：【百川】1. 添加 worker 消费限流; 2.worker 每次消费时，将多个队列进行随机打乱再进行消费; 3.handler 处理异常时可以将异常信息进行存储到 mq 中
+- 调试：参数支持传 None
 
 ## [1.1.9] - 2021-03-05
 

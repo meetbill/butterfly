@@ -19,14 +19,9 @@ import json
 from xlib import httpgateway
 import urllib
 
-try:
-    from signal import SIGKILL
-except ImportError:
-    from signal import SIGTERM as SIGKILL
 
 from xlib.mq import worker_registration
 from xlib.mq.compat import as_text, string_types
-
 from xlib.mq import defaults
 from xlib.mq.msg import Msg, MsgStatus
 from xlib.mq.queue import Queue
@@ -154,6 +149,7 @@ class Worker(object):
         self.python_version = sys.version
         self.name = name or "{hostname}:{addr_port}:{pid}".format(
             hostname=self.hostname, addr_port=addr_port, pid=self.pid)
+        self.nickname = config.SERVER_NAME
         queues_list = []
         for q in ensure_list(queues):
             if isinstance(q, string_types):
@@ -240,6 +236,7 @@ class Worker(object):
             'hostname': self.hostname,
             'version': self.version,
             'python_version': self.python_version,
+            'nickname': self.nickname,
         })
         worker_registration.register(self)
 
@@ -357,15 +354,16 @@ class Worker(object):
         data = self.connection.hmget(
             self.key, 'queues', 'state', 'last_heartbeat',
             'birth', 'failed_msg_count', 'successful_msg_count',
-            'total_working_time', 'hostname', 'pid', 'version', 'python_version',
+            'total_working_time', 'hostname', 'pid', 'version', 'python_version', 'nickname',
         )
         (queues, state, last_heartbeat, birth, failed_msg_count,
-         successful_msg_count, total_working_time, hostname, pid, version, python_version) = data
+         successful_msg_count, total_working_time, hostname, pid, version, python_version, nickname) = data
         queues = as_text(queues)
         self.hostname = as_text(hostname)
         self.pid = int(pid) if pid else None
         self.version = as_text(version)
         self.python_version = as_text(python_version)
+        self.nickname = as_text(nickname)
         self._state = as_text(state or '?')
         if last_heartbeat:
             self.last_heartbeat = utcparse(as_text(last_heartbeat))
