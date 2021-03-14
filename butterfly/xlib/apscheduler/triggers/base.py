@@ -12,7 +12,7 @@ import random
 from xlib.util import six
 
 
-class BaseTrigger(six.with_metaclass(ABCMeta)):
+class BaseTrigger(six.with_metaclass(ABCMeta, object)):
     """Abstract base class that defines the interface that every trigger must implement."""
 
     __slots__ = ()

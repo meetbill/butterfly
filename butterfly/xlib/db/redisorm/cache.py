@@ -19,12 +19,16 @@ else:
     from itertools import imap
 
 
+def _key_fn(a, k):
+    return hashlib.md5(pickle.dumps((a, k))).hexdigest()
+
 
 class Cache(object):
     """
     Cache implementation with simple ``get``/``set`` operations,
     and a decorator.
     """
+
     def __init__(self, database, name='cache', default_timeout=None,
                  debug=False):
         """
@@ -41,9 +45,15 @@ class Cache(object):
         self.metrics = {'hits': 0, 'misses': 0, 'writes': 0}
 
     def make_key(self, s):
+        """
+        Get key
+        """
         return ':'.join((self.name, s))
 
     def unmake_key(self, k):
+        """
+        unmake key
+        """
         return k[self.prefix_len:]
 
     def get(self, key, default=None):
@@ -86,7 +96,8 @@ class Cache(object):
 
     def delete(self, key):
         """Remove the given key from the cache."""
-        if self.debug: return 0
+        if self.debug:
+            return 0
         return self.database.delete(self.make_key(key))
 
     def get_many(self, keys):
@@ -98,7 +109,8 @@ class Cache(object):
         :returns: dictionary mapping keys to cached values.
         """
         accum = {}
-        if self.debug: return accum
+        if self.debug:
+            return accum
 
         prefixed = [self.make_key(key) for key in keys]
         for key, value in zip(keys, self.database.mget(prefixed)):
@@ -145,7 +157,8 @@ class Cache(object):
         :param list keys: keys to delete.
         :returns: number of keys removed.
         """
-        if self.debug: return
+        if self.debug:
+            return
         prefixed = [self.make_key(key) for key in keys]
         return self.database.delete(*prefixed)
 
@@ -162,12 +175,12 @@ class Cache(object):
             return self.database.delete(*keys)
 
     def incr(self, key, delta=1):
+        """
+        incr
+        """
         return self.database.incr(self.make_key(key), delta)
 
-    def _key_fn(a, k):
-        return hashlib.md5(pickle.dumps((a, k))).hexdigest()
-
-    def cached(self, key_fn=_key_fn, timeout=None, metrics=False):
+    def cached(self, key_fn=None, timeout=None, metrics=False):
         """
         Decorator that will transparently cache calls to the
         wrapped function. By default, the cache key will be made
@@ -198,11 +211,23 @@ class Cache(object):
         The decorated function also gains a new attribute named
         ``bust`` which will clear the cache for the given args.
         """
+        if key_fn is None:
+            key_fn=_key_fn
+
         def decorator(fn):
+            """
+            Decorator func
+            """
             def make_key(args, kwargs):
+                """
+                Make key
+                """
                 return '%s:%s' % (fn.__name__, key_fn(args, kwargs))
 
             def bust(*args, **kwargs):
+                """
+                bust
+                """
                 return self.delete(make_key(args, kwargs))
 
             _metrics = {
@@ -240,7 +265,7 @@ class Cache(object):
             return inner
         return decorator
 
-    def cached_property(self, key_fn=_key_fn, timeout=None):
+    def cached_property(self, key_fn=None, timeout=None):
         """
         Decorator that will transparently cache calls to the wrapped
         method. The method will be exposed as a property.
@@ -257,6 +282,9 @@ class Cache(object):
             clock = Clock()
             print clock.now
         """
+        if key_fn is None:
+            key_fn = _key_fn
+
         this = self
 
         class _cached_property(object):
@@ -275,11 +303,14 @@ class Cache(object):
                 raise ValueError('Cannot set value of a cached property.')
 
         def decorator(fn):
+            """
+            decorator func
+            """
             return _cached_property(fn)
 
         return decorator
 
-    def cache_async(self, key_fn=_key_fn, timeout=3600):
+    def cache_async(self, key_fn=None, timeout=3600):
         """
         Decorator that will execute the cached function in a separate
         thread. The function will immediately return, returning a
@@ -293,14 +324,25 @@ class Cache(object):
         :returns: A new function which can be called to retrieve the
             return value of the decorated function.
         """
+        if key_fn is None:
+            key_fn = _key_fn
+
         def decorator(fn):
+            """
+            decorator func
+            """
             wrapped = self.cached(key_fn, timeout)(fn)
 
             @wraps(fn)
             def inner(*args, **kwargs):
+                """
+                inner func
+                """
                 q = Queue()
+
                 def _sub_fn():
                     q.put(wrapped(*args, **kwargs))
+
                 def _get_value(block=True, timeout=None):
                     if not hasattr(_get_value, '_return_value'):
                         result = q.get(block=block, timeout=timeout)
