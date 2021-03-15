@@ -177,6 +177,7 @@ def test_instance_update_item():
     更新 instance item
     """
 
+    # ---------------------------------------------直接变更 item_value----------------------------------------------------start
     # OK
     namespace = "group_qingnang"
     instance_name = "2523"
@@ -209,6 +210,48 @@ def test_instance_update_item():
     item_name = "qn_failover_xx"
     stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value)
     assert stat == retstat.ERR_ITEM_IS_NOT_EXIST
+    # ---------------------------------------------直接变更 item_value----------------------------------------------------end
+
+    # ------------------------------------------检查设置了前置变更条件的变更----------------------------------------------start
+    # Fail
+    namespace = "group_qingnang"
+    instance_name = "2523"
+    item_name = "b|qn_failover"
+    item_value = False
+    item_value_old = True
+
+    stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
+    assert stat == retstat.ERR_ITEM_UPDATE_FAILED
+
+    # OK
+    namespace = "group_qingnang"
+    instance_name = "2523"
+    item_name = "b|qn_failover"
+    item_value = True
+    item_value_old = False
+
+    stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
+    assert stat == retstat.OK
+
+    # 检查配置是否修改成功
+    demo_item_name = "b|qn_failover"
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
+    assert stat == retstat.OK
+    demo_data = {
+        'data': {
+            "b|qn_failover": {
+                'item_value': True,
+                u'item_name': u'b|qn_failover',
+                u'item_type': u'bool',
+                u'item_description': u'qn failover switch'
+            }
+        }
+    }
+    # 去掉返回值中的 u_time
+    assert data["data"]["b|qn_failover"].pop("u_time")
+    assert data["data"]["b|qn_failover"].pop("item_id")
+    assert data == demo_data
+    # ------------------------------------------检查设置了前置变更条件的变更----------------------------------------------end
 
 
 def test_instance_update_section():
@@ -230,8 +273,7 @@ def test_instance_update_section():
     demo_data = {
         'data': {
             u'b|qn_failover': {
-                # 此值进行过更新
-                'item_value': False,
+                'item_value': True,
                 u'item_name': u'b|qn_failover',
                 u'item_type': u'bool',
                 u'item_description': u'qn failover switch'
@@ -270,7 +312,7 @@ def test_instance_update_section():
     demo_data = {
         'data': {
             u'b|qn_failover': {
-                'item_value': False,
+                'item_value': True,
                 u'item_name': u'b|qn_failover',
                 u'item_type': u'bool',
                 u'item_description': u'qn failover switch'

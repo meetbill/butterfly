@@ -41,7 +41,9 @@ def _clear_and_create_database():
         model.WuxingHistoryBool,
         model.WuxingHistoryFloat,
         model.WuxingHistoryInt,
-        model.WuxingHistoryString]
+        model.WuxingHistoryString,
+        model.WuxingHistoryText
+        ]
 
     xlib.db.my_databases["default"].drop_tables(model_list)
     xlib.db.my_databases["default"].create_tables(model_list)

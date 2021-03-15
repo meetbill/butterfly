@@ -216,9 +216,10 @@ def item_get(req, item_id, item_type):
 
 
 @funcattr.api
-def item_update(req, item_id, item_type, item_value):
+def item_update(req, item_id, item_type, item_value, item_value_old=None):
     """
     更新 item value
+    当 item_value_old 有值时，此更新操作仅在当前值为 item_value_old 时才会更新
     """
     isinstance(req, Request)
     item_model = model.WuxingInstanceItem
@@ -232,8 +233,13 @@ def item_update(req, item_id, item_type, item_value):
     update_data["user"] = op_user
     update_data["u_time"] = datetime.now()
 
-    effect_count = item_model.update(update_data).where(
-        item_model.id == item_id).execute()
+    if item_value_old is None:
+        effect_count = item_model.update(update_data).where(item_model.id == item_id).execute()
+    else:
+        old_value = get_value_by_modeltype(item_type, item_value_old)
+        value_field_model = common_map.value_field_model_map[item_type]
+        effect_count = item_model.update(update_data).where(
+            item_model.id == item_id, value_field_model == old_value).execute()
 
     if effect_count == 1:
         common_map.modelhistory_map[item_type].create(
@@ -243,7 +249,7 @@ def item_update(req, item_id, item_type, item_value):
         item_cache.ItemCache.delete(req, item_id)
         return retstat.OK, {}, [(__info, __version)]
     else:
-        return retstat.ERR, {}, [(__info, __version)]
+        return retstat.ERR_ITEM_UPDATE_FAILED, {}, [(__info, __version)]
 
 
 @funcattr.api

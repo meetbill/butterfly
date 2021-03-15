@@ -365,7 +365,7 @@ def instance_get(req, namespace, instance_name, items=None):
 
 
 @funcattr.api
-def instance_update_item(req, namespace, instance_name, item_name, item_value):
+def instance_update_item(req, namespace, instance_name, item_name, item_value, item_value_old=None):
     """
     更新 item
     """
@@ -389,7 +389,7 @@ def instance_update_item(req, namespace, instance_name, item_name, item_value):
 
     item_id = template_dict[item_name]["id"]
     item_type = template_dict[item_name]["a1"]
-    return item.item_update(req, item_id, item_type, item_value)
+    return item.item_update(req, item_id, item_type, item_value, item_value_old)
 
 
 @funcattr.api
