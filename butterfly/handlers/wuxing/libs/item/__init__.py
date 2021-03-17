@@ -64,10 +64,12 @@ def get_value_by_modeltype(modeltype, value_old):
     if modeltype == "float":
         return float(value_old)
     if modeltype == "bool":
-        if value_old.lower() == "false":
-            return False
-        else:
+        if isinstance(value_old, int) and value_old > 0:
             return True
+        if isinstance(value_old, str) and value_old.lower() == "true":
+            return True
+        else:
+            return False
 
 
 @funcattr.api
