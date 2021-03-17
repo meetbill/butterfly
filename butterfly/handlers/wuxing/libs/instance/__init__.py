@@ -198,7 +198,7 @@ def instance_create(req, namespace, instance_name, section_name, section_version
         item_dict = section_template_dict[item_name]
         item_type = item_dict["a1"]
         # 如果传了默认值，则以传的值进行创建 item
-        if item_name in items_data.keys():
+        if item_name in items_data.keys() and items_data[item_name] is not None:
             item_default = items_data[item_name]
         else:
             item_default = item_dict["a2"]
