@@ -3,6 +3,10 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.11] - 2021-03-17
+### Changed
+- 服务：【五行】(1)baichuan 处理 msg 时改为直接处理 json 数据，而不是进行 urllib.urlencode 数据；(2)baichuan worker 添加 home_dir 属性，用于后期部署管理; (3)baichuan msg 添加 handle_worker 属性，标记此消息的处理 worker
+
 ## [1.1.10] - 2021-03-14
 ### Changed
 - 服务：【五行】(1) wuxing item 中增加 text 类型，方便记录长文本数据，此数据没有加索引; (2) item list 增加 c_time 排序
