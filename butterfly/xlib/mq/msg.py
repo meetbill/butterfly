@@ -164,6 +164,7 @@ class Msg(object):
         self.meta = {}
         hostname = socket.gethostname()
         self.ip = host_util.get_ip_by_host(hostname)
+        self.handle_worker = ""
 
     def __repr__(self):  # noqa  # pragma: no cover
         return '{0}({1!r}, enqueued_at={2!r})'.format(self.__class__.__name__,
@@ -258,6 +259,7 @@ class Msg(object):
         self._status = as_text(obj.get('status')) if obj.get('status') else None
         self.ttl = int(obj.get('ttl')) if obj.get('ttl') else None
         self.meta = unpickle(obj.get('meta')) if obj.get('meta') else {}
+        self.handle_worker = as_text(obj.get('handle_worker'))
 
         raw_exc_info = obj.get('exc_info')
         if raw_exc_info:
@@ -285,6 +287,8 @@ class Msg(object):
 
         You can exclude serializing the `meta` dictionary by setting
         `include_meta=False`.
+
+        Used to store to redis.
         """
         obj = {}
         obj['created_at'] = utcformat(self.created_at or utcnow())
@@ -320,6 +324,7 @@ class Msg(object):
         if self.ttl:
             obj['ttl'] = self.ttl
         obj['ip'] = self.ip
+        obj['handle_worker'] = self.handle_worker
 
         return obj
 

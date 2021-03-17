@@ -15,11 +15,9 @@ import sys
 import traceback
 import warnings
 import time
-import json
+
+import xlib
 from xlib import httpgateway
-import urllib
-
-
 from xlib.mq import worker_registration
 from xlib.mq.compat import as_text, string_types
 from xlib.mq import defaults
@@ -29,9 +27,6 @@ from xlib.mq.registry import FailedMsgRegistry, StartedMsgRegistry, clean_regist
 from xlib.mq.utils import (backend_class, ensure_list, enum,
                            utcformat, utcnow, utcparse)
 from xlib.mq.worker_registration import clean_worker_registry, get_keys
-
-
-import xlib
 from conf import config
 
 addr_host, addr_port = config.SERVER_LISTEN_ADDR
@@ -146,6 +141,7 @@ class Worker(object):
         self.msg_class = backend_class(self, 'msg_class', override=msg_class)
         self.queue_class = backend_class(self, 'queue_class', override=queue_class)
         self.version = xlib.butterfly_version
+        self.home_dir = os.getcwd()
         self.python_version = sys.version
         self.name = name or "{hostname}:{addr_port}:{pid}".format(
             hostname=self.hostname, addr_port=addr_port, pid=self.pid)
@@ -237,6 +233,7 @@ class Worker(object):
             'version': self.version,
             'python_version': self.python_version,
             'nickname': self.nickname,
+            'home_dir': self.home_dir,
         })
         worker_registration.register(self)
 
@@ -354,15 +351,16 @@ class Worker(object):
         data = self.connection.hmget(
             self.key, 'queues', 'state', 'last_heartbeat',
             'birth', 'failed_msg_count', 'successful_msg_count',
-            'total_working_time', 'hostname', 'pid', 'version', 'python_version', 'nickname',
+            'total_working_time', 'hostname', 'pid', 'version', 'python_version', 'nickname', 'home_dir',
         )
         (queues, state, last_heartbeat, birth, failed_msg_count,
-         successful_msg_count, total_working_time, hostname, pid, version, python_version, nickname) = data
+         successful_msg_count, total_working_time, hostname, pid, version, python_version, nickname, home_dir) = data
         queues = as_text(queues)
         self.hostname = as_text(hostname)
         self.pid = int(pid) if pid else None
         self.version = as_text(version)
         self.python_version = as_text(python_version)
+        self.home_dir = as_text(home_dir)
         self.nickname = as_text(nickname)
         self._state = as_text(state or '?')
         if last_heartbeat:
@@ -538,19 +536,24 @@ class Worker(object):
         try:
             msg.started_at = utcnow()
             msg.set_status(MsgStatus.STARTED)
+            msg.handle_worker = self.name
 
+            # gen req
             ip = msg.ip
             reqid = msg.get_id()
-            data = json.loads(msg.data)
-            QUERY_STRING = urllib.urlencode(data)
             wsgienv = {
                 "PATH_INFO": queue.name,
-                "QUERY_STRING": QUERY_STRING,
-                "REQUEST_METHOD": "GET"
+                "QUERY_STRING": "",
+                "REQUEST_METHOD": "QUEUE",
+                "MSG_DATA": msg.data
             }
             req = httpgateway.Request(reqid, wsgienv, ip)
+            req.funcname = queue.name
+
+            # handle req
             protocol = self.apicube[queue.name]
             httpstatus, headers, content = protocol(req)
+
             # acclog
             self._mk_ret(req, httpstatus, headers, content)
             msg.ended_at = utcnow()

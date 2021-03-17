@@ -146,6 +146,13 @@ class Protocol(object):
                     post_params = json.loads(post_data)
                     for k, v in post_params.iteritems():
                         params[str(k)] = v
+            elif req.wsgienv.get("REQUEST_METHOD") == "QUEUE":
+                # 表明此请求是百川拼装的请求
+                msg_data = req.wsgienv.get("MSG_DATA")
+                msg_params = json.loads(msg_data)
+                for k, v in msg_params.iteritems():
+                    params[str(k)] = v
+
             req.log_params.update(params)
 
             params["req"] = req
