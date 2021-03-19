@@ -6,6 +6,7 @@
     * [2.1 前置条件](#21-前置条件)
     * [2.2 配置](#22-配置)
     * [2.3 使用方法](#23-使用方法)
+* [3 备注](#3-备注)
 
 <!-- vim-markdown-toc -->
 
@@ -34,4 +35,12 @@ python wuxing_cli.py delete 'instance_name'
 python wuxing_cli.py get 'instance_name'
 python wuxing_cli.py list
 python wuxing_cli.py update 'instance_name' 'item_name' 'item_value' 'item_value_old=None'
+```
+# 3 备注
+
+item_name 使用 `|` 作为 item 类型前缀的分割符，在 Linux 命令行中是管道符，故在使用的时候，需要对 itme_name 加双引号或者单引号
+
+> 例子
+```
+"s|region" 或者 's|region'
 ```
