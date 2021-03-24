@@ -66,7 +66,9 @@ def get_value_by_modeltype(modeltype, value_old):
     if modeltype == "bool":
         if isinstance(value_old, int) and value_old > 0:
             return True
-        if isinstance(value_old, str) and value_old.lower() == "true":
+
+        # str 和 unicode 都是 basestring 的子类
+        if isinstance(value_old, basestring) and value_old.lower() == "true":
             return True
         else:
             return False
