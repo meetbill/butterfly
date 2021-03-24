@@ -19,6 +19,8 @@
         1.0.2: 2021-03-23
             (1) 增加: upgrade 方法用于升级 instance 版本
             (2) 修改: list 方法增加输出 instance 版本号
+        1.0.3: 2021-03-24
+            (1) 修改: list 方法增加自定义额外 item 输出
 """
 import urllib
 import urllib2
@@ -29,6 +31,7 @@ WX_NAMESPACE = "namespace"
 WX_SECTION_NAME = "section_name"
 WX_SECTION_VERSION = "1.0.1"
 WX_ADDR = "http://IP:PORT"
+WX_LIST_EXTRA_ITEMS = ""
 # -------------------------------------------------------------------------------
 WX_INSTANCE_LIST = "{addr}/wuxing/instance_list".format(addr=WX_ADDR)
 WX_INSTANCE_DELETE = "{addr}/wuxing/instance_delete".format(addr=WX_ADDR)
@@ -38,13 +41,15 @@ WX_INSTANCE_UPGRADE = "{addr}/wuxing/instance_update_section".format(addr=WX_ADD
 WX_INSTANCE_GET = "{addr}/wuxing/instance_get".format(addr=WX_ADDR)
 
 
-def list():
+def list(have_extra=False):
     """
     instance list
     """
     params = {}
     params["namespace"] = WX_NAMESPACE
     params["section_name"] = WX_SECTION_NAME
+    if have_extra:
+        params["extra_items"] = WX_LIST_EXTRA_ITEMS
     params["page_index"] = 1
     while True:
         request = urllib2.Request(WX_INSTANCE_LIST + "?" + urllib.urlencode(params))
@@ -55,9 +60,12 @@ def list():
             break
 
         for instance in rep_data["data"]["list"]:
-            print "{instance_name}\t{section_version}".format(
-                instance_name=instance["instance_name"],
-                section_version=instance["section_version"])
+            instance_line = "{instance_name}\t{section_version}".format(
+                instance_name=instance["instance_name"], section_version=instance["section_version"])
+            if have_extra:
+                for item_name in WX_LIST_EXTRA_ITEMS.split(","):
+                    instance_line = instance_line + "\t" + str(instance[item_name])
+            print instance_line
         params["page_index"] = params["page_index"] + 1
 
 
