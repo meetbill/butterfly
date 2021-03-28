@@ -108,7 +108,7 @@ def test_instance_get():
     namespace = "group_qingnang"
     instance_name = "2523"
 
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, value_format="detail")
     assert stat == retstat.OK
 
     demo_data = {
@@ -154,7 +154,7 @@ def test_instance_get():
 
     # 测试某个 item 获取
     demo_item_name = "b|qn_failover"
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name, value_format="detail")
     assert stat == retstat.OK
     demo_data = {
         'data': {
@@ -189,7 +189,7 @@ def test_instance_update_item():
 
     # 检查配置是否修改成功
     demo_item_name = "b|qn_failover"
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name, value_format="detail")
     assert stat == retstat.OK
     demo_data = {
         'data': {
@@ -220,7 +220,8 @@ def test_instance_update_item():
     item_value = False
     item_value_old = True
 
-    stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
+    stat, data, header_list = wuxing.instance_update_item(
+        req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
     assert stat == retstat.ERR_ITEM_UPDATE_FAILED
 
     # OK
@@ -230,12 +231,13 @@ def test_instance_update_item():
     item_value = True
     item_value_old = False
 
-    stat, data, header_list = wuxing.instance_update_item(req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
+    stat, data, header_list = wuxing.instance_update_item(
+        req, namespace, instance_name, item_name, item_value, item_value_old=item_value_old)
     assert stat == retstat.OK
 
     # 检查配置是否修改成功
     demo_item_name = "b|qn_failover"
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, demo_item_name, value_format="detail")
     assert stat == retstat.OK
     demo_data = {
         'data': {
@@ -267,7 +269,7 @@ def test_instance_update_section():
     assert stat == retstat.OK
 
     # check
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, value_format="detail")
     assert stat == retstat.OK
 
     demo_data = {
@@ -306,7 +308,7 @@ def test_instance_update_section():
     assert stat == retstat.OK
 
     # check
-    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name)
+    stat, data, header_list = wuxing.instance_get(req, namespace, instance_name, value_format="detail")
     assert stat == retstat.OK
 
     demo_data = {

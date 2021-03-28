@@ -21,6 +21,8 @@
             (2) 修改: list 方法增加输出 instance 版本号
         1.0.3: 2021-03-24
             (1) 修改: list 方法增加自定义额外 item 输出
+        1.0.4: 2021-03-28
+            (1) 修改: get 方法增加 simple/detail 两种模式
 """
 import urllib
 import urllib2
@@ -69,13 +71,17 @@ def list(have_extra=False):
         params["page_index"] = params["page_index"] + 1
 
 
-def get(instance_name):
+def get(instance_name, value_format="simple"):
     """
     instance list
+
+    Args:
+        value_format: simple/detail
     """
     params = {}
     params["namespace"] = WX_NAMESPACE
     params["instance_name"] = instance_name
+    params["value_format"] = value_format
     request = urllib2.Request(WX_INSTANCE_GET + "?" + urllib.urlencode(params))
     response = urllib2.urlopen(request)
     rep_data_json = response.read()

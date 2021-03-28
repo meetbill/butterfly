@@ -306,25 +306,31 @@ def instance_update_section(req, namespace, instance_name, section_version):
 
 
 @funcattr.api
-def instance_get(req, namespace, instance_name, items=None):
+def instance_get(req, namespace, instance_name, items=None, value_format="simple"):
     """
     Args:
         namespace       : namespace
         instance_name   : instance_name
         items           : item name, 多个 item 使用 `,` 分割
+        value_format    : (String) detail/simple(default)
 
     Returns:
-        dict
-        {
-            key1:{
-                key1_attr1: xxx,
-                key1_attr2: xxx
-            },
-            key2:{
-                key2_attr1: xxx,
-                key2_attr2: xxx
+        dict:(detail)
+            {
+                key1:{
+                    key1_attr1: xxx,
+                    key1_attr2: xxx
+                },
+                key2:{
+                    key2_attr1: xxx,
+                    key2_attr2: xxx
+                }
             }
-        }
+        dict:(simple)
+            {
+                key1: value1,
+                key2: value2
+            }
     """
     isinstance(req, Request)
 
@@ -337,29 +343,32 @@ def instance_get(req, namespace, instance_name, items=None):
 
     instance_template_dict = instance_data["instance_template_dict"]
 
-    data = {}
     if items is None:
         select_list = instance_template_dict.keys()
     else:
         item_list = items.split(",")
         select_list = [i for i in item_list if i in instance_template_dict.keys()]
 
+    data = {}
     for key_ in select_list:
         item_id = instance_template_dict[key_]["id"]
         item_type = instance_template_dict[key_]["a1"]
         item_description = instance_template_dict[key_]["a3"]
+        if value_format == "detail":
+            # 将模板 + item_value 进行合并
+            data[key_] = {}
+            data[key_]["item_id"] = item_id
+            data[key_]["item_name"] = key_
+            data[key_]["item_type"] = item_type
+            data[key_]["item_description"] = item_description
 
-        # 将模板 + item_value 进行合并
-        data[key_] = {}
-        data[key_]["item_id"] = item_id
-        data[key_]["item_name"] = key_
-        data[key_]["item_type"] = item_type
-        data[key_]["item_description"] = item_description
-
-        # 获取 item_value
-        stat, item_data, headher_list = item.item_get(req, item_id, item_type)
-        data[key_]["item_value"] = item_data["data"]["item_value"]
-        data[key_]["u_time"] = item_data["data"]["u_time"]
+            # 获取 item_value
+            stat, item_data, headher_list = item.item_get(req, item_id, item_type)
+            data[key_]["item_value"] = item_data["data"]["item_value"]
+            data[key_]["u_time"] = item_data["data"]["u_time"]
+        else:
+            stat, item_data, headher_list = item.item_get(req, item_id, item_type)
+            data[key_] = item_data["data"]["item_value"]
 
     return retstat.OK, {"data": data}, [(__info, __version)]
 
