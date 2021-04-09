@@ -283,6 +283,7 @@ butterfly 框架基础能力:
 > * 【例子】/handlers/demo_log: 日志级别调整 handler demo
 > * 【例子】/handlers/demo_template: 后端模板 handler demo, 本例子用于输出访问日志统计状态图
 > * 【例子】/handlers/demo_async_job: 异步任务 handler demo
+> * 【例子】/handlers/demo_stackdump: 打印 Butterfly stack trace 信息到日志
 > * 【火眼】/handlers/huoyan: 用于后端接口认证，仅仅抛砖引玉，删除了具体实现
 > * 【如期】/handlers/ruqi: 高可用定时任务，可发起 HTTP POST 请求或者执行 Shell/Python 脚本
 > * 【五行】/handlers/wuxing: 用于存储配置类 / 监控类 / 巡检类数据，可配合状态机进行使用
