@@ -22,25 +22,24 @@ class HelloWorkflow(WorkflowRunner):
         """
         The output for this task will be written to the file helloWorld.out.txt
         """
-        self.addTask("easy_task1", "echo 'Hello World!' > helloWorld.out.txt; sleep 20")
+        self.addTask("easy_task1", "echo 'Hello World!'")
         self.addTask("easy_task2", "sleep 20", dependencies="easy_task1")
 
-
 @funcattr.api
-def helloworld(req, jobid=None):
+def helloworld(req):
     """
     Args:
         req     : Request
-        jobid   : (String) 若 jobid 不是 None，则会继续 jobid 的任务
     Returns:
         json_status, Content, headers
     """
     isinstance(req, Request)
     wflow = HelloWorkflow()
-    if jobid is None:
-        retval = wflow.run(dataDirRoot="data/workflow/{jobid}".format(jobid=req.reqid), isQuiet=True)
-    else:
-        retval = wflow.run(dataDirRoot="data/workflow/{jobid}".format(jobid=jobid), isContinue=True, isQuiet=True)
+    retval = wflow.run(dataDirRoot="data/workflow/{jobid}".format(jobid=req.reqid),
+            isQuiet=True,
+            job_reqid = req.reqid,
+            job_name = "ceshi"
+            )
     if retval == 0:
         return retstat.OK, {}, [(__info, __version)]
     else:

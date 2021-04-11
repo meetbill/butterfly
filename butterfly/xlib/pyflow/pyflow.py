@@ -41,7 +41,6 @@ import copy
 import datetime
 import os
 import re
-import shutil
 import subprocess
 import sys
 import threading
@@ -49,6 +48,8 @@ import time
 import traceback
 
 from pyflowConfig import siteConfig
+from xlib.pyflow import model
+from xlib.util import host_util
 
 
 moduleDir = os.path.abspath(os.path.dirname(__file__))
@@ -100,48 +101,6 @@ def getPythonVersion():
 
 
 pythonVersion = getPythonVersion()
-
-
-# portability functions:
-#
-
-def _isWindows():
-    import platform
-    return (platform.system().find("Windows") > -1)
-
-
-class GlobalConstants(object):
-    """
-    GlobalConstants class
-    """
-    isWindows = _isWindows()
-
-
-def isWindows():
-    """
-    is windows
-    """
-    return GlobalConstants.isWindows
-
-
-def forceRename(src, dst):
-    """
-    dst is only overwritten in a single atomic operation on *nix
-    on windows, we can't have atomic rename, but we can recreate the behavior otherwise
-    """
-    if isWindows():
-        if os.path.exists(dst):
-            os.remove(dst)
-
-    maxTrials = 5
-    for trial in range(maxTrials):
-        try:
-            os.rename(src, dst)
-            return
-        except OSError:
-            if (trial + 1) >= maxTrials:
-                raise
-            time.sleep(5)
 
 
 def cleanEnv():
@@ -487,112 +446,12 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
-def stackDump(dumpfp):
-    """
-    adapted from haridsv @ stackoverflow:
-    """
-
-    athreads = threading.enumerate()
-    tnames = [(th.getName()) for th in athreads]
-
-    frames = None
-    try:
-        frames = sys._current_frames()
-    except AttributeError:
-        # python version < 2.5
-        pass
-
-    id2name = {}
-    try:
-        id2name = dict([(th.ident, th.getName()) for th in athreads])
-    except AttributeError:
-        # python version < 2.6
-        pass
-
-    if (frames is None) or (len(tnames) > 50):
-        dumpfp.write("ActiveThreadCount: %i\n" % (len(tnames)))
-        dumpfp.write("KnownActiveThreadNames:\n")
-        for name in tnames:
-            dumpfp.write("  %s\n" % (name))
-        dumpfp.write("\n")
-        return
-
-    dumpfp.write("ActiveThreadCount: %i\n" % (len(frames)))
-    dumpfp.write("KnownActiveThreadNames:\n")
-    for name in tnames:
-        dumpfp.write("  %s\n" % (name))
-    dumpfp.write("\n")
-
-    for tid, stack in frames.items():
-        dumpfp.write("Thread: %d %s\n" % (tid, id2name.get(tid, "NAME_UNKNOWN")))
-        for filename, lineno, name, line in traceback.extract_stack(stack):
-            dumpfp.write('File: "%s", line %d, in %s\n' % (filename, lineno, name))
-            if line is not None:
-                dumpfp.write("  %s\n" % (line.strip()))
-        dumpfp.write("\n")
-    dumpfp.write("\n")
-
-
 #######################################################################
 #
 # these functions are written out to a utility script which allows users
 # to make a dot graph from their current state directory output. We
 # keep it in pyflow as working code so that pyflow can call sections of it.
 #
-
-def taskStateHeader():
-    """
-    taskState Header
-    """
-    return "#taskLabel\ttaskNamespace\trunState\terrorCode\trunStateUpdateTime\n"
-
-
-def taskStateParser(stateFile):
-    """
-    taskState Parser
-    """
-    class Constants(object):
-        """
-        Constants
-        """
-        nStateCols = 5
-
-    for line in open(stateFile):
-        if len(line) and line[0] == "#":
-            continue
-        line = line.strip()
-        w = line.split("\t")
-        if len(w) != Constants.nStateCols:
-            raise Exception("Unexpected format in taskStateFile: '%s' line: '%s'" % (stateFile, line))
-        yield [x.strip() for x in w]
-
-
-def taskInfoHeader():
-    """
-    taskInfo Header
-    """
-    return "#%s\n" % ("\t".join(("taskLabel", "taskNamespace", "taskType", "nCores", "memMb",
-                                 "priority", "isForceLocal", "dependencies", "cwd", "command")))
-
-
-def taskInfoParser(infoFile):
-    """
-    taskInfo Parser
-    """
-    class Constants(object):
-        """
-        Constants
-        """
-        nInfoCols = 10
-
-    for line in open(infoFile):
-        if len(line) and line[0] == "#":
-            continue
-        line = line.lstrip()
-        w = line.split("\t", (Constants.nInfoCols - 1))
-        if len(w) != Constants.nInfoCols:
-            raise Exception("Unexpected format in taskInfoFile: '%s' line: '%s'" % (infoFile, line))
-        yield [x.strip() for x in w]
 
 
 def getTaskInfoDepSet(s):
@@ -611,189 +470,7 @@ class TaskNodeConstants(object):
     TaskNodeConstants
     """
 
-    validRunstates = ("complete", "running", "queued", "waiting", "error")
-
-
-class DotConfig(object):
-    """
-    A static container of configuration data for dot graph output
-    """
-
-    runstateDotColor = {"waiting": "grey",
-                        "running": "green",
-                        "queued": "yellow",
-                        "error": "red",
-                        "complete": "blue"}
-
-    runstateDotStyle = {"waiting": "dashed",
-                        "running": None,
-                        "queued": None,
-                        "error": "bold",
-                        "complete": None}
-
-    @staticmethod
-    def getRunstateDotAttrib(runstate):
-        """
-        getRunstateDotAttrib
-        """
-        color = DotConfig.runstateDotColor[runstate]
-        style = DotConfig.runstateDotStyle[runstate]
-        attrib = ""
-        if color is not None:
-            attrib += " color=%s" % (color)
-        if style is not None:
-            attrib += " style=%s" % (style)
-        return attrib
-
-    @staticmethod
-    def getTypeDotAttrib(nodeType):
-        """
-        getTypeDotAttrib
-        """
-        attrib = ""
-        if nodeType == "workflow":
-            attrib += " shape=rect style=rounded"
-        return attrib
-
-    @staticmethod
-    def getDotLegend():
-        """
-        getDotLegend
-        """
-        string = '{ rank = source; Legend [shape=none, margin=0, label=<\n'
-        string += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">\n'
-        string += '<TR><TD COLSPAN="2">Legend</TD></TR>\n'
-        for state in TaskNodeConstants.validRunstates:
-            color = DotConfig.runstateDotColor[state]
-            string += '<TR> <TD>%s</TD> <TD BGCOLOR="%s"></TD> </TR>\n' % (state, color)
-        string += '</TABLE>>];}\n'
-        return string
-
-
-def writeDotGraph(taskInfoFile, taskStateFile, workflowClassName):
-    """
-    write out the current graph state in dot format
-    """
-
-    addOrder = []
-    taskInfo = {}
-    headNodes = set()
-    tailNodes = set()
-
-    # read info file:
-    for (label, namespace, ptype, _nCores, _memMb, _priority, _isForceLocal,
-         depStr, _cwdStr, _command) in taskInfoParser(taskInfoFile):
-        tid = (namespace, label)
-        addOrder.append(tid)
-        taskInfo[tid] = Bunch(ptype=ptype,
-                              parentLabels=getTaskInfoDepSet(depStr))
-        if len(taskInfo[tid].parentLabels) == 0:
-            headNodes.add(tid)
-        tailNodes.add(tid)
-        for plabel in taskInfo[tid].parentLabels:
-            ptid = (namespace, plabel)
-            if ptid in tailNodes:
-                tailNodes.remove(ptid)
-
-    for (label, namespace, runState, _errorCode, _time) in taskStateParser(taskStateFile):
-        tid = (namespace, label)
-        taskInfo[tid].runState = runState
-
-    dotFp = sys.stdout
-    dotFp.write("// Task graph from pyflow object '%s'\n" % (workflowClassName))
-    dotFp.write("// Process command: '%s'\n" % (cmdline()))
-    dotFp.write("// Process working dir: '%s'\n" % (os.getcwd()))
-    dotFp.write("// Graph capture time: %s\n" % (timeStrNow()))
-    dotFp.write("\n")
-    dotFp.write("digraph %s {\n" % (workflowClassName + "Graph"))
-    dotFp.write("\tcompound=true;\nrankdir=LR;\nnode[fontsize=10];\n")
-    labelToSym = {}
-    namespaceGraph = {}
-    for (i, (namespace, label)) in enumerate(addOrder):
-        tid = (namespace, label)
-        if namespace not in namespaceGraph:
-            namespaceGraph[namespace] = ""
-        sym = "n%i" % i
-        labelToSym[tid] = sym
-        attrib1 = DotConfig.getRunstateDotAttrib(taskInfo[tid].runState)
-        attrib2 = DotConfig.getTypeDotAttrib(taskInfo[tid].ptype)
-        namespaceGraph[namespace] += "\t\t%s [label=\"%s\"%s%s];\n" % (sym, label, attrib1, attrib2)
-
-    for (namespace, label) in addOrder:
-        tid = (namespace, label)
-        sym = labelToSym[tid]
-        for plabel in taskInfo[tid].parentLabels:
-            ptid = (namespace, plabel)
-            namespaceGraph[namespace] += ("\t\t%s -> %s;\n" % (labelToSym[ptid], sym))
-
-    for (i, ns) in enumerate(namespaceGraph.keys()):
-        isNs = ((ns is not None) and (ns != ""))
-        dotFp.write("\tsubgraph cluster_sg%i {\n" % (i))
-        if isNs:
-            dotFp.write("\t\tlabel = \"%s\";\n" % (ns))
-        else:
-            dotFp.write("\t\tlabel = \"%s\";\n" % (workflowClassName))
-        dotFp.write(namespaceGraph[ns])
-        dotFp.write("\t\tbegin%i [label=\"begin\" shape=diamond];\n" % (i))
-        dotFp.write("\t\tend%i [label=\"end\" shape=diamond];\n" % (i))
-        for (namespace, label) in headNodes:
-            if namespace != ns:
-                continue
-            sym = labelToSym[(namespace, label)]
-            dotFp.write("\t\tbegin%i -> %s;\n" % (i, sym))
-        for (namespace, label) in tailNodes:
-            if namespace != ns:
-                continue
-            sym = labelToSym[(namespace, label)]
-            dotFp.write("\t\t%s -> end%i;\n" % (sym, i))
-        dotFp.write("\t}\n")
-        if ns in labelToSym:
-            dotFp.write("\t%s -> begin%i [style=dotted];\n" % (labelToSym[ns], i))
-            # in LR orientation this will make the graph look messy:
-            # dotFp.write("\tend%i -> %s [style=invis];\n" % (i,labelToSym[ns]))
-
-    dotFp.write(DotConfig.getDotLegend())
-    dotFp.write("}\n")
-    hardFlush(dotFp)
-
-
-def writeDotScript(taskDotScriptFile,
-                   taskInfoFileName, taskStateFileName,
-                   workflowClassName):
-    """
-    write dot task graph creation script
-    """
-    import inspect
-
-    dsfp = os.fdopen(os.open(taskDotScriptFile, os.O_WRONLY | os.O_CREAT, 0o755), 'w')
-
-    dsfp.write("""#!/usr/bin/env python
-#
-# This is a script to create a dot graph from pyflow state files.
-# Usage: $script >| task_graph.dot
-#
-# Note that script assumes the default pyflow state files are in the script directory.
-#
-# This file was autogenerated by process: '%s'
-# ...from working directory: '%s'
-#
-
-import datetime,os,sys,time
-
-scriptDir=os.path.abspath(os.path.dirname(__file__))
-""" % (os.getcwd(), cmdline()))
-
-    for dobj in (timeStampToTimeStr, timeStrNow, cmdline, Bunch, LogGlobals, hardFlush, TaskNodeConstants,
-                 DotConfig, taskStateParser, taskInfoParser, getTaskInfoDepSet, writeDotGraph):
-        dsfp.write("\n\n")
-        dsfp.write(inspect.getsource(dobj))
-
-    dsfp.write("""
-
-if __name__ == '__main__' :
-    writeDotGraph(os.path.join(scriptDir,'%s'),os.path.join(scriptDir,'%s'),'%s')
-
-""" % (taskInfoFileName, taskStateFileName, workflowClassName))
+    validRunstates = ("finished", "started", "queued", "waiting", "failed")
 
 
 ################################################################
@@ -1073,7 +750,7 @@ class BaseTaskRunner(StoppableThread):
         """
         set Runstate
         """
-        self.setRunstate("running")
+        self.setRunstate("started")
 
     def flowLog(self, msg, logState):
         """
@@ -1369,44 +1046,6 @@ class LocalTaskRunner(CommandTaskRunner):
         return retInfo
 
 
-class TaskFileWriter(StoppableThread):
-    """
-    This class runs on a separate thread and is
-    responsible for updating the state and info task
-    files
-    """
-
-    def __init__(self, writeFunc):
-        StoppableThread.__init__(self)
-        # parameter copy:
-        self.writeFunc = writeFunc
-        # thread settings:
-        self.setDaemon(True)
-        self.setName("TaskFileWriter-Thread")
-
-        self.isWrite = threading.Event()
-
-    def run(self):
-        """
-        run
-        """
-        while not self.stopped():
-            self._writeIfSet()
-            time.sleep(5)
-            self.isWrite.wait()
-
-    def flush(self):
-        """
-        flush
-        """
-        self._writeIfSet()
-
-    def _writeIfSet(self):
-        if self.isWrite.isSet():
-            self.isWrite.clear()
-            self.writeFunc()
-
-
 class TaskManager(StoppableThread):
     """
     This class runs on a separate thread from workflowRunner,
@@ -1473,25 +1112,22 @@ class TaskManager(StoppableThread):
             # Note these should have been marked off by the TaskManager already:
             raise Exception("Attempting to launch checkpoint task: %s" % (task.fullLabel()))
 
-        isForcedLocal = ((param.mode != "local") and (payload.isForceLocal))
-
         # mark task resources as occupied:
-        if not isForcedLocal:
-            if self.freeCores != "unlimited":
-                if (self.freeCores < payload.nCores):
-                    raise Exception("Not enough free cores to launch task")
-                self.freeCores -= payload.nCores
+        if self.freeCores != "unlimited":
+            if (self.freeCores < payload.nCores):
+                raise Exception("Not enough free cores to launch task")
+            self.freeCores -= payload.nCores
 
-            if self.freeMemMb != "unlimited":
-                if (self.freeMemMb < payload.memMb):
-                    raise Exception("Not enough free memory to launch task")
-                self.freeMemMb -= payload.memMb
+        if self.freeMemMb != "unlimited":
+            if (self.freeMemMb < payload.memMb):
+                raise Exception("Not enough free memory to launch task")
+            self.freeMemMb -= payload.memMb
 
         if payload.mutex is not None:
             self.taskMutexState[payload.mutex] = True
 
         TaskRunner = None
-        if param.mode == "local" or payload.isForceLocal or payload.isCmdMakePath:
+        if param.mode == "local" or payload.isCmdMakePath:
             TaskRunner = LocalTaskRunner
         else:
             raise Exception("Can't support mode: '%s'" % (param.mode))
@@ -1505,7 +1141,7 @@ class TaskManager(StoppableThread):
             taskRetry = copy.deepcopy(payload.retry)
             taskRetry.window = 0
 
-            if param.mode == "local" or payload.isForceLocal:
+            if param.mode == "local":
                 launchCmdList = ["make", "-j", str(payload.nCores)]
             else:
                 raise Exception("Can't support mode: '%s'" % (param.mode))
@@ -1548,8 +1184,6 @@ class TaskManager(StoppableThread):
 
         if task.payload.type() == "command":
             trun = self._getCommandTaskRunner(task)
-        elif task.payload.type() == "workflow":
-            trun = self._getWorkflowTaskRunner(task)
         else:
             assert 0
 
@@ -1580,19 +1214,10 @@ class TaskManager(StoppableThread):
             self._infoLog("Completed %s: '%s' launched from %s" %
                           (node.payload.desc(), node.fullLabel(), namespaceLabel(node.namespace)))
 
-        # launch all workflows first, then launch command tasks as resources allow:
-        ready_workflows = [r for r in ready if r.payload.type() == "workflow"]
-        for task in ready_workflows:
-            if self.stopped():
-                return
-            self._launchTask(task)
-
         # Task submission could be shutdown, eg. in response to a task error, so check for this state and stop if so
         # TODO can this be moved above workflow launch?
         if (not self._cdata.isTaskSubmissionActive()):
             return
-
-        isNonLocal = (self._cdata.param.mode != "local")
 
         # start command task launch:
         ready_commands = [r for r in ready if r.payload.type() == "command"]
@@ -1601,14 +1226,11 @@ class TaskManager(StoppableThread):
             if self.stopped():
                 return
 
-            # In a non-local run mode, "isForceLocal" tasks are not subject to
             # global core and memory restrictions:
-            isForcedLocal = (isNonLocal and task.payload.isForceLocal)
-            if not isForcedLocal:
-                if ((self.freeCores != "unlimited") and (task.payload.nCores > self.freeCores)):
-                    continue
-                if ((self.freeMemMb != "unlimited") and (task.payload.memMb > self.freeMemMb)):
-                    continue
+            if ((self.freeCores != "unlimited") and (task.payload.nCores > self.freeCores)):
+                continue
+            if ((self.freeMemMb != "unlimited") and (task.payload.memMb > self.freeMemMb)):
+                continue
 
             # all command tasks must obey separate mutex restrictions:
             if ((task.payload.mutex is not None) and
@@ -1626,16 +1248,13 @@ class TaskManager(StoppableThread):
         assert(task in self.runningTasks)
 
         # shortcut:
-        param = self._cdata.param
 
         # recover core and memory allocations:
         if task.payload.type() == "command":
-            isForcedLocal = ((param.mode != "local") and (task.payload.isForceLocal))
-            if not isForcedLocal:
-                if self.freeCores != "unlimited":
-                    self.freeCores += task.payload.nCores
-                if self.freeMemMb != "unlimited":
-                    self.freeMemMb += task.payload.memMb
+            if self.freeCores != "unlimited":
+                self.freeCores += task.payload.nCores
+            if self.freeMemMb != "unlimited":
+                self.freeMemMb += task.payload.memMb
 
             if task.payload.mutex is not None:
                 self.taskMutexState[task.payload.mutex] = False
@@ -1664,9 +1283,9 @@ class TaskManager(StoppableThread):
                 task.errorMessage = task.runStatus.errorMessage
 
             if task.errorstate == 0:
-                task.setRunstate("complete")
+                task.setRunstate("finished")
             else:
-                task.setRunstate("error")
+                task.setRunstate("failed")
 
             notrunning.add(task)
 
@@ -1783,13 +1402,12 @@ class CmdPayload(object):
     """
 
     def __init__(self, fullLabel, cmd, nCores, memMb, priority,
-                 isForceLocal, isCmdMakePath=False, isTaskStable=True,
+                 isCmdMakePath=False, isTaskStable=True,
                  mutex=None, retry=None):
         self.cmd = cmd
         self.nCores = nCores
         self.memMb = memMb
         self.priority = priority
-        self.isForceLocal = isForceLocal
         self.isCmdMakePath = isCmdMakePath
         self.isTaskStable = isTaskStable
         self.isTaskEphemeral = False
@@ -1815,53 +1433,19 @@ class CmdPayload(object):
         return "command task"
 
 
-class WorkflowPayload(object):
-    """
-    WorkflowPayload class
-    """
-
-    def __init__(self, workflow, isTaskEphemeral=False):
-        self.workflow = workflow
-        self.isTaskStable = True
-        self.isTaskEphemeral = isTaskEphemeral
-
-    def type(self):
-        """
-        type
-        """
-        return "workflow"
-
-    def name(self):
-        """
-        name
-        """
-        if self.workflow is None:
-            return "None"
-        else:
-            return self.workflow._whoami()
-
-    def desc(self):
-        """
-        desc
-        """
-        return "sub-workflow task"
-
-
 class TaskNode(object):
     """
     Represents an individual task in the task graph
     """
 
-    def __init__(self, lock, init_id, namespace, label, payload, isContinued, isFinishedEvent, isWriteTaskStatus):
+    def __init__(self, job_id, lock, init_id, namespace, label, payload, isContinued, isFinishedEvent):
+        self.job_id = job_id
         self.lock = lock
         self.id = init_id
         self.namespace = namespace
         self.label = label
         self.payload = payload
         self.isContinued = isContinued
-
-        assert(isWriteTaskStatus is not None)
-        self.isWriteTaskStatus = isWriteTaskStatus
 
         # if true, do not execute this task or honor it as a dependency for child tasks
         self.isIgnoreThis = False
@@ -1880,7 +1464,7 @@ class TaskNode(object):
         self.children = set()
         self.runstateUpdateTimeStamp = time.time()
         if self.isContinued:
-            self.runstate = "complete"
+            self.runstate = "finished"
         else:
             self.runstate = "waiting"
         self.errorstate = 0
@@ -1888,8 +1472,15 @@ class TaskNode(object):
         # errorMessage is used by sub-workflow tasks, but not by command taks:
         self.errorMessage = ""
 
+        self._task_id = model.Task.insert(
+            job_id=job_id,
+            task_label=self.label,
+            task_cmd=self.payload.cmd.cmd
+        ).execute()
+
         # This is a link to the live status object updated by TaskRunner:
         self.runStatus = RunningTaskStatus(isFinishedEvent)
+        self._running_time = 0
 
     def __str__(self):
         msg = "TASK id: %s state: %s error: %i" % (self.fullLabel(), self.runstate, self.errorstate)
@@ -1904,17 +1495,17 @@ class TaskNode(object):
     @lockMethod
     def isDone(self):
         "task has gone as far as it can"
-        return ((self.runstate == "error") or (self.runstate == "complete"))
+        return ((self.runstate == "failed") or (self.runstate == "finished"))
 
     @lockMethod
     def isError(self):
         "true if an error occurred in this node"
-        return ((self.errorstate != 0) or (self.runstate == "error"))
+        return ((self.errorstate != 0) or (self.runstate == "failed"))
 
     @lockMethod
     def isComplete(self):
         "task completed without error"
-        return ((self.errorstate == 0) and (self.runstate == "complete"))
+        return ((self.errorstate == 0) and (self.runstate == "finished"))
 
     @lockMethod
     def isReady(self):
@@ -1974,8 +1565,21 @@ class TaskNode(object):
             self.runstateUpdateTimeStamp = time.time()
         else:
             self.runstateUpdateTimeStamp = updateTimeStamp
+
+        if runstate == "started":
+            self._running_time = time.time()
+
+        if runstate == "finished" or runstate == "failed":
+            _cost = time.time() - self._running_time
+        else:
+            _cost = 0
+
+        model.Task.update({
+            'task_status': runstate,
+            'task_cost': _cost,
+            'u_time': datetime.datetime.now()}
+        ).where(model.Task.task_id == self._task_id).execute()
         self.runstate = runstate
-        self.isWriteTaskStatus.set()
 
     @lockMethod
     def getTaskErrorMsg(self):
@@ -1990,8 +1594,6 @@ class TaskNode(object):
             self.payload.desc(), self.fullLabel(), namespaceLabel(self.namespace))
         if self.payload.type() == "command":
             msg += ", error code: %s, command: '%s'" % (str(self.errorstate), str(self.payload.launchCmd))
-        elif self.payload.type() == "workflow":
-            msg += ", failed sub-workflow classname: '%s'" % (self.payload.name())
         else:
             assert 0
 
@@ -2018,7 +1620,7 @@ class TaskDAG(object):
     """
 
     def __init__(self, isContinue, isForceContinue, isDryRun,
-                 taskInfoFile, taskStateFile, workflowClassName,
+                 workflowClassName,
                  startFromTasks, ignoreTasksAfter, resetTasks,
                  flowLog):
         """
@@ -2030,8 +1632,6 @@ class TaskDAG(object):
         self.isContinue = isContinue
         self.isForceContinue = isForceContinue
         self.isDryRun = isDryRun
-        self.taskInfoFile = taskInfoFile
-        self.taskStateFile = taskStateFile
         self.workflowClassName = workflowClassName
         self.startFromTasks = startFromTasks
         self.ignoreTasksAfter = ignoreTasksAfter
@@ -2059,9 +1659,6 @@ class TaskDAG(object):
         # (ie. local mode), if this isn't set the normal polling
         # cycle applies
         self.isFinishedEvent = threading.Event()
-
-        self.isWriteTaskInfo = None
-        self.isWriteTaskStatus = None
 
     @lockMethod
     def isTaskPresent(self, namespace, label):
@@ -2233,7 +1830,7 @@ class TaskDAG(object):
             return (task.payload.type() == "command") and (task.payload.cmd.cmd is None)
 
         if node.isReady() and isCheckpointTask(node):
-            node.setRunstate("complete")
+            node.setRunstate("finished")
             completed.add(node)
 
     @lockMethod
@@ -2251,7 +1848,7 @@ class TaskDAG(object):
         return completed
 
     @lockMethod
-    def addTask(self, namespace, label, payload, dependencies, isContinued=False):
+    def addTask(self, job_id, namespace, label, payload, dependencies, isContinued=False):
         """
         Add new task to the task DAG
 
@@ -2272,8 +1869,8 @@ class TaskDAG(object):
                 # confirm that task is a match, flip off the isContinued flag and return:
                 task = self.labelMap[(namespace, label)]
                 parentLabels = set([p.label for p in task.parents])
-                excPrefix = "Task: '%s' does not match previous definition defined in '%s'." % (
-                    fullLabel, self.taskInfoFile)
+                excPrefix = "Task: '%s' does not match previous definition defined" % (
+                    fullLabel)
                 if task.payload.type() != payload.type():
                     msg = excPrefix + " New/old payload type: '%s'/'%s'" % (payload.type(), task.payload.type())
                     raise Exception(msg)
@@ -2308,10 +1905,6 @@ class TaskDAG(object):
                         return False
 
                     if not doesTaskHaveFinishedChildren(task):
-                        if payload.type() == "workflow":
-                            # workflow logic is not recorded in the state file, so on continuation it
-                            # needs to be added back in:
-                            task.payload.workflow = payload.workflow
                         task.setRunstate("waiting")
                         task.payload.isTaskEphemeral = True
 
@@ -2321,6 +1914,7 @@ class TaskDAG(object):
                 raise Exception("Task: '%s' is already in TaskDAG" % (fullLabel))
 
         task = TaskNode(
+            job_id,
             self.lock,
             self.taskId,
             namespace,
@@ -2328,12 +1922,20 @@ class TaskDAG(object):
             payload,
             isContinued,
             self.isFinishedEvent,
-            self.isWriteTaskStatus)
+        )
 
         self.taskId += 1
 
         self.addOrder.append((namespace, label))
         self.labelMap[(namespace, label)] = task
+
+        # ------------------------------------------------------------------save db
+        dependencies_list = list(dependencies)
+        dependencies_str = ",".join(dependencies_list)
+        model.Task.update({
+            'task_dependencies': dependencies_str,
+            'u_time': datetime.datetime.now()
+        }).where(model.Task.task_id == task._task_id).execute()
 
         for d in dependencies:
             parent = self.getTask(namespace, d)
@@ -2357,10 +1959,6 @@ class TaskDAG(object):
             if isReset:
                 task.setRunstate("waiting")
                 task.isReset = True
-
-        if not isContinued:
-            self.isWriteTaskInfo.set()
-            self.isWriteTaskStatus.set()
 
         # determine if this is an ignoreTasksAfter node
         if label in self.ignoreTasksAfter:
@@ -2399,7 +1997,7 @@ class TaskDAG(object):
                     task.isAutoCompleted = False
 
         if task.isAutoCompleted:
-            task.setRunstate("complete")
+            task.setRunstate("finished")
 
         # update tailNodes:
         if not task.isIgnoreThis:
@@ -2418,52 +2016,18 @@ class TaskDAG(object):
                 raise Exception("Task: '%s' has invalid continuation state. Task dependencies are incomplete")
 
     @lockMethod
-    def writeTaskStatus(self):
-        """
-        Update the runstate and errorstate for all tasks. This is intended to be atomic, but can
-        only be made so on unix.
-        """
-
-        # don't write task status during dry runs:
-        if self.isDryRun:
-            return
-
-        tmpFile = self.taskStateFile + ".update.incomplete"
-        tmpFp = open(tmpFile, "w")
-        tmpFp.write(taskStateHeader())
-        for (namespace, label) in self.addOrder:
-            task = self.labelMap[(namespace, label)]
-            runstateUpdateTimeStr = timeStampToTimeStr(task.runstateUpdateTimeStamp)
-            tmpFp.write(
-                "%s\t%s\t%s\t%i\t%s\n" %
-                (label,
-                 namespace,
-                 task.runstate,
-                 task.errorstate,
-                 runstateUpdateTimeStr))
-
-        tmpFp.close()
-        forceRename(tmpFile, self.taskStateFile)
-
-    @lockMethod
     def getTaskStatus(self):
         """
         Enumerate status of command tasks (but look at sub-workflows to determine if specification is complete)
         """
 
-        val = Bunch(waiting=0, queued=0, running=0, complete=0, error=0, isAllSpecComplete=True,
+        val = Bunch(waiting=0, queued=0, started=0, finished=0, failed=0, isAllSpecComplete=True,
                     longestQueueSec=0, longestRunSec=0, longestQueueName="", longestRunName="")
 
         currentSec = time.time()
         for (namespace, label) in self.addOrder:
             node = self.labelMap[(namespace, label)]
             # special check just for workflow tasks:
-            if node.payload.type() == "workflow":
-                if not node.runStatus.isSpecificationComplete.isSet():
-                    val.isAllSpecComplete = False
-
-                # the rest of this enumeration is for command tasks only:
-                continue
 
             taskTime = int(currentSec - node.runstateUpdateTimeStamp)
 
@@ -2474,144 +2038,17 @@ class TaskDAG(object):
                 if val.longestQueueSec < taskTime:
                     val.longestQueueSec = taskTime
                     val.longestQueueName = node.fullLabel()
-            elif node.runstate == "running":
-                val.running += 1
+            elif node.runstate == "started":
+                val.started += 1
                 if val.longestRunSec < taskTime:
                     val.longestRunSec = taskTime
                     val.longestRunName = node.fullLabel()
-            elif node.runstate == "complete":
-                val.complete += 1
-            elif node.runstate == "error":
-                val.error += 1
+            elif node.runstate == "finished":
+                val.finished += 1
+            elif node.runstate == "failed":
+                val.failed += 1
 
         return val
-
-    @lockMethod
-    def writeTaskInfo(self):
-        """
-        appends a description of all new tasks to the taskInfo file
-        """
-
-        def getTaskLineFromTask(task):
-            """
-            Create a single-line summary of the input task for use in the taskInfo file
-            """
-            depstring = ""
-            if len(task.parents):
-                depstring = ",".join([p.label for p in task.parents])
-
-            cmdstring = ""
-            nCores = "0"
-            memMb = "0"
-            priority = "0"
-            isForceLocal = "0"
-            payload = task.payload
-            cwdstring = ""
-            if payload.type() == "command":
-                cmdstring = str(payload.cmd)
-                nCores = str(payload.nCores)
-                memMb = str(payload.memMb)
-                priority = str(payload.priority)
-                isForceLocal = boolToStr(payload.isForceLocal)
-                cwdstring = payload.cmd.cwd
-            elif payload.type() == "workflow":
-                cmdstring = payload.name()
-            else:
-                assert 0
-            return "\t".join((task.label, task.namespace, payload.type(),
-                              nCores, memMb, priority,
-                              isForceLocal, depstring, cwdstring, cmdstring))
-
-        assert (self.lastTaskIdWritten <= self.taskId)
-
-        if self.lastTaskIdWritten == self.taskId:
-            return
-
-        newTaskLines = []
-        while self.lastTaskIdWritten < self.taskId:
-            task = self.labelMap[self.addOrder[self.lastTaskIdWritten]]
-            newTaskLines.append(getTaskLineFromTask(task))
-            self.lastTaskIdWritten += 1
-
-        fp = open(self.taskInfoFile, "a")
-        for taskLine in newTaskLines:
-            fp.write(taskLine + "\n")
-        fp.close()
-
-    def _createContinuedStateFile(self, taskStateFile):
-        """
-        Update task state file for a 'continued' run, meaning a run which is being resumed after interrupt.
-
-        In this scenario, the existing task state file is read in but only tasks which are complete retain status,
-        and any other state (running, queued, etc.) is lost, reflecting the atomic nature of these tasks -- having
-        not completed they must be completely restarted.
-
-        The filtered task output is written to a new task file and swapped in to replace the old task state file.
-
-        The function returns the set of full names for complete tasks
-        """
-
-        if not os.path.isfile(taskStateFile):
-            return set()
-
-        tmpFile = taskStateFile + ".update.incomplete"
-        tmpfp = open(tmpFile, "w")
-        tmpfp.write(taskStateHeader())
-        complete = set()
-        for words in taskStateParser(taskStateFile):
-            (runState, errorCode) = words[2:4]
-            if (runState != "complete") or (int(errorCode) != 0):
-                continue
-            tmpfp.write("\t".join(words) + "\n")
-            (label, namespace) = words[0:2]
-            complete.add(namespaceJoin(namespace, label))
-
-        tmpfp.close()
-        forceRename(tmpFile, taskStateFile)
-        return complete
-
-    def _createContinuedInfoFile(self, taskInfoFile, complete):
-        """
-        Initialize TaskDAG to include placeholders of all tasks which have already been completed.
-        Also update task info file to only retain completed tasks.
-
-        Placeholder tasks are used to check that the underlying task definitions have not unexpectedly
-        changed over the interrupt/resume cycle.
-
-        Update the task info file when a run is attempting to continue from where it left off after interruption.
-
-        @param complete: Fullnames of all completed tasks
-        """
-
-        if not os.path.isfile(taskInfoFile):
-            return
-
-        tmpFile = taskInfoFile + ".update.incomplete"
-        tmpfp = open(tmpFile, "w")
-        tmpfp.write(taskInfoHeader())
-        for words in taskInfoParser(taskInfoFile):
-            (label, namespace, ptype, nCores, memMb, priority, isForceLocal, depStr, cwdStr, command) = words
-            fullLabel = namespaceJoin(namespace, label)
-            if fullLabel not in complete:
-                continue
-
-            tmpfp.write("\t".join(words) + "\n")
-            self.lastTaskIdWritten += 1
-
-            if ptype == "command":
-                if command == "":
-                    command = None
-                payload = CmdPayload(fullLabel, Command(command, cwdStr), int(
-                    nCores), int(memMb), int(priority), argToBool(isForceLocal))
-            elif ptype == "workflow":
-                payload = WorkflowPayload(None)
-            else:
-                assert 0
-
-            self.addTask(namespace, label, payload, getTaskInfoDepSet(depStr), isContinued=True)
-
-        tmpfp.close()
-        forceRename(tmpFile, taskInfoFile)
 
     @lockMethod
     def setupContinuedWorkflow(self):
@@ -2625,11 +2062,7 @@ class TaskDAG(object):
         # we create new tasks while reading the info file, and the state file notifiers are copied from
         # this object into the individual tasks.
         #
-        assert(self.isWriteTaskInfo is not None)
-        assert(self.isWriteTaskStatus is not None)
-
-        complete = self._createContinuedStateFile(self.taskStateFile)
-        self._createContinuedInfoFile(self.taskInfoFile, complete)
+        pass
 
 
 # workflowRunner:
@@ -2728,16 +2161,6 @@ class WorkflowRunnerThreadSharedData(object):
             raise Exception("Invalid mode argument '%s'. Accepted modes are {%s}."
                             % (param.mode, ",".join(RunMode.data.keys())))
 
-        stateDir = os.path.join(param.dataDir, "state")
-        if param.isContinue == "Auto":
-            param.isContinue = os.path.exists(stateDir)
-
-        if param.isContinue:
-            if not os.path.exists(stateDir):
-                raise Exception(
-                    "Cannot continue run without providing a pyflow dataDir containing previous state.: '%s'" %
-                    (stateDir))
-
     def _setCustomLogs(self):
         if (self.warningLogFp is None) and (self.param.warningLogFile is not None):
             self.warningLogFp = open(self.param.warningLogFile, "w")
@@ -2754,7 +2177,6 @@ class WorkflowRunnerThreadSharedData(object):
         # setup log file-handle first, then run the rest of parameter validation:
         # (hold this file open so that we can still log if pyflow runs out of filehandles)
         self.param.dataDir = os.path.abspath(self.param.dataDir)
-        self.param.dataDir = os.path.join(self.param.dataDir, "pyflow.data")
         logDir = os.path.join(self.param.dataDir, "logs")
         ensureDir(logDir)
         self.flowLogFile = os.path.join(logDir, "pyflow_log.txt")
@@ -2803,47 +2225,16 @@ The associated pyflow job details are as follows:
             mfp.write("\n")
             mfp.close()
 
-        stateDir = os.path.join(self.param.dataDir, "state")
-        ensureDir(stateDir)
-
         # setup other instance data:
         self.runcount += 1
 
         # initialize directories
         self.wrapperLogDir = os.path.join(logDir, "tmp", "taskWrapperLogs")
         ensureDir(self.wrapperLogDir)
-        stackDumpLogDir = os.path.join(logDir, "tmp", "stackDumpLog")
-        ensureDir(stackDumpLogDir)
-
-        # initialize filenames:
-        taskStateFileName = "pyflow_tasks_runstate.txt"
-        taskInfoFileName = "pyflow_tasks_info.txt"
 
         self.taskStdoutFile = os.path.join(logDir, "pyflow_tasks_stdout_log.txt")
         self.taskStderrFile = os.path.join(logDir, "pyflow_tasks_stderr_log.txt")
-        self.taskStateFile = os.path.join(stateDir, taskStateFileName)
-        self.taskInfoFile = os.path.join(stateDir, taskInfoFileName)
-        self.taskDotScriptFile = os.path.join(stateDir, "make_pyflow_task_graph.py")
-
-        self.stackDumpLogFile = os.path.join(stackDumpLogDir, "pyflow_stack_dump.txt")
-
-        # empty file:
-        if not self.param.isContinue:
-            fp = open(self.taskInfoFile, "w")
-            fp.write(taskInfoHeader())
-            fp.close()
-
         self._setCustomLogs()
-
-        # finally write dot task graph creation script:
-        #
-        # this could fail because of script permission settings, buk it is not critical for
-        # workflow completion so we get away with a warning
-        try:
-            writeDotScript(self.taskDotScriptFile, taskInfoFileName, taskStateFileName, self.param.workflowClassName)
-        except OSError:
-            msg = ["Failed to write task graph visualization script to %s" % (self.taskDotScriptFile)]
-            self.flowLog(msg, logState=LogState.WARNING)
 
     def resetRun(self):
         """
@@ -2998,7 +2389,7 @@ class WorkflowRunner(object):
             retryWait=90,
             retryWindow=360,
             retryMode="nonlocal",
-            updateInterval=60,
+            updateInterval=0,
             schedulerArgList=None,
             isQuiet=False,
             warningLogFile=None,
@@ -3006,7 +2397,10 @@ class WorkflowRunner(object):
             successMsg=None,
             startFromTasks=None,
             ignoreTasksAfter=None,
-            resetTasks=None):
+            resetTasks=None,
+            job_reqid="",
+            job_name=""
+            ):
         """
         Call this method to execute the workflow() method overridden
         in a child class and specify the resources available for the
@@ -3133,6 +2527,15 @@ class WorkflowRunner(object):
         @type resetTasks: A single string, or set, tuple or list of strings
         """
 
+        # ---------------------------------------------------------- save data to MySQL
+        self._running_time = time.time()
+        job_id = model.Job.insert(job_runner=host_util.server_name,
+                                  job_reqid=job_reqid,
+                                  job_name=job_name,
+                                  job_type=self.__class__.__name__,
+                                  ).execute()
+        self._job_id = job_id
+
         # Setup pyflow signal handlers:
         #
         inHandlers = Bunch(isSet=False)
@@ -3166,13 +2569,11 @@ class WorkflowRunner(object):
             import signal
             if not inHandlers.isSet:
                 inHandlers.sigterm = signal.getsignal(signal.SIGTERM)
-                if not isWindows():
-                    inHandlers.sighup = signal.getsignal(signal.SIGHUP)
+                inHandlers.sighup = signal.getsignal(signal.SIGHUP)
                 inHandlers.isSet = True
             try:
                 signal.signal(signal.SIGTERM, sigtermHandler)
-                if not isWindows():
-                    signal.signal(signal.SIGHUP, sighupHandler)
+                signal.signal(signal.SIGHUP, sighupHandler)
             except ValueError:
                 if isMainThread():
                     raise
@@ -3189,8 +2590,7 @@ class WorkflowRunner(object):
                 return
             try:
                 signal.signal(signal.SIGTERM, inHandlers.sigterm)
-                if not isWindows():
-                    signal.signal(signal.SIGHUP, inHandlers.sighup)
+                signal.signal(signal.SIGHUP, inHandlers.sighup)
             except ValueError:
                 if isMainThread():
                     raise
@@ -3260,6 +2660,20 @@ class WorkflowRunner(object):
             self._cdata().resetRun()
             unset_pyflow_sig_handlers()
 
+        # ---------------------------------------------------------- save data to MySQL
+        if retval == 0:
+            _job_status = "finished"
+        else:
+            _job_status = "failed"
+        _cost = time.time() - self._running_time
+
+        model.Job.update({
+            'job_status': _job_status,
+            'job_retcode': retval,
+            'job_cost': _cost,
+            'u_time': datetime.datetime.now()
+        }).where(model.Job.job_id == self._job_id).execute()
+
         return retval
 
     # protected methods which can be called within the workflow method:
@@ -3267,7 +2681,7 @@ class WorkflowRunner(object):
     def addTask(self, label, command=None, cwd=None, env=None, nCores=1,
                 memMb=None,
                 dependencies=None, priority=0,
-                isForceLocal=False, isCommandMakePath=False, isTaskStable=True,
+                isCommandMakePath=False, isTaskStable=True,
                 mutex=None,
                 retryMax=None, retryWait=None, retryWindow=None, retryMode=None):
         """
@@ -3335,15 +2749,6 @@ class WorkflowRunner(object):
                  called, so lower-priority tasks may be launched first
                  if they are specified first in the workflow.
 
-        @param isForceLocal: Force this task to run locally when a
-                 distributed task mode is used. This can be used to
-                 launch very small jobs outside of the sge queue. Note
-                 that 'isForceLocal' jobs launched during a non-local
-                 task mode are not subject to resource management, so
-                 it is important that these represent small
-                 jobs. Tasks which delete, move or touch a small
-                 number of files are ideal for this setting.
-
         @param isCommandMakePath: If true, command is assumed to be a
                  path containing a makefile. It will be run using
                  make/qmake according to the run's mode and the task's
@@ -3400,7 +2805,6 @@ class WorkflowRunner(object):
         # #                         dependencies if possible.
 
         # sanitize bools:
-        isForceLocal = argToBool(isForceLocal)
         isCommandMakePath = argToBool(isCommandMakePath)
 
         # sanitize ints:
@@ -3457,93 +2861,10 @@ class WorkflowRunner(object):
             nCores,
             memMb,
             priority,
-            isForceLocal,
             isCommandMakePath,
             isTaskStable,
             mutex,
             task_retry)
-        self._addTaskCore(self._getNamespace(), label, payload, dependencies)
-        return label
-
-    def addWorkflowTask(self, label, workflowRunnerInstance, dependencies=None, isEphemeral=False):
-        """
-        Add another WorkflowRunner instance as a task to this
-        workflow. The added Workflow's workflow() method will be
-        called once the dependencies specified in this call have
-        completed. Once started, all of the submitted workflow's
-        method calls (like addTask) will be placed into the enclosing
-        workflow instance and bound by the run parameters of the
-        enclosing workflow.
-
-        This task will be marked complete once the submitted workflow's
-        workflow() method has finished, and any tasks it initiated have
-        completed.
-
-        Note that all workflow tasks will have their own tasks namespaced
-        with the workflow task label. This namespace is recursive in the
-        case that you add workflow tasks which add their own workflow
-        tasks, etc.
-
-        Note that the submitted workflow instance will be deep copied
-        before being altered in any way.
-
-        @return: The 'label' argument is returned without modification.
-
-        @param label: A string used to identify each task. The label must
-                 be composed of only ascii letters, digits,
-                 underscores and dashes (ie. /[A-Za-z0-9_-]+/). The
-                 label must also be unique within the workflow, and
-                 non-empty.
-
-        @param workflowRunnerInstance: A L{WorkflowRunner} instance.
-
-        @param dependencies: A label string or container of labels specifying all dependent
-                        tasks. Dependent tasks must already exist in
-                        the workflow.
-        @type dependencies: A single string, or set, tuple or list of strings
-
-        @param isEphemeral: If true, the workflow will be rerun under certain conditions when an
-                interrupt/resume cycle occurs, even if it already successfully completed. This will
-                only occur if (1) no downstream dependencies have already completed and (2) the
-                parent workflow is not complete. (default: False)
-        """
-
-        self._requireInWorkflow()
-
-        # sanity check label:
-        WorkflowRunner._checkTaskLabel(label)
-
-        import inspect
-
-        # copy and 'hijack' the workflow:
-        workflowCopy = copy.deepcopy(workflowRunnerInstance)
-
-        # hijack! -- take all public methods at the WorkflowRunner level
-        # (except workflow()), and insert the self copy:
-        publicExclude = ["workflow", "addTask", "addWorkflowTask", "waitForTasks", "isTaskComplete", "isTaskDone",
-                         "cancelTaskTree"]
-        for (n, _v) in inspect.getmembers(WorkflowRunner, predicate=inspect.ismethod):
-            if n[0] == "_":
-                continue  # skip private/special methods
-            if n in publicExclude:
-                continue
-            setattr(workflowCopy, n, getattr(self, n))
-
-        privateInclude = ["_cdata", "_addTaskCore", "_waitForTasksCore", "_isTaskCompleteCore", "_setRunning",
-                          "_getRunning", "_cancelTaskTreeCore"]
-        for n in privateInclude:
-            setattr(workflowCopy, n, getattr(self, n))
-
-        # final step: disable the run() function to be extra safe...
-        workflowCopy.run = None
-
-        # set the task namespace:
-        workflowCopy._appendNamespace(self._getNamespaceList())
-        workflowCopy._appendNamespace(label)
-
-        # add workflow task to the task-dag, and launch a new taskrunner thread
-        # if one isn't already running:
-        payload = WorkflowPayload(workflowCopy, isTaskEphemeral=isEphemeral)
         self._addTaskCore(self._getNamespace(), label, payload, dependencies)
         return label
 
@@ -3838,7 +3159,7 @@ class WorkflowRunner(object):
         # add task to the task-dag, and launch a new taskrunner thread
         # if one isn't already running:
         dependencies = setzer(dependencies)
-        self._tdag.addTask(namespace, label, payload, dependencies)
+        self._tdag.addTask(self._job_id, namespace, label, payload, dependencies)
         self._startTaskManager()
 
     def _getWaitStatus(self, namespace, labels, status):
@@ -3959,17 +3280,8 @@ class WorkflowRunner(object):
         # notification systems:
         self._flowLog(msg, logState)
 
-    def _flushFileWriters(self):
-        """
-        Some file updates are buffered on separate threads to improve workflow performance. Thus function provides a
-        central point to request that all such buffers are flushed.
-        """
-        self._taskInfoWriter.flush()
-        self._taskStatusWriter.flush()
-
     def _killWorkflow(self, errorMsg):
         self._notify(errorMsg, logState=LogState.ERROR)
-        self._flushFileWriters()
         self._shutdownAll(timeoutSec=10)
         sys.exit(1)
 
@@ -4015,8 +3327,8 @@ class WorkflowRunner(object):
             report = []
             report.append("===== " + self._whoami() + " StatusUpdate =====")
             report.append("Workflow specification is complete?: %s" % (str(isSpecComplete)))
-            report.append("Task status (waiting/queued/running/complete/error): %i/%i/%i/%i/%i"
-                          % (status.waiting, status.queued, status.running, status.complete, status.error))
+            report.append("Task status (waiting/queued/started/finished/failed): %i/%i/%i/%i/%i"
+                          % (status.waiting, status.queued, status.started, status.finished, status.failed))
             report.append("Longest ongoing queued task time (hrs): %.4f" % (status.longestQueueSec / 3600.))
             report.append("Longest ongoing queued task name: '%s'" % (status.longestQueueName))
             report.append("Longest ongoing running task time (hrs): %.4f" % (status.longestRunSec / 3600.))
@@ -4024,21 +3336,6 @@ class WorkflowRunner(object):
 
             report = ["[StatusUpdate] " + line for line in report]
             self._infoLog(report)
-
-            # Update interval is also an appropriate interval to dump a stack-trace of all active
-            # threads. This is a useful post-mortem in the event of a large class of hang/deadlock
-            # errors:
-            #
-            stackDumpFp = open(self._cdata().stackDumpLogFile, "a")
-
-            # create one fully decorated line in the stack dump file as a prefix to the report:
-            linePrefixOut = "[%s] [StackDump]" % (self._cdata().getRunid())
-            ofpList = [stackDumpFp]
-            log(ofpList, "Initiating stack dump for all threads", linePrefixOut)
-
-            stackDump(stackDumpFp)
-            hardFlush(stackDumpFp)
-            stackDumpFp.close()
 
     def _runWorkflow(self, param):
         #
@@ -4085,8 +3382,6 @@ class WorkflowRunner(object):
             runStatus.errorCode = 1
             runStatus.errorMessage = "Thread: '%s', has stopped without a traceable cause" % (trun.getName())
 
-        self._flushFileWriters()
-
         return self._evalWorkflow(runStatus)
 
     def _setupWorkflow(self, param):
@@ -4097,36 +3392,10 @@ class WorkflowRunner(object):
 
         # setup other instance data:
         self._tdag = TaskDAG(cdata.param.isContinue, cdata.param.isForceContinue, cdata.param.isDryRun,
-                             cdata.taskInfoFile, cdata.taskStateFile, cdata.param.workflowClassName,
+                             cdata.param.workflowClassName,
                              cdata.param.startFromTasks, cdata.param.ignoreTasksAfter, cdata.param.resetTasks,
                              self._flowLog)
         self._tman = None
-
-        def backupFile(inputFile):
-            """
-            backup old state files if they exist
-            """
-            if not os.path.isfile(inputFile):
-                return
-            fileDir = os.path.dirname(inputFile)
-            fileName = os.path.basename(inputFile)
-            backupDir = os.path.join(fileDir, "backup")
-            ensureDir(backupDir)
-            backupFileName = fileName + ".backup_before_starting_run_%s.txt" % (cdata.getRunid())
-            backupFile = os.path.join(backupDir, backupFileName)
-            shutil.copyfile(inputFile, backupFile)
-
-        backupFile(cdata.taskStateFile)
-        backupFile(cdata.taskInfoFile)
-
-        self._taskInfoWriter = TaskFileWriter(self._tdag.writeTaskInfo)
-        self._taskStatusWriter = TaskFileWriter(self._tdag.writeTaskStatus)
-
-        self._tdag.isWriteTaskInfo = self._taskInfoWriter.isWrite
-        self._tdag.isWriteTaskStatus = self._taskStatusWriter.isWrite
-
-        self._taskInfoWriter.start()
-        self._taskStatusWriter.start()
 
         if cdata.param.isContinue:
             # Make workflow changes required when resuming after an interrupt, where the client has requested the
