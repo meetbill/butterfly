@@ -17,6 +17,7 @@ import warnings
 import time
 
 import xlib
+from xlib.util import host_util
 from xlib import httpgateway
 from xlib.mq import worker_registration
 from xlib.mq.compat import as_text, string_types
@@ -29,7 +30,6 @@ from xlib.mq.utils import (backend_class, ensure_list, enum,
 from xlib.mq.worker_registration import clean_worker_registry, get_keys
 from conf import config
 
-addr_host, addr_port = config.SERVER_LISTEN_ADDR
 logger = logging.getLogger(__name__)
 
 
@@ -143,8 +143,7 @@ class Worker(object):
         self.version = xlib.butterfly_version
         self.home_dir = os.getcwd()
         self.python_version = sys.version
-        self.name = name or "{hostname}:{addr_port}:{pid}".format(
-            hostname=self.hostname, addr_port=addr_port, pid=self.pid)
+        self.name = name or host_util.server_name
         self.nickname = config.SERVER_NAME
         queues_list = []
         for q in ensure_list(queues):

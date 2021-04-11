@@ -8,9 +8,12 @@
 # Description:
 
 """
+import os
 import re
 import socket
 import logging
+
+from conf import config
 
 
 def get_host_by_ip(ip):
@@ -48,12 +51,24 @@ def is_ip(host):
     :param host: 机器名/ip, str
     :return: True/False
     """
-    p = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
+    p = re.compile(r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
     if p.match(host):
         return True
     else:
         return False
 
+
+def _get_server_name():
+    """
+    拼接 server name
+    """
+    addr_host, addr_port = config.SERVER_LISTEN_ADDR
+    hostname = socket.gethostname()
+    pid = os.getpid()
+    return "{hostname}:{addr_port}:{pid}".format(hostname=hostname, addr_port=addr_port, pid=pid)
+
+
+server_name = _get_server_name()
 
 if __name__ == '__main__':
     import sys
