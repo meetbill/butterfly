@@ -219,28 +219,35 @@ class Scheduler(object):
 
         return True
 
-    def _add_cron_job(self, func, job_id, job_name, cmd, rule):
+    def _check_rule(self, job_trigger, rule):
         """
-        创建 cron 任务, 有同名任务时则失败
+        检查调度规则是否符合合法
+
+        Returns:
+            bool
+        """
+        if job_trigger == "cron":
+            cron_rule_list = rule.split(' ')
+            if len(cron_rule_list) != 6:
+                return False
+
+        if job_trigger == "interval":
+            rule_list = re.findall(r"[0-9]+|[a-z]+", rule)
+            if len(rule_list) != 2:
+                return False
+
+            if rule_list[1] not in ["s", "m", "h", "d"]:
+                return False
+        return True
+
+    def _gen_cron_trigger(self, rule):
+        """
         Args:
-            func    : func
-            job_id  : job id(唯一索引)
-            job_name: 用作分类
-            cmd     : job cmd
             rule    : "* * * * * *"
         Returns:
-            (Bool, Str)
+            trigger
         """
         cron_rule_list = rule.split(' ')
-        if len(cron_rule_list) != 6:
-            return (False, "Rule check failed")
-
-        kwargs = {}
-        kwargs["cmd"] = cmd
-        kwargs["job_id"] = job_id
-        kwargs["job_name"] = job_name
-        kwargs["errlog"] = self._errlog
-
         cron_trigger = CronTrigger(
             second=cron_rule_list[0],
             minute=cron_rule_list[1],
@@ -249,28 +256,15 @@ class Scheduler(object):
             month=cron_rule_list[4],
             day_of_week=cron_rule_list[5])
 
-        self._scheduler.add_job(
-            func=func,
-            trigger=cron_trigger,
-            kwargs=kwargs,
-            id=job_id,
-            name=job_name,
-            # 允许调度 30s 前未调度的任务
-            misfire_grace_time=30,
-        )
-        return (True, "OK")
+        return cron_trigger
 
-    def _add_interval_job(self, func, job_id, job_name, cmd, rule):
+    def _gen_interval_trigger(self, rule):
         """
         添加间隔任务
         Args:
-            func    : func
-            job_id  : job id(唯一索引)
-            job_name: 用作分类
-            cmd     : job cmd
             rule    : Xs/Xm/Xh/Xd
         Returns:
-            (Bool, Str)
+            trigger
         """
         interval_cron_dict = {}
         interval_cron_dict["days"] = 0
@@ -279,12 +273,6 @@ class Scheduler(object):
         interval_cron_dict["seconds"] = 0
 
         rule_list = re.findall(r"[0-9]+|[a-z]+", rule)
-        if len(rule_list) != 2:
-            return (False, "Rule check failed")
-
-        if rule_list[1] not in ["s", "m", "h", "d"]:
-            return (False, "Rule check failed")
-
         if rule_list[1] == "s":
             interval_cron_dict["seconds"] = int(rule_list[0])
         elif rule_list[1] == "m":
@@ -294,12 +282,6 @@ class Scheduler(object):
         elif rule_list[1] == "d":
             interval_cron_dict["days"] = int(rule_list[0])
 
-        kwargs = {}
-        kwargs["cmd"] = cmd
-        kwargs["job_id"] = job_id
-        kwargs["job_name"] = job_name
-        kwargs["errlog"] = self._errlog
-
         interval_trigger = IntervalTrigger(
             days=interval_cron_dict["days"],
             hours=interval_cron_dict["hours"],
@@ -307,28 +289,14 @@ class Scheduler(object):
             seconds=interval_cron_dict["seconds"],
         )
 
-        self._scheduler.add_job(
-            func=func,
-            trigger=interval_trigger,
-            kwargs=kwargs,
-            id=job_id,
-            name=job_name,
-            # 允许调度 30s 前未调度的任务
-            misfire_grace_time=30,
-        )
-        return (True, "OK")
+        return interval_trigger
 
-    def _add_date_job(self, func, job_id, job_name, cmd, rule):
+    def _gen_date_trigger(self, rule):
         """
-        添加一次任务
         Args:
-            func    : func
-            job_id  : job id(唯一索引)
-            job_name: 用作分类
-            cmd     : job cmd
             rule    : "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
         Returns:
-            (Bool, Str)
+            trigger
         """
 
         if rule == "now":
@@ -336,23 +304,7 @@ class Scheduler(object):
         else:
             date_trigger = DateTrigger(run_date=rule)
 
-        kwargs = {}
-        kwargs["cmd"] = cmd
-        kwargs["job_id"] = job_id
-        kwargs["job_name"] = job_name
-        kwargs["errlog"] = self._errlog
-
-        self._scheduler.add_job(
-            func=func,
-            trigger=date_trigger,
-            kwargs=kwargs,
-            id=job_id,
-            name=job_name,
-            # 允许调度 30s 前未调度的任务
-            misfire_grace_time=30,
-        )
-
-        return (True, "OK")
+        return date_trigger
 
     def add_job(self, job_trigger, job_id, job_name, cmd, rule):
         """
@@ -368,14 +320,17 @@ class Scheduler(object):
         Returns:
             (Bool, Str)
         """
-        jobs_map = {
-            "cron": self._add_cron_job,
-            "interval": self._add_interval_job,
-            "date": self._add_date_job
+        triggers_map = {
+            "cron": self._gen_cron_trigger,
+            "interval": self._gen_interval_trigger,
+            "date": self._gen_date_trigger
         }
 
-        if job_trigger not in jobs_map.keys():
+        # check trigger, rule
+        if job_trigger not in triggers_map.keys():
             return (False, "Job_trigger not in jobs_map")
+        if not self._check_rule(job_trigger, rule):
+            return (False, "Job_rule not match")
 
         if cmd.startswith("http"):
             func = run_http
@@ -386,14 +341,23 @@ class Scheduler(object):
                 return (False, "(scripts) Cmd does not meet expectations")
             func = run_cmd
 
-        try:
-            is_success, err_msg = jobs_map[job_trigger](func, job_id, job_name, cmd, rule)
-        except ConflictingIdError as e:
-            is_success, err_msg = False, str(e)
-        except BaseException as e:
-            is_success, err_msg = False, str(e)
+        kwargs = {}
+        kwargs["cmd"] = cmd
+        kwargs["job_id"] = job_id
+        kwargs["job_name"] = job_name
+        kwargs["errlog"] = self._errlog
 
-        return (is_success, err_msg)
+        ruqi_trigger = triggers_map[job_trigger](rule)
+        self._scheduler.add_job(
+            func=func,
+            trigger=ruqi_trigger,
+            kwargs=kwargs,
+            id=job_id,
+            name=job_name,
+            # 允许调度 30s 前未调度的任务
+            misfire_grace_time=30,
+        )
+        return (True, "OK")
 
     def start(self):
         """
@@ -520,7 +484,7 @@ class Scheduler(object):
             record_select_dict = {}
             record_select_dict["job_id"] = record_dict["id"]
             record_select_dict["job_name"] = record_dict["job_name"]
-            record_select_dict["Job_trigger"] = record_dict["job_trigger"]
+            record_select_dict["job_trigger"] = record_dict["job_trigger"]
             record_select_dict["cmd"] = record_dict["job_state"]["kwargs"]["cmd"]
             record_select_dict["rule"] = record_dict["job_rule"]
             record_select_dict["next_run_time"] = record_dict["job_state"]["next_run_time"]
@@ -578,6 +542,59 @@ class Scheduler(object):
             is_success, err_msg = False, str(e)
         return (is_success, err_msg)
 
+    def modify_job(self, job_trigger, job_id, job_name, cmd, rule):
+        """
+        Args:
+            job_trigger: job_trigger(cron/interval/date)
+            job_id     : job id(唯一索引)
+            job_name   : 用作分类
+            cmd        : job cmd
+            rule       :
+                   date: "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+                   cron: "* * * * * *"
+               interval: Xs/Xm/Xh/Xd
+        Returns:
+            (Bool, Str)
+        """
+        triggers_map = {
+            "cron": self._gen_cron_trigger,
+            "interval": self._gen_interval_trigger,
+            "date": self._gen_date_trigger
+        }
+
+        # check trigger, rule
+        if job_trigger not in triggers_map.keys():
+            return (False, "Job_trigger not in jobs_map")
+        if not self._check_rule(job_trigger, rule):
+            return (False, "Job_rule not match")
+
+        if cmd.startswith("http"):
+            func = run_http
+        elif cmd.startswith("/"):
+            func = run_mq
+        else:
+            if not self._check_cmd(cmd):
+                return (False, "(scripts) Cmd does not meet expectations")
+            func = run_cmd
+
+        kwargs = {}
+        kwargs["cmd"] = cmd
+        kwargs["job_id"] = job_id
+        kwargs["job_name"] = job_name
+        kwargs["errlog"] = self._errlog
+
+        ruqi_trigger = triggers_map[job_trigger](rule)
+        self._scheduler.modify_job(
+            job_id=job_id,
+            func=func,
+            trigger=ruqi_trigger,
+            kwargs=kwargs,
+            name=job_name,
+            # 允许调度 30s 前未调度的任务
+            misfire_grace_time=30,
+        )
+        return (True, "OK")
+
 
 # scheduler 为【如期】scheduler，常用于在分布式系统中单独作为定时使用, 使用 mysql jobstore 时，可以高可用
 scheduler = Scheduler(logger_conf.initlog, logger_conf.errlog, jobstore_alias=config.scheduler_store)
@@ -601,12 +618,14 @@ if __name__ == "__main__":
 
     cmd = "bash test_scripts.sh"
 
-    scheduler.add_job("cron", "test_cron1", "scripts", cmd, "*/3 */4 * * * *")
-    scheduler.add_job("cron", "test_cron2", "scripts", cmd, "*/3 */4 * * * *")
-    scheduler.add_job("cron", "test_cron3", "scripts", cmd, "*/3 */4 * * * *")
-    scheduler.add_job("interval", "test_interval1", "scripts", cmd, "10s")
-    scheduler.add_job("date", "test_date1", "scripts", cmd, "now")
+    print scheduler.add_job("cron", "test_cron1", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_job("cron", "test_cron2", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_job("cron", "test_cron3", "scripts", cmd, "*/3 */4 * * * *")
+    print scheduler.add_job("interval", "test_interval1", "scripts", cmd, "10s")
+    print scheduler.add_job("date", "test_date1", "scripts", cmd, "now")
+    print scheduler.modify_job("cron", "test_cron3", "scripts", cmd, "*/3 * * * * *")
 
+    scheduler.start()
     for job in scheduler.get_jobs():
         print job
 

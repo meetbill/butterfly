@@ -7,6 +7,11 @@
 # Description:
     如期而至，定时执行
     用于管理定时任务, 需要在配置文件中开启定时任务
+
+# Version
+    1.0.1: 2021-01-08
+    1.0.2: 2021-04-12
+        增加修改任务接口
 """
 
 from xlib.middleware import funcattr
@@ -18,7 +23,7 @@ from xlib.db import shortcuts
 from xlib.apscheduler import manager
 
 __info = "ruqi"
-__version = "1.0.1"
+__version = "1.0.2"
 
 
 @funcattr.api
@@ -58,6 +63,30 @@ def add_job(req, job_trigger, job_id, job_name, cmd, rule):
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
 
+@funcattr.api
+def modify_job(req, job_trigger, job_id, job_name, cmd, rule):
+    """
+    添加定时任务
+
+    Args:
+        job_trigger: job_trigger(cron/interval/date)
+        job_id     : job id(唯一索引)
+        job_name   : 用作分类
+        cmd        : job cmd
+        rule       :
+            date: "2020-12-16 18:03:17"/"2020-12-16 18:05:17.682862"/"now"
+            cron: "* * * * * *"
+            interval: Xs/Xm/Xh/Xd
+    Returns:
+        status, content, headers
+    """
+    isinstance(req, Request)
+    is_success, err_msg = manager.scheduler.modify_job(job_trigger, job_id, job_name, cmd, rule)
+    if is_success:
+        return retstat.OK, {}, [(__info, __version)]
+    else:
+        req.error_str = err_msg
+        return retstat.ERR, {}, [(__info, __version)]
 
 @funcattr.api
 def remove_job(req, job_id):
