@@ -488,6 +488,7 @@ class Scheduler(object):
             record_select_dict["cmd"] = record_dict["job_state"]["kwargs"]["cmd"]
             record_select_dict["rule"] = record_dict["job_rule"]
             record_select_dict["next_run_time"] = record_dict["job_state"]["next_run_time"]
+            record_select_dict["c_time"] = record_dict["c_time"]
             data_list.append(record_select_dict)
 
         data["total"] = record_count
