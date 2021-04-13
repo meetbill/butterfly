@@ -158,7 +158,9 @@ class Protocol(object):
             params["req"] = req
 
             if not httpgateway.check_param(self._func, params):
-                return self._mk_err_ret(req, True, "Param check failed", "%s Param check failed" % req.ip)
+                return self._mk_err_ret(req, True, "Param check failed",
+                                        "client_ip={client_ip} err_info=Param_check_failed params={params}".format(
+                                            client_ip=req.ip, params=str(params)))
         except BaseException:
             return self._mk_err_ret(req, True, "Param check exception",
                                     "%s Param check failed\n%s" % (req.ip, traceback.format_exc()))
