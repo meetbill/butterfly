@@ -28,8 +28,9 @@
     * [4.1 传送门](#41-传送门)
     * [4.2 自带 app 介绍](#42-自带-app-介绍)
     * [4.3 报告错误](#43-报告错误)
-* [5 版本信息](#5-版本信息)
-* [6 参加步骤](#6-参加步骤)
+* [5 贡献](#5-贡献)
+* [6 版本信息](#6-版本信息)
+* [7 参加步骤](#7-参加步骤)
 
 <!-- vim-markdown-toc -->
 
@@ -296,12 +297,26 @@ handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进
 
 如果您想报告错误，请在 GitHub 上[创建一个新问题](https://github.com/meetbill/butterfly/issues/new)。
 
+# 5 贡献
 
-# 5 版本信息
+Use issues for everything
+
+> * For a small change, just send a PR.
+> * For bigger changes open an issue for discussion before sending a PR.
+> * PR should have:
+>   * Test case
+>   * Documentation
+>   * Example (If it makes sense)
+> * You can also contribute by:
+>   * Reporting issues
+>   * Suggesting new features or enhancements
+>   * Improve/fix documentation
+
+# 6 版本信息
 
 本项目的各版本信息和变更历史可以在[这里][changelog] 查看。
 
-# 6 参加步骤
+# 7 参加步骤
 
 * 在 GitHub 上 `fork` 到自己的仓库，然后 `clone` 到本地，并设置用户信息。
 ```bash
