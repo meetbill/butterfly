@@ -12,6 +12,8 @@
     1.0.1: 2021-01-08
     1.0.2: 2021-04-12
         增加修改任务接口
+    1.0.3: 2021-04-14
+        增加 get_job 接口, 用于获取 job 详情
 """
 
 from xlib.middleware import funcattr
@@ -23,7 +25,7 @@ from xlib.db import shortcuts
 from xlib.apscheduler import manager
 
 __info = "ruqi"
-__version = "1.0.2"
+__version = "1.0.3"
 
 
 @funcattr.api
@@ -36,6 +38,35 @@ def get_jobs(req, job_id=None, job_name=None, page_index=None, page_size=15):
     jobs = manager.scheduler.get_jobs(job_id, job_name, page_index, page_size)
     jobs_result["data"] = jobs
     return retstat.OK, jobs_result, [(__info, __version)]
+
+
+@funcattr.api
+def get_job(req, job_id):
+    """
+    获取定期任务详情
+
+    Args:
+        job_id: (String) job_id
+    Returns:
+        job_info
+        {
+            "job_id"        : "xxx",
+            "job_name"      : "xxx",
+            "job_trigger"   : "cron/interval/date",
+            "cmd"           : "xxx",
+            "rule"          : "xxx",
+            "nexttime"      : "xxx"
+        }
+    备注:
+        使用 test_handler.py 时，因为 test_handler.py 未启动 scheduler，故直接返回 None
+    """
+    isinstance(req, Request)
+    is_success, job_info = manager.scheduler.get_job(job_id)
+    if is_success:
+        return retstat.OK, {"data": job_info}, [(__info, __version)]
+    else:
+        req.error_str = job_info
+        return retstat.ERR, {}, [(__info, __version)]
 
 
 @funcattr.api
@@ -63,6 +94,7 @@ def add_job(req, job_trigger, job_id, job_name, cmd, rule):
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
 
+
 @funcattr.api
 def modify_job(req, job_trigger, job_id, job_name, cmd, rule):
     """
@@ -87,6 +119,7 @@ def modify_job(req, job_trigger, job_id, job_name, cmd, rule):
     else:
         req.error_str = err_msg
         return retstat.ERR, {}, [(__info, __version)]
+
 
 @funcattr.api
 def remove_job(req, job_id):

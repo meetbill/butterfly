@@ -70,7 +70,7 @@ class MySQLJobStore(BaseJobStore):
         old_datetime = now - datetime.timedelta(seconds=20)
         old_timestamp = datetime_to_timestamp(old_datetime)
         selectable = self.jobs_t.select(self.jobs_t.id).where(self.jobs_t.next_run_time <= old_timestamp,
-                self.jobs_t.job_lock == True)
+                                                              self.jobs_t.job_lock == True)
         for row in selectable:
             row_dict = shortcuts.model_to_dict(row)
             update = self.jobs_t.update(data).where(
@@ -81,7 +81,7 @@ class MySQLJobStore(BaseJobStore):
             if result > 0:
                 self._logger.warning(
                     "[module=apscheduler sub_module=jobstore method=unlock_expired_jobs job_id={job_id} ]".format(
-                    job_id=row_dict["id"]))
+                        job_id=row_dict["id"]))
 
     def get_due_jobs(self, now):
         """
@@ -123,7 +123,23 @@ class MySQLJobStore(BaseJobStore):
     def _get_rule_by_state(self, job_state):
         """
         Args:
-            job_state
+            job_state: (dict)
+                {
+                    'args': (),
+                    'executor': 'default',
+                    'max_instances': 1,
+                    'func': 'xlib.apscheduler.manager:run_mq',
+                    'id': u'test_job',
+                    'next_run_time': datetime.datetime(2021, 4, 14, 11, 5, 1),
+                    'name': u'test',
+                    'misfire_grace_time': 30,
+                    'trigger': <CronTrigger (month='*', day='*', day_of_week='*', hour='*', minute='5', second='1')>,
+                    'coalesce': False,
+                    'version': 1,
+                    'kwargs': {
+                        'errlog': <xlib.logger.LoggerBase object at 0x1c87a90>,
+                        'cmd': u'/demo_api/ping', 'job_id': u'test_job', 'job_name': u'test'}
+                    }
         Returns:
             job_trigger, job_rule
                 job_trigger: (str) cron/interval/date
@@ -148,7 +164,7 @@ class MySQLJobStore(BaseJobStore):
 
         if isinstance(job_state["trigger"], interval.IntervalTrigger):
             job_trigger = "interval"
-            job_rule = str(job_state["trigger"].interval_length) + "s"
+            job_rule = str(int(job_state["trigger"].interval_length)) + "s"
 
         if isinstance(job_state["trigger"], date.DateTrigger):
             job_trigger = "date"
@@ -195,6 +211,7 @@ class MySQLJobStore(BaseJobStore):
         if extra_update:
             job_state = job.__getstate__()
             job_trigger, job_rule = self._get_rule_by_state(job_state)
+            data["job_name"] = job_state["name"]
             data["job_trigger"] = job_trigger
             data["job_rule"] = job_rule
 
@@ -254,14 +271,14 @@ class MySQLJobStore(BaseJobStore):
         result = update.execute()
         if result == 0:
             self._logger.info(
-                    ("[module=apscheduler sub_module=jobstore method=lock_job "
-                     "id={id} run_time={run_time} state=failed ]").format(
+                ("[module=apscheduler sub_module=jobstore method=lock_job "
+                 "id={id} run_time={run_time} state=failed ]").format(
                     id=job_id, run_time=next_run_time_datetime))
             return False
         else:
             self._logger.info(
-                    ("[module=apscheduler sub_module=jobstore method=lock_job "
-                     "id={id} run_time={run_time} state=success ]").format(
+                ("[module=apscheduler sub_module=jobstore method=lock_job "
+                 "id={id} run_time={run_time} state=success ]").format(
                     id=job_id, run_time=next_run_time_datetime))
             return True
 

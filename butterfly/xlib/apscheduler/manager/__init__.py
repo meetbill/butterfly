@@ -11,7 +11,6 @@ from xlib.apscheduler.triggers.interval import IntervalTrigger
 from xlib.apscheduler.triggers.cron import CronTrigger
 from xlib.apscheduler.triggers.date import DateTrigger
 # jobstores
-from xlib.apscheduler.jobstores.base import ConflictingIdError
 from xlib.apscheduler.jobstores.mysql import MySQLJobStore
 from xlib.apscheduler.jobstores.memory import MemoryJobStore
 # models
@@ -389,6 +388,46 @@ class Scheduler(object):
         """
         self._scheduler.wakeup()
 
+    def _parse_job_object(self, job_object):
+        """
+        将 job_object 转为 dict
+        """
+        # cron_rule
+        job_info_dict = {}
+
+        rule = ""
+        trigger = ""
+        if isinstance(job_object.trigger, CronTrigger):
+            trigger = "cron"
+            fields = job_object.trigger.fields
+            cron = {}
+            for field in fields:
+                cron[field.name] = str(field)
+            rule = "{second} {minute} {hour} {day} {month} {day_of_week}".format(
+                second=cron['second'],
+                minute=cron['minute'],
+                hour=cron['hour'],
+                day=cron['day'],
+                month=cron['month'],
+                day_of_week=cron["day_of_week"]
+            )
+
+        if isinstance(job_object.trigger, IntervalTrigger):
+            trigger = "interval"
+            rule = str(int(job_object.trigger.interval_length)) + "s"
+
+        if isinstance(job_object.trigger, DateTrigger):
+            trigger = "date"
+            rule = str(job_object.trigger.run_date)
+
+        job_info_dict["job_id"] = job_object.id
+        job_info_dict["job_name"] = job_object.name
+        job_info_dict["job_trigger"] = trigger
+        job_info_dict["cmd"] = job_object.kwargs["cmd"]
+        job_info_dict["rule"] = rule
+        job_info_dict["nexttime"] = str(job_object.next_run_time)
+        return job_info_dict
+
     def _get_jobs_in_memory(self):
         """
         获取所有任务
@@ -414,41 +453,8 @@ class Scheduler(object):
         data = {}
         jobs = []
         for job in self._scheduler.get_jobs():
-            # cron_rule
-            jobinfo = {}
-
-            rule = ""
-            trigger = ""
-            if isinstance(job.trigger, CronTrigger):
-                trigger = "cron"
-                fields = job.trigger.fields
-                cron = {}
-                for field in fields:
-                    cron[field.name] = str(field)
-                rule = "{second} {minute} {hour} {day} {month} {day_of_week}".format(
-                    second=cron['second'],
-                    minute=cron['minute'],
-                    hour=cron['hour'],
-                    day=cron['day'],
-                    month=cron['month'],
-                    day_of_week=cron["day_of_week"]
-                )
-
-            if isinstance(job.trigger, IntervalTrigger):
-                trigger = "interval"
-                rule = str(job.trigger.interval_length) + "s"
-
-            if isinstance(job.trigger, DateTrigger):
-                trigger = "date"
-                rule = str(job.trigger.run_date)
-
-            jobinfo["job_id"] = job.id
-            jobinfo["job_name"] = job.name
-            jobinfo["job_trigger"] = trigger
-            jobinfo["cmd"] = job.kwargs["cmd"]
-            jobinfo["rule"] = rule
-            jobinfo["nexttime"] = str(job.next_run_time)
-            jobs.append(jobinfo)
+            job_info_dict = self._parse_job_object(job)
+            jobs.append(job_info_dict)
 
         data["total"] = len(jobs)
         data["list"] = jobs
@@ -506,6 +512,20 @@ class Scheduler(object):
             return self._get_jobs_in_mysql(job_id, job_name, page_index, page_size)
         else:
             return self._get_jobs_in_memory()
+
+    def get_job(self, job_id):
+        """
+        获取 job 信息
+        """
+        is_success = True
+        err_msg = "OK"
+        try:
+            job = self._scheduler.get_job(job_id, "default")
+            job_info_dict = self._parse_job_object(job)
+        except BaseException as e:
+            is_success, err_msg = False, str(e)
+            return (is_success, err_msg)
+        return (is_success, job_info_dict)
 
     def remove_job(self, job_id):
         """
