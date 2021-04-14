@@ -189,7 +189,7 @@ def init_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d %H
         os.makedirs(dir)
 
     # ---------------------------------------------------- root
-    format = "%(levelname)s %(name)s %(asctime)s: %(filename)s:%(lineno)d %(thread)d @@@@@@@@@@@@@@@@ * %(message)s"
+    format = "%(levelname)s %(name)s %(asctime)s: %(pathname)s:%(lineno)d %(thread)d @@@@@@@@@@@@@@@@ * %(message)s"
     formatter = logging.Formatter(format, datefmt)
     logger = logging.getLogger()
     logger.setLevel(level)
@@ -239,7 +239,7 @@ def init_bf_log(log_path, level=logging.INFO, when="D", backup=7, datefmt="%m-%d
         os.makedirs(dir)
 
     # ---------------------------------------------------- butterfly
-    format = "%(levelname)s %(name)s %(asctime)s: %(filename)s:%(lineno)d %(thread)d %(reqid)s * %(message)s"
+    format = "%(levelname)s %(name)s %(asctime)s: %(pathname)s:%(lineno)d %(thread)d %(reqid)s * %(message)s"
     formatter = logging.Formatter(format, datefmt)
     logger = logging.getLogger("butterfly")
     # propagate 属性设置为 False, 不向父级 logger 传递日志, 否则日志中会打印两条重复日志

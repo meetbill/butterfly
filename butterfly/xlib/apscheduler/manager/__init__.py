@@ -18,6 +18,7 @@ from xlib.apscheduler.models.apscheduler_model import RuqiJobsHistory
 from xlib.apscheduler.models.apscheduler_model import RuqiJobs
 # executors
 from xlib.apscheduler.executors.pool import ThreadPoolExecutor
+from xlib.apscheduler import util as apscheduler_util
 
 from xlib.util import shell_util
 from xlib.util import http_util
@@ -236,6 +237,13 @@ class Scheduler(object):
                 return False
 
             if rule_list[1] not in ["s", "m", "h", "d"]:
+                return False
+
+        if job_trigger == "date":
+            if rule == "now":
+                return True
+            m = apscheduler_util._DATE_REGEX.match(rule)
+            if not m:
                 return False
         return True
 
