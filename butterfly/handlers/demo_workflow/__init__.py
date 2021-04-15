@@ -25,6 +25,7 @@ class HelloWorkflow(WorkflowRunner):
         self.addTask("easy_task1", "echo 'Hello World!'")
         self.addTask("easy_task2", "sleep 20", dependencies="easy_task1")
 
+
 @funcattr.api
 def helloworld(req):
     """
@@ -36,10 +37,10 @@ def helloworld(req):
     isinstance(req, Request)
     wflow = HelloWorkflow()
     retval = wflow.run(dataDirRoot="data/workflow/{jobid}".format(jobid=req.reqid),
-            isQuiet=True,
-            job_reqid = req.reqid,
-            job_name = "ceshi"
-            )
+                       isQuiet=True,
+                       job_reqid=req.reqid,
+                       job_name="ceshi"
+                       )
     if retval == 0:
         return retstat.OK, {}, [(__info, __version)]
     else:

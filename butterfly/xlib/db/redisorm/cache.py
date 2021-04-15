@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: cache.py
+# Description:
+
+"""
 from functools import wraps
 import hashlib
 import pickle
@@ -354,7 +360,3 @@ class Cache(object):
                 return _get_value
             return inner
         return decorator
-
-
-class sentinel(object):
-    pass

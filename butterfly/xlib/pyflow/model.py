@@ -40,6 +40,9 @@ class Job(xlib.db.BaseModel):
     u_time = DateTimeField(column_name="u_time", default=datetime.now)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'xinggui_job'
 
 
@@ -81,6 +84,9 @@ class Task(xlib.db.BaseModel):
     u_time = DateTimeField(column_name="u_time", default=datetime.now)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'xinggui_task'
 
 

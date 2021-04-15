@@ -9,11 +9,12 @@ import random
 from xlib.ral import mcpack
 from xlib.ral import nshead
 
+
 def _get_logid():
     """
     获取随机 id 作为 logid
     """
-    return random.randint(1,10000000)
+    return random.randint(1, 10000000)
 
 
 def nshead_client_test(ip, port):
@@ -29,7 +30,13 @@ def nshead_client_test(ip, port):
     sock.connect(proxy)
 
     # 打包
-    send_dict = {"uname":"wangbin34test1","tk":"wangbin34test1","method":"SETEX","key":"wangbin34", "value":"mykey value", "seconds" : 2000}
+    send_dict = {
+        "uname": "wangbin34test1",
+        "tk": "wangbin34test1",
+        "method": "SETEX",
+        "key": "wangbin34",
+        "value": "mykey value",
+        "seconds": 2000}
     #send_dict = {"uname":"wangbin34test1","tk":"wangbin34test1","method":"GET","key":"wangbin34"}
     send_pack = mcpack.dumps(send_dict)
 
@@ -45,12 +52,13 @@ def nshead_client_test(ip, port):
     """
     {'err_no': 0, 'err_msg': 'OK', 'ret': {'wangbin34': 'OK'}}
     """
-    sock.close() #关闭套接字
+    sock.close()  # 关闭套接字
     print result_info
 
 
 if __name__ == '__main__':
-    import sys, inspect
+    import sys
+    import inspect
     if len(sys.argv) < 2:
         print "Usage:"
         for k, v in sorted(globals().items(), key=lambda item: item[0]):
@@ -58,7 +66,7 @@ if __name__ == '__main__':
                 args, __, __, defaults = inspect.getargspec(v)
                 if defaults:
                     print sys.argv[0], k, str(args[:-len(defaults)])[1:-1].replace(",", ""), \
-                          str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
+                        str(["%s=%s" % (a, b) for a, b in zip(args[-len(defaults):], defaults)])[1:-1].replace(",", "")
                 else:
                     print sys.argv[0], k, str(v.func_code.co_varnames[:v.func_code.co_argcount])[1:-1].replace(",", "")
         sys.exit(-1)
@@ -67,9 +75,10 @@ if __name__ == '__main__':
         args = sys.argv[2:]
         try:
             r = func(*args)
-        except Exception, e:
+        except Exception as e:
             print "Usage:"
-            print "\t", "python %s" % sys.argv[1], str(func.func_code.co_varnames[:func.func_code.co_argcount])[1:-1].replace(",", "")
+            print "\t", "python %s" % sys.argv[1], str(func.func_code.co_varnames[:func.func_code.co_argcount])[
+                1:-1].replace(",", "")
             if func.func_doc:
                 print "\n".join(["\t\t" + line.strip() for line in func.func_doc.strip().split("\n")])
             print e
