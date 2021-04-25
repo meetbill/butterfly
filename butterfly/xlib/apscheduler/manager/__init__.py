@@ -1,4 +1,10 @@
 # coding=utf8
+"""
+# File Name: manager.py
+# Description:
+    schedule manager
+
+"""
 import os
 import re
 import json
@@ -191,7 +197,8 @@ class Scheduler(object):
         self._initlog = initlog
         self._errlog = errlog
         self._scheduler = background.BackgroundScheduler(jobstores=jobstores,
-                                                         executors=executors, job_defaults=job_defaults, scheduler_config=scheduler_config)
+                                                         executors=executors,
+                                                         job_defaults=job_defaults, scheduler_config=scheduler_config)
 
     def _check_cmd(self, cmd):
         """

@@ -49,6 +49,9 @@ class WuxingSection(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_section'
         primary_key = CompositeKey('namespace', 'section_name', 'section_version')
 
@@ -75,6 +78,9 @@ class WuxingInstance(xlib.db.BaseModel):
     u_time = DateTimeField(column_name="u_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_instance'
         primary_key = CompositeKey('namespace', 'instance_name')
 
@@ -105,6 +111,9 @@ class WuxingInstanceItem(xlib.db.BaseModel):
     u_time = DateTimeField(column_name="u_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_instance_item'
 
 # Define a model class
@@ -124,6 +133,9 @@ class WuxingHistoryBool(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_history_bool'
 
 # Define a model class
@@ -143,6 +155,9 @@ class WuxingHistoryFloat(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_history_float'
 
 # Define a model class
@@ -163,6 +178,9 @@ class WuxingHistoryInt(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_history_int'
 
 # Define a model class
@@ -183,6 +201,9 @@ class WuxingHistoryString(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_history_string'
 
 
@@ -201,6 +222,9 @@ class WuxingHistoryText(xlib.db.BaseModel):
     c_time = DateTimeField(column_name="c_time", default=datetime.now, index=True)
 
     class Meta(object):
+        """
+        meta
+        """
         table_name = 'wuxing_history_text'
 
 if __name__ == "__main__":

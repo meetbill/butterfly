@@ -24,6 +24,9 @@ SEPARATOR = re.compile(' *, *')
 
 
 class BaseField(object):
+    """
+    Base field class
+    """
     REAL = True
     COMPILERS = [AllExpression, RangeExpression]
 
@@ -33,15 +36,27 @@ class BaseField(object):
         self.compile_expressions(exprs)
 
     def get_min(self, dateval):
+        """
+        Get min
+        """
         return MIN_VALUES[self.name]
 
     def get_max(self, dateval):
+        """
+        Get max
+        """
         return MAX_VALUES[self.name]
 
     def get_value(self, dateval):
+        """
+        Get value
+        """
         return getattr(dateval, self.name)
 
     def get_next_value(self, dateval):
+        """
+        Get next value
+        """
         smallest = None
         for expr in self.expressions:
             value = expr.get_next_value(dateval, self)
@@ -51,6 +66,9 @@ class BaseField(object):
         return smallest
 
     def compile_expressions(self, exprs):
+        """
+        Compile expressions
+        """
         self.expressions = []
 
         # Split a comma-separated expression list, if any
@@ -58,6 +76,9 @@ class BaseField(object):
             self.compile_expression(expr)
 
     def compile_expression(self, expr):
+        """
+        Compile expression
+        """
         for compiler in self.COMPILERS:
             match = compiler.value_re.match(expr)
             if match:
@@ -86,26 +107,47 @@ class BaseField(object):
 
 
 class WeekField(BaseField):
+    """
+    Week field
+    """
     REAL = False
 
     def get_value(self, dateval):
+        """
+        Get value
+        """
         return dateval.isocalendar()[1]
 
 
 class DayOfMonthField(BaseField):
+    """
+    Month day field class
+    """
     COMPILERS = BaseField.COMPILERS + [WeekdayPositionExpression, LastDayOfMonthExpression]
 
     def get_max(self, dateval):
+        """
+        Get max
+        """
         return monthrange(dateval.year, dateval.month)[1]
 
 
 class DayOfWeekField(BaseField):
+    """
+    Week day field class
+    """
     REAL = False
     COMPILERS = BaseField.COMPILERS + [WeekdayRangeExpression]
 
     def get_value(self, dateval):
+        """
+        Get value
+        """
         return dateval.weekday()
 
 
 class MonthField(BaseField):
+    """
+    Month field class
+    """
     COMPILERS = BaseField.COMPILERS + [MonthRangeExpression]

@@ -1,3 +1,9 @@
+# coding=utf8
+"""
+# File Name: base.py
+# Description:
+
+"""
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -12,6 +18,9 @@ from xlib.apscheduler.events import (
 
 
 class MaxInstancesReachedError(Exception):
+    """
+    Max instances reached error
+    """
     def __init__(self, job):
         super(MaxInstancesReachedError, self).__init__(
             'Job "%s" has already reached its maximum number of instances (%d)' %

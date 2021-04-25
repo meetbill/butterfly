@@ -1,3 +1,10 @@
+# coding=utf8
+"""
+# File Name: cron __init__.py
+# Description:
+    Cron trigger
+
+"""
 from datetime import datetime, timedelta
 
 from xlib.util import six
@@ -146,6 +153,9 @@ class CronTrigger(BaseTrigger):
         return datetime(**values)
 
     def get_next_fire_time(self, previous_fire_time, now):
+        """
+        get next fire time
+        """
         if previous_fire_time:
             start_date = min(now, previous_fire_time + timedelta(microseconds=1))
             if start_date == previous_fire_time:

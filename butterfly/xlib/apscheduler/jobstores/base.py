@@ -1,3 +1,10 @@
+# coding=utf8
+"""
+# File Name: base.py
+# Description:
+    jobstore base module
+
+"""
 from abc import ABCMeta, abstractmethod
 import logging
 

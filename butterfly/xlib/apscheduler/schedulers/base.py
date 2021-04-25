@@ -77,8 +77,12 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
     # Public API
     #
 
-    def __init__(self, gconfig={}, **options):
+    def __init__(self, gconfig=None, **options):
         super(BaseScheduler, self).__init__()
+
+        if gconfig is None:
+            gconfig = {}
+
         self._executors = {}
         self._executors_lock = self._create_lock()
         self._jobstores = {}
@@ -96,7 +100,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         # 下次唤醒时间
         self._next_wakeup_time = None
 
-    def configure(self, gconfig={}, prefix='apscheduler.', **options):
+    def configure(self, gconfig=None, prefix='apscheduler.', **options):
         """
         Reconfigures the scheduler with the given options.
 
@@ -109,6 +113,9 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         :raises SchedulerAlreadyRunningError: if the scheduler is already running
 
         """
+        if gconfig is None:
+            gconfig = {}
+
         if self.state != STATE_STOPPED:
             raise SchedulerAlreadyRunningError
 
@@ -116,8 +123,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         # global configuration dict
         if prefix:
             prefixlen = len(prefix)
-            gconfig = dict((key[prefixlen:], value) for key, value in six.iteritems(gconfig)
-                           if key.startswith(prefix))
+            gconfig = dict((key[prefixlen:], value) for key, value in six.iteritems(gconfig) if key.startswith(prefix))
 
         # Create a structure from the dotted options
         # (e.g. "a.b.c = d" -> {'a': {'b': {'c': 'd'}}})
@@ -348,7 +354,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
 
         self._dispatch_event(SchedulerEvent(EVENT_JOBSTORE_REMOVED, alias))
 
-    def add_listener(self, callback, mask=EVENT_ALL):
+    def add_listener(self, callback, mask=None):
         """
         add_listener(callback, mask=EVENT_ALL)
 
@@ -366,6 +372,9 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         .. seealso:: :ref:`scheduler-events`
 
         """
+        if mask is None:
+            mask = EVENT_ALL
+
         with self._listeners_lock:
             self._listeners.append((callback, mask))
 
@@ -378,8 +387,8 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
                     del self._listeners[i]
 
     def add_job(self, func, trigger=None, args=None, kwargs=None, id=None, name=None,
-                misfire_grace_time=undefined, coalesce=undefined, max_instances=undefined,
-                next_run_time=undefined, jobstore='default', executor='default',
+                misfire_grace_time=None, coalesce=None, max_instances=None,
+                next_run_time=None, jobstore='default', executor='default',
                 replace_existing=False, **trigger_args):
         """
         add_job(func, trigger=None, args=None, kwargs=None, id=None, \
@@ -426,6 +435,18 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         :rtype: Job
 
         """
+        if misfire_grace_time is None:
+            misfire_grace_time = undefined
+
+        if coalesce is None:
+            coalesce = undefined
+
+        if max_instances is None:
+            max_instances = undefined
+
+        if next_run_time is None:
+            next_run_time = undefined
+
         job_kwargs = {
             'trigger': self._create_trigger(trigger, trigger_args),
             'executor': executor,
@@ -439,8 +460,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
             'max_instances': max_instances,
             'next_run_time': next_run_time
         }
-        job_kwargs = dict((key, value) for key, value in six.iteritems(job_kwargs) if
-                          value is not undefined)
+        job_kwargs = dict((key, value) for key, value in six.iteritems(job_kwargs) if value is not undefined)
         job = Job(self, **job_kwargs)
 
         # Don't really add jobs to job stores before the scheduler is up and running
@@ -455,8 +475,8 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         return job
 
     def scheduled_job(self, trigger, args=None, kwargs=None, id=None, name=None,
-                      misfire_grace_time=undefined, coalesce=undefined, max_instances=undefined,
-                      next_run_time=undefined, jobstore='default', executor='default',
+                      misfire_grace_time=None, coalesce=None, max_instances=None,
+                      next_run_time=None, jobstore='default', executor='default',
                       **trigger_args):
         """
         scheduled_job(trigger, args=None, kwargs=None, id=None, \
@@ -472,7 +492,22 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         store. The scheduler cannot, however, enforce this requirement.
 
         """
+        if misfire_grace_time is None:
+            misfire_grace_time = undefined
+
+        if coalesce is None:
+            coalesce = undefined
+
+        if max_instances is None:
+            max_instances = undefined
+
+        if next_run_time is None:
+            next_run_time = undefined
+
         def inner(func):
+            """
+            inner func
+            """
             self.add_job(func, trigger, args, kwargs, id, name, misfire_grace_time, coalesce,
                          max_instances, next_run_time, jobstore, executor, True, **trigger_args)
             return func
@@ -892,8 +927,8 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         self._dispatch_event(event)
 
         self._logger.info(('[module=apscheduler sub_module=scheduler method=add_job '
-            'job_id={job_id} job_name={job_name} job_store={job_store} ]'.format(
-            job_id = job.id, job_name=job.name, job_store=jobstore_alias)))
+                           'job_id={job_id} job_name={job_name} job_store={job_store} ]'.format(
+                               job_id=job.id, job_name=job.name, job_store=jobstore_alias)))
 
         # Notify the scheduler about the new job
         if self.state == STATE_RUNNING:
