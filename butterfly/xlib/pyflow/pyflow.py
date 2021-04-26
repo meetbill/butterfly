@@ -47,7 +47,7 @@ import threading
 import time
 import traceback
 
-from pyflowConfig import siteConfig
+from xlib.pyflow.pyflowConfig import siteConfig
 from xlib.pyflow import model
 from xlib.util import host_util
 

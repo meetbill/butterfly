@@ -55,6 +55,9 @@ class PyJWT(PyJWS):
                headers=None,  # type: Optional[Dict]
                json_encoder=None  # type: Optional[Callable]
                ):
+        """
+        encode
+        """
         # Check that we get a mapping
         if not isinstance(payload, Mapping):
             raise TypeError('Expecting a mapping object, as JWT only supports '
@@ -83,6 +86,9 @@ class PyJWT(PyJWS):
                algorithms=None,  # type: List[str]
                options=None,  # type: Dict
                **kwargs):
+        """
+        decode
+        """
 
         if verify and not algorithms:
             warnings.warn(

@@ -244,6 +244,9 @@ class Cache(object):
 
             @wraps(fn)
             def inner(*args, **kwargs):
+                """
+                inner func
+                """
                 start = time.time()
                 is_cache_hit = True
                 key = make_key(args, kwargs)
@@ -293,7 +296,7 @@ class Cache(object):
 
         this = self
 
-        class _cached_property(object):
+        class CachedProperty(object):
             def __init__(self, fn):
                 self._fn = this.cached(key_fn, timeout)(fn)
 
@@ -312,7 +315,7 @@ class Cache(object):
             """
             decorator func
             """
-            return _cached_property(fn)
+            return CachedProperty(fn)
 
         return decorator
 
