@@ -297,6 +297,9 @@ class Cache(object):
         this = self
 
         class CachedProperty(object):
+            """
+            Cached property class
+            """
             def __init__(self, fn):
                 self._fn = this.cached(key_fn, timeout)(fn)
 

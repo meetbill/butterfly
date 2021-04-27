@@ -58,8 +58,17 @@ class CronTrigger(BaseTrigger):
 
         self.jitter = jitter
 
+        """
         values = dict((key, value) for (key, value) in six.iteritems(locals())
                       if key in self.FIELD_NAMES and value is not None)
+        """
+        values_list = []
+        for (key, value) in six.iteritems(locals()):
+            if key in self.FIELD_NAMES and value is not None:
+                values_list.append((key, value))
+
+        values = dict(values_list)
+
         self.fields = []
         assign_defaults = False
         for field_name in self.FIELD_NAMES:
