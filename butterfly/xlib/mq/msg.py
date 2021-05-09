@@ -108,6 +108,13 @@ class Msg(object):
         if save:
             self.connection.hset(self.key, 'status', self._status)
 
+    def set_handle_worker(self, worker_name):
+        """
+        set handle_worker
+        """
+        self.handle_worker = worker_name
+        self.connection.hset(self.key, 'handle_worker', self.handle_worker)
+
     @property
     def is_finished(self):
         return self.get_status() == MsgStatus.FINISHED

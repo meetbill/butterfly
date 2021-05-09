@@ -535,7 +535,7 @@ class Worker(object):
         try:
             msg.started_at = utcnow()
             msg.set_status(MsgStatus.STARTED)
-            msg.handle_worker = self.name
+            msg.set_handle_worker(self.name)
 
             # gen req
             ip = msg.ip
