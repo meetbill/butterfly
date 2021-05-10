@@ -24,3 +24,5 @@ def test_mcpack():
         send_unpack = mcpack.loads(send_pack)
         assert send_dict == send_unpack
 
+if __name__ == "__main__":
+    test_mcpack()
