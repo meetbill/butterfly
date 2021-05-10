@@ -3,6 +3,40 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.12] - 2021-05-10
+### Changed
+> * 服务：【五行】
+>   * 适配 item_value 为 bool 时，传值为 int 类型的情况 [commit](https://github.com/meetbill/butterfly/commit/85907a6a572c6acc05d4ff67b83358fd4a79cb28)
+>   * 创建 instance 时的 items_data 的 value 传值为 None 时，则使用默认值进行创建 [commit](https://github.com/meetbill/butterfly/commit/14d4bf9f6b4f9f5e362a177b98e8d51bc592f16b)
+>   * instance get 返回结果可返回 simple/detail 两种格式，默认是 simple 格式 [commit](https://github.com/meetbill/butterfly/commit/cdaa539feec13baae08b9f45b0911262a513d622)
+> * 配置:
+>   * 配置中日志和 data 目录从相对路径修改为绝对路径 [commit](https://github.com/meetbill/butterfly/commit/6390d66a5b3fe9418285198612e04a5edf2a4823)
+> * 服务：【如期】
+>   * ruqi job list 添加 c_time 信息 [commit](https://github.com/meetbill/butterfly/commit/13eca4a5c06271db0fd8ac99fe28c246f30aae0d)
+> * 日志
+>   * 参数错误时，记录访问的具体参数信息 [commit](https://github.com/meetbill/butterfly/commit/f11c9f801881ceece4cf97f05f23d920e3ce2b8d)
+> * RAL
+>   * 更新 mcpack 包 [commit](https://github.com/meetbill/butterfly/commit/c2470aed4b35e67c19a3e469e1a600d8140afa45)
+
+### Added
+> * 服务: 【五行】
+>   * wuxing_cli [commit](https://github.com/meetbill/butterfly/commit/22204633ed7899629738927c8a990c55f3b13955)
+> * 服务: 【如期】
+>   * 添加 ruqi get_job 接口，用于获取 job 详情 [commit](https://github.com/meetbill/butterfly/commit/163922a3349b24be276f84d946fd13562f3e86d5)
+> * 服务：【星轨】
+>   * workflow [commit](https://github.com/meetbill/butterfly/commit/fa5024301619e1df8f75d4d1a6671171520e4b81)
+> * 调试：
+>   * 可将 Butterfly stack trace 信息到日志 [commit](https://github.com/meetbill/butterfly/commit/24f6edd316a889f1d4fc22239d922c8275d965d4)
+> * 服务：【如期】
+>   * 添加修改定时任务接口 [commit](https://github.com/meetbill/butterfly/commit/fec323c046688f28b7048e844f691082b1e1be4a)
+
+### Fixed
+> * 服务：【五行】
+>   * 修复创建 item 时，item 类型为 bool 时，没有检查是否为 unicode 类型的问题 [commit](https://github.com/meetbill/butterfly/commit/05418c28de629bf88b55f8e977e24be0fb362cae)
+> * 服务：【百川】
+>   * 修复消息队列中设置 handle_worker 不生效问题 [commit](https://github.com/meetbill/butterfly/commit/dd4a214471b2a5057c77d8293ab4c30e4eb80cdf)
+
+
 ## [1.1.11] - 2021-03-17
 ### Changed
 - 服务：【五行】(1)baichuan 处理 msg 时改为直接处理 json 数据，而不是进行 urllib.urlencode 数据；(2)baichuan worker 添加 home_dir 属性，用于后期部署管理; (3)baichuan msg 添加 handle_worker 属性，标记此消息的处理 worker
