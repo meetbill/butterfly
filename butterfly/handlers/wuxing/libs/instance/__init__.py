@@ -25,6 +25,10 @@
         +-------+---------+------------+----------------+
         |item_id|item_type|item_default|item_description|
         +-------+---------+------------+----------------+
+
+# Version
+    version 1.0.2: 2021-05-15
+        创建 instance 时增加 instance_name 长度检查
 """
 from datetime import datetime
 import copy
@@ -41,8 +45,8 @@ from handlers.wuxing.libs import item
 from handlers.wuxing.libs.section import section_cache
 from handlers.wuxing.libs.instance import instance_cache
 
-__info = "wuxing"
-__version = "1.0.1"
+__info = "wuxing_instance"
+__version = "1.0.2"
 
 
 @funcattr.api
@@ -171,6 +175,9 @@ def instance_create(req, namespace, instance_name, section_name, section_version
     """
     isinstance(req, Request)
     instance_model = model.WuxingInstance
+
+    if len(instance_name) > model.MAX_INSTANCE_NAME_LENGTH:
+        return retstat.ERR_INSTANCE_NAME_IS_INVALID, {}, [(__info, __version)]
 
     if items_data is None:
         items_data = {}

@@ -26,7 +26,7 @@ from handlers.wuxing.libs import common_map
 from handlers.wuxing.libs.item import item_cache
 
 
-__info = "wuxing"
+__info = "wuxing_item"
 __version = "1.0.1"
 
 

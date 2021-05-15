@@ -19,6 +19,13 @@ from xlib.db.peewee import DoubleField
 from xlib.db.peewee import BooleanField
 import xlib.db
 
+# GLOBAL VARIABLE
+MAX_NAMESPACE_LENGTH = 16
+MAX_SECTION_NAME_LENGTH = 64
+MAX_SECTION_VERSION_LENGTH = 16
+MAX_INSTANCE_NAME_LENGTH = 64
+MAX_ITEM_NAME_LENGTH = 64
+
 
 # Define a model class
 class WuxingSection(xlib.db.BaseModel):

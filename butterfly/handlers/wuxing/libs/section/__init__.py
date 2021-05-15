@@ -25,6 +25,10 @@
         +-------+---------+------------+----------------+
         |item_id|item_type|item_default|item_description|
         +-------+---------+------------+----------------+
+
+# Version
+    version: 1.0.2 2021-05-15
+        创建 section 时增加 namespace, section_name, section_version 长度检查
 """
 import json
 import hashlib
@@ -41,8 +45,8 @@ from handlers.wuxing.libs import common_map
 from handlers.wuxing.libs.section import section_cache
 
 
-__info = "wuxing"
-__version = "1.0.1"
+__info = "wuxing_section"
+__version = "1.0.2"
 
 
 @funcattr.api
@@ -98,6 +102,16 @@ def section_create(req, namespace, section_name, section_version):
         section_version : (str) section 版本
     """
     isinstance(req, Request)
+
+    if len(namespace) > model.MAX_NAMESPACE_LENGTH:
+        return retstat.ERR_NAMESPACE_IS_INVALID, {}, [(__info, __version)]
+
+    if len(section_name) > model.MAX_SECTION_NAME_LENGTH:
+        return retstat.ERR_SECTION_NAME_IS_INVALID, {}, [(__info, __version)]
+
+    if len(section_version) > model.MAX_SECTION_VERSION_LENGTH:
+        return retstat.ERR_SECTION_VERSION_IS_INVALID, {}, [(__info, __version)]
+
     op_user = req.username
     section_template = "{}"
     md5 = hashlib.md5()
@@ -142,9 +156,12 @@ def section_item_add(req, namespace, section_name, section_version, item_name,
     op_user = req.username
     section_model = model.WuxingSection
 
+    if len(item_name) > model.MAX_ITEM_NAME_LENGTH:
+        return retstat.ERR_ITEM_NAME_IS_INVALID, {}, [(__info, __version)]
+
     item_prefix = item_name[:2]
     if item_prefix not in ["i|", "s|", "f|", "b|", "t|"]:
-        return retstat.ERR_SECTION_ITEM_TYPE_FAILED, {}, [(__info, __version)]
+        return retstat.ERR_SECTION_ITEM_TYPE_INVALID, {}, [(__info, __version)]
 
     item_type = common_map.item_type_map[item_prefix]
 

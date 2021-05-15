@@ -56,6 +56,12 @@ def test_instance_create():
         req, namespace, instance_name, section_name, section_version, items_data)
     assert stat == retstat.OK
 
+    # ERR_INSTANCE_NAME_IS_INVALID
+    instance_name = "1234567890" * 7
+    stat, data, header_list = wuxing.instance_create(
+        req, namespace, instance_name, section_name, section_version, items_data)
+    assert stat == retstat.ERR_INSTANCE_NAME_IS_INVALID
+
 
 def test_instance_list():
     """

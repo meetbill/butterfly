@@ -67,11 +67,26 @@ def test_section_create():
     stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
     assert stat == retstat.OK
 
-    # ERR_SECTION_CREATE_FAILED
+    # ERR_NAMESPACE_IS_INVALID
     # namespace 超出长度
     namespace = "12345678901234567"
     stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
-    assert stat == retstat.ERR_SECTION_CREATE_FAILED
+    assert stat == retstat.ERR_NAMESPACE_IS_INVALID
+
+    # ERR_SECTION_NAME_IS_INVALID
+    # namespace 超出长度
+    namespace = "1234567890123456"
+    section_name = "1234567890" * 7
+    stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
+    assert stat == retstat.ERR_SECTION_NAME_IS_INVALID
+
+    # ERR_SECTION_VERSION_IS_INVALID
+    # namespace 超出长度
+    namespace = "1234567890123456"
+    section_name = "1234567890"
+    section_version = "12345678901234567"
+    stat, data, header_list = wuxing.section_create(req, namespace, section_name, section_version)
+    assert stat == retstat.ERR_SECTION_VERSION_IS_INVALID
 
 
 def test_section_item_add():
@@ -188,6 +203,22 @@ def test_section_item_add():
                                                           item["item_name"], item["item_default"], item["item_description"])
 
         assert stat == retstat.OK
+
+    # ERR_ITEM_NAME_IS_INVALID
+    item_name = "1234567890" * 7
+    item_default = "0"
+    item_description = "ERR_ITEM_NAME_IS_INVALID"
+    stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
+                                                      item_name, item_default, item_description)
+    assert stat == retstat.ERR_ITEM_NAME_IS_INVALID
+
+    # ERR_SECTION_ITEM_TYPE_INVALID
+    item_name = "1234567890"
+    item_default = "0"
+    item_description = "ERR_SECTION_ITEM_TYPE_INVALID"
+    stat, data, header_list = wuxing.section_item_add(req, namespace, section_name, section_version,
+                                                      item_name, item_default, item_description)
+    assert stat == retstat.ERR_SECTION_ITEM_TYPE_INVALID
 
 
 def test_section_enable():
