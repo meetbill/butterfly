@@ -38,7 +38,8 @@ class LoggerBase(object):
         _fd                     : Log file fd
 
     """
-    FILE_SIZE_CHECK_LINES = 1000
+    # One line record about 200 bytes. 10000 records, about 2MB
+    FILE_SIZE_CHECK_LINES = 10000
 
     def __init__(self, path, is_day_rolling, size_limit, batch_write):
         file_dir = os.path.dirname(path)
@@ -56,6 +57,7 @@ class LoggerBase(object):
         self._tm = None
         self._writed_lines = 0
         self._fd = None
+        self._lock = threading.Lock()
 
     def _reopen_file(self, mode):
         """
@@ -69,6 +71,7 @@ class LoggerBase(object):
         """
         if self._fd is not None:
             os.close(self._fd)
+
         self._fd = os.open(self._curpath, mode, 0o644)
 
     def _checkfile(self, now):
@@ -91,10 +94,14 @@ class LoggerBase(object):
                 self._reopen_file(os.O_CREAT | os.O_APPEND | os.O_WRONLY)
 
         if self._size_limit and self._writed_lines > self.FILE_SIZE_CHECK_LINES:
-            if os.fstat(self._fd).st_size > self._size_limit:
-                self._reopen_file(os.O_CREAT | os.O_APPEND |
-                                  os.O_WRONLY | os.O_TRUNC)
-                self._writed_lines = 0
+            self._lock.acquire()
+            try:
+                if os.fstat(self._fd).st_size > self._size_limit:
+                    self._reopen_file(os.O_CREAT | os.O_APPEND |
+                                      os.O_WRONLY | os.O_TRUNC)
+                    self._writed_lines = 0
+            finally:
+                self._lock.release()
 
     def log(self, logtype, info=""):
         """
