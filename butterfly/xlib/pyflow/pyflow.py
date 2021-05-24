@@ -1009,12 +1009,6 @@ class CommandTaskRunner(BaseTaskRunner):
 
         return taskExitMsg
 
-
-class LocalTaskRunner(CommandTaskRunner):
-    """
-    Local task runner
-    """
-
     def getFullCmd(self):
         """
         get full cmd
@@ -1128,7 +1122,7 @@ class TaskManager(StoppableThread):
 
         TaskRunner = None
         if param.mode == "local" or payload.isCmdMakePath:
-            TaskRunner = LocalTaskRunner
+            TaskRunner = CommandTaskRunner
         else:
             raise Exception("Can't support mode: '%s'" % (param.mode))
 
