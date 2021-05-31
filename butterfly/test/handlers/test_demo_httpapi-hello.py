@@ -11,15 +11,15 @@
 """
 
 
-from handlers.demo_httpapi import hello
-from xlib import httpgateway
+#from handlers.demo_httpapi import hello
+#from xlib import httpgateway
 
-def test_hello():
-    # 生成 req
-    reqid="test_hello"
-    ip = "127.0.0.1"
-    wsgienv = {}
-    req = httpgateway.Request(reqid, wsgienv, ip)
+#def test_hello():
+#    # 生成 req
+#    reqid="test_hello"
+#    ip = "127.0.0.1"
+#    wsgienv = {}
+#    req = httpgateway.Request(reqid, wsgienv, ip)
 
     # OK
-    assert hello(req, "test_info") == (200, {'stat': 'OK', 'str_info': 'test_info'}, [('demo', '1.0.1')])
+#    assert hello(req, "test_info") == (200, {'stat': 'OK', 'str_info': 'test_info'}, [('demo', '1.0.1')])

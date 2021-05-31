@@ -60,6 +60,19 @@ env:Python 2.7
 
 # 2 五分钟 Butterfly 体验指南
 
+> 流程简述
+```
+(1) 下载 butterfly 包
+(2) 编写 handler
+   开发人员主要就是编写 {butterfly_project}/handlers/{app}/{handler}
+   * {app} 是 Python package, 即 Linux 系统上的 目录
+   * {handler} 是 Python function
+(3) 测试 handler
+   python test_handler.py /{app}/{handler} param1 param2 ...
+(4) 启动 butterfly 提供 web 服务
+   curl -v "http://{IP}:{PORT}/{app}/{handler}?{param1}=value1&..."
+```
+
 ## 2.1 五分钟体验之部署 Butterfly（预计 1 分钟）
 > 部署
 ```
@@ -251,13 +264,13 @@ Butterfly       |                   |      |          |
                                     +-------------------------+
 ```
 
-通用服务能力(app)：
+通用服务能力 (app)：
 
-> * 【如期】而至---定时调度服务
-> * 【五行】化一---数据管理服务
-> * 【百川】归海---消息队列服务
+> * 【如期】而至 --- 定时调度服务
+> * 【五行】化一 --- 数据管理服务
+> * 【百川】归海 --- 消息队列服务
 
-butterfly 框架基础能力:
+butterfly 框架基础能力：
 
 > * 工作流
 > * 状态机
@@ -291,7 +304,7 @@ butterfly 框架基础能力:
 
 > 备注：
 ```
-handlers 目录下 APP, 均可移除，具体操作就是将对应 app 目录进行删除
+可将 examples 下 app 拷贝到 {butterfly_project}/handlers/ 下
 ```
 ## 4.3 报告错误
 
