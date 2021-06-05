@@ -8,6 +8,7 @@
 import os
 import re
 import json
+import logging
 import traceback
 
 # schedulers
@@ -36,14 +37,13 @@ from xlib import db
 from xlib.mq import Queue
 
 
-def run_cmd(job_id, job_name, cmd, errlog):
+def run_cmd(job_id, job_name, cmd):
     """
     执行本地命令
     Args:
         job_id  : (Str) job_id
         job_name: (Str) job_name
         cmd     : (Str) "python/bash file_path args"
-        errlog  : (object) errlog logger
     """
     # 设置 1 小时超时
     cmd_result = shell_util.run(cmd, timeout=3600)
@@ -60,11 +60,11 @@ def run_cmd(job_id, job_name, cmd, errlog):
     try:
         RuqiJobsHistory.create(**values)
     except BaseException:
-        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+        logging.error("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
 
-def run_http(job_id, job_name, cmd, errlog):
+def run_http(job_id, job_name, cmd):
     """
     执行 HTTP 请求
     Args:
@@ -73,7 +73,6 @@ def run_http(job_id, job_name, cmd, errlog):
         cmd     : (Str) 'python/bash file_path args'
                 : 'http://127.0.0.1:8585/demo_api/hello#{"str_info":"hello"}'
                 : 'http://127.0.0.1:8585/demo_api/ping'
-        errlog  : (object) errlog logger
     """
     # 请求体数据
     data = {}
@@ -102,11 +101,11 @@ def run_http(job_id, job_name, cmd, errlog):
     try:
         RuqiJobsHistory.create(**values)
     except BaseException:
-        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+        logging.error("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
 
-def run_mq(job_id, job_name, cmd, errlog):
+def run_mq(job_id, job_name, cmd):
     """
     执行消息到消息队列
     Args:
@@ -116,7 +115,6 @@ def run_mq(job_id, job_name, cmd, errlog):
                 : '/demo_api/ping'
                 : '/demo_api/hello#{"str_info":"hello"}'
                 : '/demo_api/hello#{"str_info":"hello"}#ceshi_msg_id'
-        errlog  : (object) errlog logger
     """
     # cmd
     cmd_list = cmd.split("#")
@@ -144,7 +142,7 @@ def run_mq(job_id, job_name, cmd, errlog):
         cmd_is_success = True
     except BaseException:
         cmd_is_success = False
-        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+        logging.error("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
     values = {
@@ -161,7 +159,7 @@ def run_mq(job_id, job_name, cmd, errlog):
     try:
         RuqiJobsHistory.create(**values)
     except BaseException:
-        errlog.log("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
+        logging.error("[module=run_scheduler_job  job_id=job_id exception_info={exception_info}]".format(
             job_id=job_id, exception_info=traceback.format_exc()))
 
 
@@ -359,7 +357,6 @@ class Scheduler(object):
         kwargs["cmd"] = cmd
         kwargs["job_id"] = job_id
         kwargs["job_name"] = job_name
-        kwargs["errlog"] = self._errlog
 
         ruqi_trigger = triggers_map[job_trigger](rule)
         self._scheduler.add_job(
@@ -617,7 +614,6 @@ class Scheduler(object):
         kwargs["cmd"] = cmd
         kwargs["job_id"] = job_id
         kwargs["job_name"] = job_name
-        kwargs["errlog"] = self._errlog
 
         ruqi_trigger = triggers_map[job_trigger](rule)
         self._scheduler.modify_job(
