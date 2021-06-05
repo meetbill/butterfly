@@ -192,10 +192,7 @@ class MySQLJobStore(BaseJobStore):
             'job_trigger': job_trigger,
             'job_rule': job_rule
         }
-        try:
-            self.jobs_t.insert(**values).execute()
-        except BaseException:
-            raise ConflictingIdError(job.id)
+        self.jobs_t.insert(**values).execute()
 
     def update_job(self, job, extra_update=False):
         """
