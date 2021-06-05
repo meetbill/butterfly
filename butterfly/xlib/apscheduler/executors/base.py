@@ -148,8 +148,10 @@ def run_job(job, jobstore_alias, run_times, logger_name):
             events.append(JobExecutionEvent(EVENT_JOB_ERROR, job.id, jobstore_alias, run_time,
                                             exception=exc, traceback=formatted_tb))
             logger.error(('[module=apscheduler sub_module=executor method=execute_job '
-                '{job} exe_status=FAILURE exe_traceback={exe_traceback} ]'.format(
-                job=job, exe_traceback=formatted_tb)))
+                '{job} exe_status=FAILURE '
+                'job_kwargs={job_kwargs} '
+                'exe_traceback={exe_traceback} ]'.format(
+                job=job, job_kwargs=str(job.kwargs), exe_traceback=formatted_tb)))
 
             # This is to prevent cyclic references that would lead to memory leaks
             if six.PY2:
@@ -163,6 +165,8 @@ def run_job(job, jobstore_alias, run_times, logger_name):
             events.append(JobExecutionEvent(EVENT_JOB_EXECUTED, job.id, jobstore_alias, run_time,
                                             retval=retval))
             logger.info(('[module=apscheduler sub_module=executor method=execute_job '
-                '{job} exe_status=SUCCESS ]'.format(job=job)))
+                '{job} exe_status=SUCCESS '
+                'job_kwargs={job_kwargs} '
+                ']'.format(job=job, job_kwargs=str(job.kwargs))))
 
     return events
