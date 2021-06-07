@@ -29,6 +29,7 @@ from xlib.apscheduler import util as apscheduler_util
 
 from xlib.util import shell_util
 from xlib.util import http_util
+from xlib.util import host_util
 from xlib.db import peewee
 from xlib.db import shortcuts
 from conf import config
@@ -54,7 +55,7 @@ def run_cmd(job_id, job_name, cmd):
         "cmd_is_success": cmd_result.success(),
         # 设置的在数据库中最多存储 4096 字节
         "cmd_output": cmd_result.output()[:4096],
-        "scheduler_name": config.scheduler_name,
+        "scheduler_name": host_util.server_name,
         "cmd_cost": float(cmd_result.cost)
     }
     try:
@@ -95,7 +96,7 @@ def run_http(job_id, job_name, cmd):
         # 设置的在数据库中最多存储 4096 字节
         # http_util 默认会将 json 转为 dict
         "cmd_output": str(cmd_result.output())[:4096],
-        "scheduler_name": config.scheduler_name,
+        "scheduler_name": host_util.server_name,
         "cmd_cost": float(cmd_result.cost)
     }
     try:
@@ -153,7 +154,7 @@ def run_mq(job_id, job_name, cmd):
         # 设置的在数据库中最多存储 4096 字节
         # http_util 默认会将 json 转为 dict
         "cmd_output": msg_id,
-        "scheduler_name": config.scheduler_name,
+        "scheduler_name": host_util.server_name,
         "cmd_cost": 0
     }
     try:

@@ -56,5 +56,4 @@ SECRET_KEY = None               # If it is None, a key will be randomly generate
 JWT_TOKEN_TTL = 28800           # default 8 hours
 
 # Scheduler
-scheduler_name = "Scheduler1"   # Scheduler name, Used to perform historical queries
 scheduler_store = "memory"      # ("mysql"/"memory")
