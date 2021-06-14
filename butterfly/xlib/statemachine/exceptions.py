@@ -75,7 +75,7 @@ class TransitionNotAllowed(StateMachineError):
         super(TransitionNotAllowed, self).__init__(msg)
 
 
-class TransitionNotAllowedOnExitCheckFaild(StateMachineError):
+class TransitionNotAllowedOnExitCheckFailed(StateMachineError):
     """
     The transition can't run from the current state.
 
@@ -87,7 +87,7 @@ class TransitionNotAllowedOnExitCheckFaild(StateMachineError):
         msg: (str)
         """
         msg = _(msg)
-        super(TransitionNotAllowedOnExitCheckFaild, self).__init__(msg)
+        super(TransitionNotAllowedOnExitCheckFailed, self).__init__(msg)
 
 
 class MultipleStatesFound(StateMachineError):
