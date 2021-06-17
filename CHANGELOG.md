@@ -3,6 +3,24 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.13] - 2021-06-17
+### Changed
+> * 服务: 【五行】
+>   * 增加 wuxing parameter length check [commit](https://github.com/meetbill/butterfly/commit/1e830331c76b7fb5a2eb7f9a2c18f15dfea124ef)
+> * 服务: 【如期】
+>   * 定时任务执行日志添加参数信息 [commit](https://github.com/meetbill/butterfly/commit/c082e48b681561a891de9896c3b29fd71ac8bd28)
+>   * 去掉 ruqi scheduler_name 配置，改为使用 host_util.server_name 作为 scheduler heduler_name [commit](https://github.com/meetbill/butterfly/commit/2d53fa9f81577d420e1e4aa2785fb4d48f514ea0)
+> * 服务:
+>   * 将 handlers 目录下 handler 移动至 examples 目录下 [commit](https://github.com/meetbill/butterfly/commit/320e710e01fc35d17760212e27de845b06339a50)
+
+### Fixed
+> * 日志
+>   *  修复轮转 acc.log 等日志时线程不安全问题 [commit](https://github.com/meetbill/butterfly/commit/b4ac5da3d600faeb6852bdcc6290f4665b94203a)
+
+### Added
+> 组件
+>   * add pluginbase, 作用: (1)管理 workflow, 通过 name 查找特定 workflow class, (2)小蝶 ChatOps 中通过 name 查找对应 action 函数 [commit](https://github.com/meetbill/butterfly/commit/b334cbbecbdb3fc89b18eb2d9ed5c82d99a1a495)
+
 ## [1.1.12] - 2021-05-10
 ### Changed
 > * 服务：【五行】
