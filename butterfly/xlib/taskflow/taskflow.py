@@ -25,7 +25,6 @@ class WorkflowRunner(object):
     L{workflow()<WorkflowRunner.workflow>} method to define the
     tasks that need to be run and their dependencies.
     """
-
     def create(self, job_reqid, job_namespace, job_name, job_extra=None, job_timeout=None):
         """
         Create workflow
@@ -172,11 +171,14 @@ def is_job_end(job_id):
         except BaseException:
             # 设置任务失败
             task.go_failure()
-            log_msg = "job_id={job_id} task_id={task_id} err_info={err_info}".format(
+            log_msg = ("job_id={job_id} task_id={task_id} task_reqid={task_reqid} task_cmd={task_cmd} "
+                    "err_info={err_info}".format(
                 job_id=record_dict["job_id"],
                 task_id=record_dict["task_id"],
+                task_reqid=record_dict["task_reqid"],
+                task_cmd=record_dict["task_cmd"],
                 err_info=traceback.format_exc()
-            )
+            ))
             logging.error(log_msg)
 
     if task_status_dict["failed_count"] > 0:
