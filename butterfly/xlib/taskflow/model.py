@@ -75,6 +75,8 @@ class Task(xlib.db.BaseModel):
     task_reqid = CharField(max_length=64, default="", index=True)
     # 请求的 handler
     task_cmd = CharField(max_length=128, index=True)
+    # 参数
+    task_params = CharField(max_length=1024, null=True)
     # 参数: 即 arg1,arg2
     task_requires = CharField(max_length=1024, default="")
     # 结果: 即 result1,result2

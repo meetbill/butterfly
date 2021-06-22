@@ -2,10 +2,13 @@
 """
 # Description:
     workflow
+
+Version: 1.0.1: 2021-06-22
 """
 import os
 import json
 import logging
+import traceback
 from functools import partial
 
 from conf import config
@@ -26,6 +29,7 @@ __info = "xingqiao"
 __version = "1.0.1"
 
 baichuan_connection = db.my_caches["baichuan"]
+log = logging.getLogger("butterfly")
 
 #------------------------------------------------plugin
 here = os.path.abspath(os.path.dirname(__file__))
@@ -43,7 +47,7 @@ class Application(object):
                 plugin = self.source.load_plugin(plugin_name)
                 plugin.setup(self)
             except:
-                logging.error("module=xingqiao plugin={plugin} err_info=load_plugin failed".format(plugin=plugin_name))
+                log.error("module=xingqiao plugin={plugin} err_info=load_plugin failed".format(plugin=plugin_name))
 
     def register_formatter(self, name, formatter):
         """A function a plugin can use to register a formatter."""
@@ -67,9 +71,14 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
         return "ERR_JOB_EXTRA_INVALID", {}, [(__info, __version)]
 
     workflow_class = plugin_app.formatters[job_type]
-    wflow = workflow_class()
-    job_id = wflow.create(job_reqid=req.reqid, job_namespace=job_namespace, job_name=job_name,
-            job_extra=job_extra, job_timeout=job_timeout)
+    try:
+        wflow = workflow_class()
+        job_id = wflow.create(job_reqid=req.reqid, job_namespace=job_namespace, job_name=job_name,
+                job_extra=job_extra, job_timeout=job_timeout)
+    except:
+        log.error(traceback.format_exc())
+        return "ERR_JOB_CREATE_FAILED", {}, [(__info, __version)]
+
     job_action(req, job_id)
     return retstat.OK, {"job_id": job_id}, [(__info, __version)]
 

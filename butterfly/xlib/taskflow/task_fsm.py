@@ -98,6 +98,12 @@ class TaskMachine(StateMachine):
         self.task_requires_dict = {}
         all_taskdata_key = "all_taskdata"
 
+        # 检查是否已设置 params, 若有，则直接跳过
+        if self.model.task_params is not None:
+            params_dict = json.loads(self.model.task_params)
+            self.task_requires_dict = params_dict
+            return
+
         # 无需传参
         if not self.model.task_requires:
             return

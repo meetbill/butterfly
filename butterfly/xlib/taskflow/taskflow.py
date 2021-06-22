@@ -64,6 +64,7 @@ class WorkflowRunner(object):
     def add_task(self,
                  label,
                  cmd,
+                 params=None,
                  requires=None,
                  provides=None,
                  dependencies=None,
@@ -86,6 +87,9 @@ class WorkflowRunner(object):
             retrymax: (int).
             is_save: (bool) Save the results to the job at the same time.
         """
+        if params is not None:
+            assert isinstance(params, dict)
+            params = json.dumps(params)
 
         if requires is None:
             requires_str = ""
@@ -112,6 +116,7 @@ class WorkflowRunner(object):
             job_id=self._job_id,
             task_label=label,
             task_cmd=cmd,
+            task_params=params,
             task_requires=requires_str,
             task_provides=provides_str,
             task_dependencies=dependencies_str,
