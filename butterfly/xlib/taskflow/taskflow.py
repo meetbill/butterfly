@@ -25,6 +25,7 @@ class WorkflowRunner(object):
     L{workflow()<WorkflowRunner.workflow>} method to define the
     tasks that need to be run and their dependencies.
     """
+
     def create(self, job_reqid, job_namespace, job_name, job_extra=None, job_timeout=None):
         """
         Create workflow
@@ -35,6 +36,7 @@ class WorkflowRunner(object):
         if job_timeout is None:
             job_timeout = 0
 
+        self.job_extra = job_extra
         job_extra_json = json.dumps(job_extra)
 
         job_id = model.Job.insert(
