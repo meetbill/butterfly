@@ -339,7 +339,7 @@ class Worker(object):
 
         One heartbeat per minute
         """
-        timeout = 120
+        timeout = 600
         self.connection.expire(self.key, timeout)
         self.connection.hset(self.key, 'last_heartbeat', utcformat(utcnow()))
 
