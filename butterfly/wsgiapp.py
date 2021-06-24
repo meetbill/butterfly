@@ -70,7 +70,8 @@ if "baichuan" in db.my_caches.keys():
     manager.original_scheduler.add_job(
         func=worker.heartbeat,
         trigger=interval_trigger,
-        jobstore="memory"
+        jobstore="memory",
+        misfire_grace_time=30,
     )
 
     # 设置每 15 分钟进行删除无效 worker
@@ -80,7 +81,8 @@ if "baichuan" in db.my_caches.keys():
     manager.original_scheduler.add_job(
         func=worker.clean_registries,
         trigger=interval_trigger,
-        jobstore="memory"
+        jobstore="memory",
+        misfire_grace_time=30,
     )
 
     # 启动单独线程进行单独拉取队列中任务
