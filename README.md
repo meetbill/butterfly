@@ -1,9 +1,6 @@
 # butterfly
 
 <div align=center><img src="https://github.com/meetbill/butterfly/blob/master/images/butterfly.png" width="350"/></div>
-
-蝴蝶（轻量化 Web 框架）如同蝴蝶一样，此框架小而美，简单可依赖
-
 ```
     __          __  __            ______
    / /_  __  __/ /_/ /____  _____/ __/ /_  __
@@ -12,11 +9,13 @@
 /_.___/\__,_/\__/\__/\___/_/  /_/ /_/\__, /
                                     /____/
 ```
+
 <!-- vim-markdown-toc GFM -->
 
 * [1 简介](#1-简介)
-    * [1.1 环境](#11-环境)
-    * [1.2 特性](#12-特性)
+    * [1.1 介绍](#11-介绍)
+    * [1.2 环境](#12-环境)
+    * [1.3 特性](#13-特性)
 * [2 五分钟 Butterfly 体验指南](#2-五分钟-butterfly-体验指南)
     * [2.1 五分钟体验之部署 Butterfly（预计 1 分钟）](#21-五分钟体验之部署-butterfly预计-1-分钟)
     * [2.2 五分钟体验之编写 handler （预计 3 分钟）](#22-五分钟体验之编写-handler-预计-3-分钟)
@@ -35,12 +34,20 @@
 <!-- vim-markdown-toc -->
 
 # 1 简介
-## 1.1 环境
+## 1.1 介绍
+
+Butterfly（轻量化 WSGI web 应用程序框架）如同蝴蝶一样，小而美，简单可依赖。目的是让入门变得简单快捷，能够扩展到复杂的应用程序。
+
+> * 接入：普通 Python 函数可快速升级为 butterfly handler
+> * 异步：开启【百川】，butterfly handler 可自动成为消息队列消费者，异步处理任务
+> * 编排：使用【星桥】，设置 butterfly handler 依赖，有序编排 handler
+
+## 1.2 环境
 
 ```
 env:Python 2.7
 ```
-## 1.2 特性
+## 1.3 特性
 
 > * 快速开发
 >   * (1) 无需配置路由：根据 handlers package 下目录结构自动加载路由（目前不支持动态路由）
