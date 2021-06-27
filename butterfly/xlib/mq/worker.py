@@ -79,7 +79,7 @@ class Worker(object):
         workers = []
         for key in worker_keys:
             workers.append(cls.find_by_key(as_text(key), connection=connection,
-                msg_class=msg_class, queue_class=queue_class))
+                                           msg_class=msg_class, queue_class=queue_class))
 
         return compact(workers)
 
@@ -560,6 +560,11 @@ class Worker(object):
             # content is a set
             msg._result = content[0]
 
+            # set cost
+            cost = time.time() - req.init_tm
+            cost_str = "%.6f" % cost
+            msg.set_cost(cost_str)
+
             if req.log_ret_code == "OK":
                 self.log.info('%s: %s (%s)', msg.origin, 'Msg OK', msg.id)
                 self.handle_msg_success(msg=msg, queue=queue, started_msg_registry=started_msg_registry)
@@ -567,6 +572,7 @@ class Worker(object):
                 self.log.error('%s: %s (%s)', msg.origin, 'Msg ERROR', msg.id)
                 exc_string = self._get_safe_exception_string(req.error_detail)
                 self.handle_msg_failure(msg=msg, exc_string=exc_string, started_msg_registry=started_msg_registry)
+
         except BaseException:
             self.log.error('worker exe msg exception {exception_info}'.format(exception_info=traceback.format_exc()))
             return False

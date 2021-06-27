@@ -115,6 +115,13 @@ class Msg(object):
         self.handle_worker = worker_name
         self.connection.hset(self.key, 'handle_worker', self.handle_worker)
 
+    def set_cost(self, cost):
+        """
+        set cost
+        """
+        self.cost = cost
+        self.connection.hset(self.key, 'cost', self.cost)
+
     @property
     def is_finished(self):
         return self.get_status() == MsgStatus.FINISHED
@@ -169,9 +176,11 @@ class Msg(object):
         self.ttl = None
         self._status = None
         self.meta = {}
+        # --------------------------------custom
         hostname = socket.gethostname()
         self.ip = host_util.get_ip_by_host(hostname)
         self.handle_worker = ""
+        self.cost = "0"
 
     def __repr__(self):  # noqa  # pragma: no cover
         return '{0}({1!r}, enqueued_at={2!r})'.format(self.__class__.__name__,
@@ -267,6 +276,7 @@ class Msg(object):
         self.ttl = int(obj.get('ttl')) if obj.get('ttl') else None
         self.meta = unpickle(obj.get('meta')) if obj.get('meta') else {}
         self.handle_worker = as_text(obj.get('handle_worker'))
+        self.cost = as_text(obj.get('cost'))
 
         raw_exc_info = obj.get('exc_info')
         if raw_exc_info:
@@ -332,6 +342,7 @@ class Msg(object):
             obj['ttl'] = self.ttl
         obj['ip'] = self.ip
         obj['handle_worker'] = self.handle_worker
+        obj['cost'] = self.cost
 
         return obj
 
