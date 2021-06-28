@@ -24,11 +24,10 @@ import xlib.db
 class Job(xlib.db.BaseModel):
     """
     Job 表结构
-    job_status: waiting --> started --> finished
-                                |
-                                V
-                              failed
-               同步 job 状态从 started 开始，异步 job 状态从 waiting 开始
+    job_status: started --> finished
+                    |
+                    V
+                  failed
     """
     # If none of the fields are initialized with primary_key=True,
     # an auto-incrementing primary key will automatically be created and named 'id'.
@@ -60,10 +59,10 @@ class Task(xlib.db.BaseModel):
     """
     Task 表结构
 
-    task_status: waiting --> started --> finished
-                                |
-                                V
-                              failed
+    task_status: waiting --> pending --> started --> finished
+                    |           |           |
+                    |            \          V
+                    +--------------+----->failed
     """
     # task 唯一 id, 创建时生成
     task_id = PrimaryKeyField()
@@ -86,7 +85,7 @@ class Task(xlib.db.BaseModel):
     # 状态
     task_status = CharField(max_length=64, default="waiting", index=True)
     # 耗时
-    task_cost = IntegerField(default=0, index=True)
+    task_cost = DoubleField(default=0, index=True)
     # 额外信息
     task_extra = CharField(max_length=2048, default="{}")
     # 是否保存数据到 job 中

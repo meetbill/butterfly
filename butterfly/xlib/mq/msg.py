@@ -157,8 +157,8 @@ class Msg(object):
         self.connection = connection
         self._id = id
         self.created_at = utcnow()
-        self.data = UNEVALUATED
-        self._func_name = UNEVALUATED
+        # msg data, this is a json
+        self.data = ""
         self.description = None
         self.origin = None
         self.enqueued_at = None

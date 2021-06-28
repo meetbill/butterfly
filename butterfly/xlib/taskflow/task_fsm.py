@@ -8,8 +8,9 @@
 # Description:
 
 """
-import logging
 import json
+import logging
+import traceback
 
 from xlib.statemachine import StateMachine
 from xlib.statemachine import State
@@ -19,6 +20,7 @@ from xlib.db import shortcuts
 from xlib import db
 from xlib.mq import Queue
 from xlib.mq import msg
+from xlib.mq import exceptions as mq_exceptions
 
 log = logging.getLogger("butterfly")
 baichuan_connection = db.my_caches["baichuan"]
@@ -173,13 +175,24 @@ class TaskMachine(StateMachine):
         else:
             provides_list = []
 
-        if not msg.Msg.exists(msg_id, baichuan_connection):
+        try:
+            msg_obj = msg.Msg.fetch(msg_id, connection=baichuan_connection)
+        except mq_exceptions.NoSuchMsgError:
             log_msg = "task_id={task_id} task_reqid={task_reqid} msg_status={msg_status} err_info={err_info}".format(
                 task_id=self.model.task_id, task_reqid=msg_id, msg_status=msg_status, err_info="msg not exists")
             raise exceptions.TaskError(log_msg)
+        except BaseException:
+            logging.warning(
+                "msg_id={msg_id} err_info={err_info}".format(
+                    msg_id=msg_id,
+                    err_info=traceback.format_exc()))
+            raise exceptions.TaskWaiting(log_msg)
 
-        msg_obj = msg.Msg(msg_id, baichuan_connection)
+        # status
         msg_status = msg_obj.get_status()
+        # cost
+        self.model.task_cost = float(getattr(msg_obj, "cost", "-1"))
+
         if msg_status == "failed":
             log_msg = "task_id={task_id} task_reqid={task_reqid} msg_status={msg_status} err_info={err_info}".format(
                 task_id=self.model.task_id, task_reqid=msg_id, msg_status=msg_status, err_info="msg exe failed")

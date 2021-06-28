@@ -164,6 +164,8 @@ def write_dot_graph(job_id, filename="./graph.dot"):
                 tailNodes.remove(ptid)
 
         taskInfo[tid].runState = runState
+        taskInfo[tid].task_cost = task["task_cost"]
+        taskInfo[tid].task_id = task["task_id"]
 
     with open(filename, "w") as dotFp:
         dotFp.write("// Task graph from pyflow object\n")
@@ -182,6 +184,9 @@ def write_dot_graph(job_id, filename="./graph.dot"):
             sym = "n%i" % i
             labelToSym[tid] = sym
             attrib1 = DotConfig.getRunstateDotAttrib(taskInfo[tid].runState)
+            # add taskid and cost
+            label = "{label}\\ntaskid={taskid}\\ncost={cost}".format(label=label, taskid=taskInfo[tid].task_id,
+                                                                     cost=taskInfo[tid].task_cost)
             namespaceGraph[namespace] += "\t\t%s [label=\"%s\"%s];\n" % (sym, label, attrib1)
 
         for (namespace, label) in addOrder:
@@ -198,6 +203,7 @@ def write_dot_graph(job_id, filename="./graph.dot"):
                 dotFp.write("\t\tlabel = \"%s\";\n" % (ns))
             else:
                 dotFp.write("\t\tlabel = \"%s\";\n" % ("workflow"))
+
             dotFp.write(namespaceGraph[ns])
             dotFp.write("\t\tbegin%i [label=\"begin\" shape=diamond];\n" % (i))
             dotFp.write("\t\tend%i [label=\"end\" shape=diamond];\n" % (i))
