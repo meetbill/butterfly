@@ -31,10 +31,11 @@ __version = "1.0.1"
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
 
-#------------------------------------------------plugin
+# ------------------------------------------------plugin
 here = os.path.abspath(os.path.dirname(__file__))
 get_path = partial(os.path.join, here)
 plugin_base = pluginbase.PluginBase(package='plugin_bus')
+
 
 class Application(object):
     """Represents a simple example application."""
@@ -46,7 +47,7 @@ class Application(object):
             try:
                 plugin = self.source.load_plugin(plugin_name)
                 plugin.setup(self)
-            except:
+            except BaseException:
                 log.error("module=xingqiao plugin={plugin} err_info=load_plugin failed".format(plugin=plugin_name))
 
     def register_formatter(self, name, formatter):
@@ -73,9 +74,9 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
     workflow_class = plugin_app.formatters[job_type]
     try:
         wflow = workflow_class()
-        job_id = wflow.create(job_reqid=req.reqid, job_namespace=job_namespace, job_name=job_name,
-                job_extra=job_extra, job_timeout=job_timeout)
-    except:
+        job_id = wflow.create(job_reqid=req.reqid, job_namespace=job_namespace, job_name=job_name, job_type=job_type,
+                              job_extra=job_extra, job_timeout=job_timeout)
+    except BaseException:
         log.error(traceback.format_exc())
         return "ERR_JOB_CREATE_FAILED", {}, [(__info, __version)]
 
@@ -94,15 +95,15 @@ def job_action(req, job_id):
         params = {}
         params["job_id"] = job_id
         params_json = json.dumps(params)
-        mq_queue=Queue("/xingqiao/job_action", connection=baichuan_connection)
-        msg_obj=mq_queue.enqueue(params_json)
-        msg_id= msg_obj.id
-    return retstat.OK, {"job_id": job_id, "msg_id":msg_id, "task_status": task_status_dict}, [(__info, __version)]
+        mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
+        msg_obj = mq_queue.enqueue(params_json)
+        msg_id = msg_obj.id
+    return retstat.OK, {"job_id": job_id, "msg_id": msg_id, "task_status": task_status_dict}, [(__info, __version)]
 
 
 @funcattr.api
 def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
-              job_status=None, job_type=None, job_retcode=None, page_index=1, page_size=10):
+              job_status=None, job_type=None, ret_stat=None, page_index=1, page_size=10):
     """
     Args:
         state       : (str) job 状态
@@ -122,8 +123,8 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
                         'c_time': datetime.datetime(2021, 4, 11, 16, 27, 26),
                         'u_time': datetime.datetime(2021, 4, 11, 16, 27, 27),
                         'job_cost': 1.06245994567871,
-                        'job_type': u'HelloWorkflow',
-                        'job_retcode': 1,
+                        'job_type': u'ping',
+                        'ret_stat': 'OK',
                         'job_name': u'ceshi',
                         'job_extra': u'{}'
                     }
@@ -154,8 +155,8 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
     if job_type is not None:
         expressions.append(peewee.NodeList((model.Job.job_type, peewee.SQL('='), job_type)))
 
-    if job_retcode is not None:
-        expressions.append(peewee.NodeList((model.Job.job_retcode, peewee.SQL('='), job_retcode)))
+    if ret_stat is not None:
+        expressions.append(peewee.NodeList((model.Job.ret_stat, peewee.SQL('='), ret_stat)))
 
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
@@ -185,8 +186,8 @@ def get_job_detail(req, job_id):
                 'c_time': datetime.datetime(2021, 4, 11, 17, 31, 59),
                 'u_time': datetime.datetime(2021, 4, 11, 17, 32, 4),
                 'job_cost': 5.63627195358276,
-                'job_type': u'HelloWorkflow',
-                'job_retcode': 1,
+                'job_type': u'ping',
+                'ret_stat': u'OK',
                 'job_name': u'ceshi',
                 'job_extra': u'{}'
             }

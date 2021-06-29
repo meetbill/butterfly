@@ -10,6 +10,7 @@
 """
 from xlib.taskflow.taskflow import WorkflowRunner
 
+
 class Ping(WorkflowRunner):
     """
     a workflow is defined by overloading the WorkflowRunner.workflow() method:
@@ -22,6 +23,7 @@ class Ping(WorkflowRunner):
         self.add_task("task1", "/demo_api/ping")
         # 通过 dependencies 描述依赖关系
         self.add_task("task2", "/demo_api/ping", dependencies=["task1"])
+
 
 def setup(app):
     """
