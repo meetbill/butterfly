@@ -137,35 +137,47 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
     data = {}
     data_list = []
 
+    job_model = model.Job
+    select_list = [
+        job_model.job_id,
+        job_model.job_namespace,
+        job_model.job_reqid,
+        job_model.job_name,
+        job_model.job_status,
+        job_model.job_type,
+        job_model.ret_stat,
+        job_model.c_time
+    ]
+
     # 如下方式以分页数据返回
-    query_cmd = model.Job.select()
+    query_cmd = job_model.select(*select_list)
     expressions = []
     if job_reqid is not None:
-        expressions.append(peewee.NodeList((model.Job.job_reqid, peewee.SQL('='), job_reqid)))
+        expressions.append(peewee.NodeList((job_model.job_reqid, peewee.SQL('='), job_reqid)))
 
     if job_id is not None:
-        expressions.append(peewee.NodeList((model.Job.job_id, peewee.SQL('='), int(job_id))))
+        expressions.append(peewee.NodeList((job_model.job_id, peewee.SQL('='), int(job_id))))
 
     if job_name is not None:
-        expressions.append(peewee.NodeList((model.Job.job_name, peewee.SQL('LIKE'), job_name)))
+        expressions.append(peewee.NodeList((job_model.job_name, peewee.SQL('LIKE'), job_name)))
 
     if job_status is not None:
-        expressions.append(peewee.NodeList((model.Job.job_status, peewee.SQL('='), job_status)))
+        expressions.append(peewee.NodeList((job_model.job_status, peewee.SQL('='), job_status)))
 
     if job_type is not None:
-        expressions.append(peewee.NodeList((model.Job.job_type, peewee.SQL('='), job_type)))
+        expressions.append(peewee.NodeList((job_model.job_type, peewee.SQL('='), job_type)))
 
     if ret_stat is not None:
-        expressions.append(peewee.NodeList((model.Job.ret_stat, peewee.SQL('='), ret_stat)))
+        expressions.append(peewee.NodeList((job_model.ret_stat, peewee.SQL('='), ret_stat)))
 
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
 
     record_count = query_cmd.count()
-    record_list = query_cmd.order_by(model.Job.c_time.desc()).paginate(int(page_index), int(page_size))
+    record_list = query_cmd.order_by(job_model.c_time.desc()).paginate(int(page_index), int(page_size))
 
     for record in record_list:
-        record_dict = shortcuts.model_to_dict(record)
+        record_dict = shortcuts.model_to_dict(record, only=select_list)
         data_list.append(record_dict)
 
     data["total"] = record_count
@@ -199,6 +211,11 @@ def get_job_detail(req, job_id):
         return "ERR_JOB_NOT_EXIST", {"data": {}}, [(__info, __version)]
 
     job_dict = shortcuts.model_to_dict(job)
+    if job_dict["ret_data"] is not None:
+        job_dict["ret_data"] = json.loads(job_dict["ret_data"])
+    else:
+        job_dict["ret_data"] = {}
+
     return retstat.OK, {"data": job_dict}, [(__info, __version)]
 
 

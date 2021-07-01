@@ -11,6 +11,7 @@
 import json
 import logging
 import traceback
+from datetime import datetime
 
 from xlib.taskflow import model
 from xlib.db import shortcuts
@@ -133,6 +134,7 @@ def is_job_end(job_id):
 
     task_model = model.Task
     job_model = model.Job
+    job_obj = job_model.get(job_model.job_id == job_id)
     # 获取所有字段
     record_list = task_model.select().where(task_model.job_id == job_id)
 
@@ -159,10 +161,16 @@ def is_job_end(job_id):
                 task.go_success()
             if record_dict["task_status"] == "finished":
                 task_status_dict["finished_count"] = task_status_dict["finished_count"] + 1
+                task = task_fsm.TaskMachine(model=record, state_field="task_status")
                 # 检查是否需要保存数据到 job
                 if record_dict["task_is_save"]:
-                    job_model.update({"ret_data": record_dict["ret_data"]}).where(
-                        job_model.job_id == job_id).execute()
+                    ret_data = record_dict["ret_data"]
+                    ret_data_dict = json.loads(ret_data)
+                    if "data" in ret_data_dict.keys():
+                        job_obj.ret_data = json.dumps(ret_data_dict["data"])
+                    else:
+                        ret_data_dict.pop("stat", None)
+                        job_obj.ret_data = json.dumps(ret_data_dict)
 
             if record_dict["task_status"] == "failed":
                 task_status_dict["failed_count"] = task_status_dict["failed_count"] + 1
@@ -170,8 +178,6 @@ def is_job_end(job_id):
         except exceptions.TaskWaiting:
             logging.info(traceback.format_exc())
         except BaseException:
-            # 设置任务失败
-            task.go_failure()
             log_msg = ("job_id={job_id} task_id={task_id} task_reqid={task_reqid} task_cmd={task_cmd} "
                        "err_info={err_info}".format(
                            job_id=record_dict["job_id"],
@@ -181,11 +187,17 @@ def is_job_end(job_id):
                            err_info=traceback.format_exc()
                        ))
             logging.error(log_msg)
+            # 设置任务失败
+            task.go_failure()
 
+    job_obj.u_time = datetime.now()
+    job_obj.job_cost = (job_obj.u_time - job_obj.c_time).total_seconds()
     if task_status_dict["failed_count"] > 0:
-        job_model.update({'job_status': 'failed'}).where(job_model.job_id == job_id).execute()
+        job_obj.job_status = "failed"
+        job_obj.save()
         return True, task_status_dict
     if task_status_dict["finished_count"] == len(record_list):
-        job_model.update({'job_status': 'finished'}).where(job_model.job_id == job_id).execute()
+        job_obj.job_status = "finished"
+        job_obj.save()
         return True, task_status_dict
     return False, task_status_dict
