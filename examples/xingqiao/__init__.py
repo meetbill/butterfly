@@ -96,7 +96,7 @@ def job_action(req, job_id):
         params["job_id"] = job_id
         params_json = json.dumps(params)
         mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
-        msg_obj = mq_queue.enqueue(params_json)
+        msg_obj = mq_queue.enqueue(params_json, result_ttl=900)
         msg_id = msg_obj.id
     return retstat.OK, {"job_id": job_id, "msg_id": msg_id, "task_status": task_status_dict}, [(__info, __version)]
 

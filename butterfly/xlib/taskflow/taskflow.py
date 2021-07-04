@@ -35,7 +35,8 @@ class WorkflowRunner(object):
             job_extra = {}
 
         if job_timeout is None:
-            job_timeout = 0
+            # 1h
+            job_timeout = 3600
 
         self.job_extra = job_extra
         job_extra_json = json.dumps(job_extra)
@@ -192,12 +193,20 @@ def is_job_end(job_id):
 
     job_obj.u_time = datetime.now()
     job_obj.job_cost = (job_obj.u_time - job_obj.c_time).total_seconds()
+    if job_obj.job_cost > job_obj.job_timeout:
+        job_obj.job_status = "failed"
+        job_obj.ret_stat = "ERR_JOB_TIMEOUT"
+        job_obj.save()
+        return True, task_status_dict
+
     if task_status_dict["failed_count"] > 0:
         job_obj.job_status = "failed"
         job_obj.save()
         return True, task_status_dict
+
     if task_status_dict["finished_count"] == len(record_list):
         job_obj.job_status = "finished"
         job_obj.save()
         return True, task_status_dict
+
     return False, task_status_dict
