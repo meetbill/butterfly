@@ -16,6 +16,13 @@ class Hello(WorkflowRunner):
     a workflow is defined by overloading the WorkflowRunner.workflow() method:
     """
 
+    def params_check(self):
+        """
+        params_check, self.job_extra
+        """
+        if "str_info" not in self.job_extra.keys():
+            raise Exception("job_extra not have str_info")
+
     def workflow(self):
         """
         学习点:
@@ -33,9 +40,6 @@ class Hello(WorkflowRunner):
             task1 执行完成后，执行 task2
             task1 和 task2 都执行完成后，执行 task3, task3 将结果保存到 job ret_data 中
         """
-        if "str_info" not in self.job_extra.keys():
-            raise Exception("job_extra not have str_info")
-
         self.add_task("task1", "/demo_api/hello", requires=["str_info"])
         self.add_task("task2", "/demo_api/ping", dependencies=["task1"])
         self.add_task(

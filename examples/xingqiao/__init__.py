@@ -68,8 +68,15 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
     if job_type not in plugin_app.formatters.keys():
         return "ERR_JOB_TYPE_NOT_EXISTS", {}, [(__info, __version)]
 
-    if job_extra is not None and not isinstance(job_extra, dict):
-        return "ERR_JOB_EXTRA_INVALID", {}, [(__info, __version)]
+    if job_extra is not None:
+        if isinstance(job_extra, basestring):
+            try:
+                job_extra = json.loads(job_extra)
+            except BaseException:
+                return "ERR_JOB_EXTRA_INVALID", {}, [(__info, __version)]
+
+        if not isinstance(job_extra, dict):
+            return "ERR_JOB_EXTRA_INVALID", {}, [(__info, __version)]
 
     workflow_class = plugin_app.formatters[job_type]
     try:
@@ -81,6 +88,7 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
         return "ERR_JOB_CREATE_FAILED", {}, [(__info, __version)]
 
     job_action(req, job_id)
+    req.log_res.add("job_id={job_id}".format(job_id=job_id))
     return retstat.OK, {"job_id": job_id}, [(__info, __version)]
 
 

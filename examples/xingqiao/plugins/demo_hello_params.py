@@ -16,6 +16,13 @@ class HelloParams(WorkflowRunner):
     a workflow is defined by overloading the WorkflowRunner.workflow() method:
     """
 
+    def params_check(self):
+        """
+        params_check
+        """
+        if "str_info" not in self.job_extra.keys():
+            raise Exception("job_extra not have str_info")
+
     def workflow(self):
         """
         学习点:

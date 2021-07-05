@@ -39,6 +39,7 @@ class WorkflowRunner(object):
             job_timeout = 3600
 
         self.job_extra = job_extra
+        self.params_check()
         job_extra_json = json.dumps(job_extra)
 
         job_id = model.Job.insert(
@@ -52,6 +53,12 @@ class WorkflowRunner(object):
         self._job_id = job_id
         self.workflow()
         return self._job_id
+
+    def params_check(self):
+        """
+        Parameter check
+        """
+        pass
 
     def workflow(self):
         """
