@@ -4,6 +4,8 @@
     workflow
 
 Version: 1.0.1: 2021-06-22
+Version: 1.0.2: 2021-07-06
+    list_jobs 添加排序参数，命名格式适配的 amis
 """
 import os
 import json
@@ -26,7 +28,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.1"
+__version = "1.0.2"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -110,13 +112,25 @@ def job_action(req, job_id):
 
 
 @funcattr.api
-def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
-              job_status=None, job_type=None, ret_stat=None, page_index=1, page_size=10):
+def list_jobs(req, job_namespace=None, job_id=None, job_reqid=None, job_name=None,
+              job_status=None, job_type=None, ret_stat=None,
+              orderBy=None, orderDir=None,
+              page_index=1, page_size=10):
     """
     Args:
-        state       : (str) job 状态
-        page_index  : (int) 页数
-        page_size   : (int) 每页显示条数
+        job_namespace   : (str) job_namespace
+        job_id          : (str/int) job_id
+        job_reqid       : (str) butterfly reqid
+        job_name        : (str) job name
+        job_status      : (str) job 状态 started/finished/failed
+        job_type        : (str) job 插件名
+        ret_stat        : (str) job 执行结果标识, 比如 OK/ERR
+
+        orderBy         : (str) 排序字段(适配 amis)
+        orderDir        : (str) asc/desc(适配 amis)
+
+        page_index      : (int) 页数
+        page_size       : (int) 每页显示条数
 
     Returns:
         {
@@ -160,11 +174,14 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
     # 如下方式以分页数据返回
     query_cmd = job_model.select(*select_list)
     expressions = []
-    if job_reqid is not None:
-        expressions.append(peewee.NodeList((job_model.job_reqid, peewee.SQL('='), job_reqid)))
+    if job_namespace is not None:
+        expressions.append(peewee.NodeList((job_model.job_namespace, peewee.SQL('='), job_namespace)))
 
     if job_id is not None:
         expressions.append(peewee.NodeList((job_model.job_id, peewee.SQL('='), int(job_id))))
+
+    if job_reqid is not None:
+        expressions.append(peewee.NodeList((job_model.job_reqid, peewee.SQL('='), job_reqid)))
 
     if job_name is not None:
         expressions.append(peewee.NodeList((job_model.job_name, peewee.SQL('LIKE'), job_name)))
@@ -183,7 +200,21 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
         query_cmd = query_cmd.where(*expressions)
 
     record_count = query_cmd.count()
-    record_list = query_cmd.order_by(job_model.c_time.desc()).paginate(int(page_index), int(page_size))
+
+    if orderBy is not None:
+        model_sort_field = getattr(job_model, orderBy)
+        if model_sort_field is None:
+            req.log_res.add("model_order_field_is_None")
+            query_cmd = query_cmd.order_by(job_model.job_id.desc())
+        else:
+            # 默认是升序
+            if orderDir == "desc":
+                model_sort_field = model_sort_field.desc()
+            query_cmd = query_cmd.order_by(model_sort_field)
+    else:
+        query_cmd = query_cmd.order_by(job_model.job_id.desc())
+
+    record_list = query_cmd.paginate(int(page_index), int(page_size))
 
     for record in record_list:
         record_dict = shortcuts.model_to_dict(record, only=select_list)
