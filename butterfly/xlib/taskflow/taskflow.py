@@ -42,6 +42,7 @@ class WorkflowRunner(object):
         self.params_check()
         job_extra_json = json.dumps(job_extra)
 
+        # 创建 job 记录
         job_id = model.Job.insert(
             job_reqid=job_reqid,
             job_namespace=job_namespace,
@@ -50,8 +51,14 @@ class WorkflowRunner(object):
             job_extra=job_extra_json,
             job_timeout=job_timeout
         ).execute()
+
         self._job_id = job_id
+
+        # 生成 task 记录
         self.workflow()
+
+        # 更新 job
+        model.Job.update({'is_valid': True}).where(model.Job.job_id == self._job_id).execute()
         return self._job_id
 
     def params_check(self):

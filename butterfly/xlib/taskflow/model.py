@@ -13,7 +13,8 @@ from datetime import datetime
 from xlib.db.peewee import CharField
 from xlib.db.peewee import IntegerField
 from xlib.db.peewee import DateTimeField
-from xlib.db.peewee import PrimaryKeyField
+from xlib.db.peewee import BigAutoField
+from xlib.db.peewee import BigIntegerField
 from xlib.db.peewee import DoubleField
 from xlib.db.peewee import TextField
 from xlib.db.peewee import BooleanField
@@ -31,7 +32,7 @@ class Job(xlib.db.BaseModel):
     """
     # If none of the fields are initialized with primary_key=True,
     # an auto-incrementing primary key will automatically be created and named 'id'.
-    job_id = PrimaryKeyField()
+    job_id = BigAutoField(primary_key=True)
     job_namespace = CharField(max_length=64, default="", index=True)
     job_reqid = CharField(max_length=64, default="none", index=True)
     job_name = CharField(max_length=64, index=True)
@@ -40,10 +41,12 @@ class Job(xlib.db.BaseModel):
     job_type = CharField(max_length=64, default="", index=True)
     ret_stat = CharField(max_length=64, index=True, default="OK")
     ret_data = TextField(null=True)
-    job_cost = DoubleField(null=True, index=True)
+    job_cost = DoubleField(default=0, index=True)
     job_extra = CharField(max_length=2048, default="{}")
     # job超时(s)
-    job_timeout = IntegerField(default=0, index=True)
+    job_timeout = IntegerField(default=0)
+    # 是否有效
+    is_valid = BooleanField(default=False, index=True)
     c_time = DateTimeField(column_name="c_time", default=datetime.now)
     u_time = DateTimeField(column_name="u_time", default=datetime.now)
 
@@ -65,9 +68,9 @@ class Task(xlib.db.BaseModel):
                     +--------------+----->failed
     """
     # task 唯一 id, 创建时生成
-    task_id = PrimaryKeyField()
+    task_id = BigAutoField(primary_key=True)
     # job id, 创建时生成
-    job_id = IntegerField(index=True)
+    job_id = BigIntegerField(index=True)
     # task 的任务 label, 创建时生成
     task_label = CharField(max_length=64, index=True)
     # task 的 reqid
@@ -89,17 +92,17 @@ class Task(xlib.db.BaseModel):
     # 额外信息
     task_extra = CharField(max_length=2048, default="{}")
     # 是否保存数据到 job 中
-    task_is_save = BooleanField(default=False, index=True)
+    task_is_save = BooleanField(default=False)
     # 任务结果返回码
     ret_stat = CharField(max_length=64, default="OK", index=True)
     # 任务结果返回信息
     ret_data = TextField(null=True)
     # 最多重试次数
-    task_retrymax = IntegerField(default=0, index=True)
+    task_retrymax = IntegerField(default=0)
     # 重试次数
-    task_retrycount = IntegerField(default=0, index=True)
+    task_retrycount = IntegerField(default=0)
     # 任务超时(s)
-    task_timeout = IntegerField(default=0, index=True)
+    task_timeout = IntegerField(default=0)
     # 创建时间
     c_time = DateTimeField(column_name="c_time", default=datetime.now)
     # 更新时间
@@ -110,9 +113,6 @@ class Task(xlib.db.BaseModel):
         meta
         """
         table_name = 'workflow_task'
-        indexes = (
-            (('job_id', 'task_label'), True),
-        )
 
 
 if __name__ == "__main__":

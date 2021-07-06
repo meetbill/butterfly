@@ -178,6 +178,7 @@ def list_jobs(req, job_reqid=None, job_id=None, job_name=None,
     if ret_stat is not None:
         expressions.append(peewee.NodeList((job_model.ret_stat, peewee.SQL('='), ret_stat)))
 
+    expressions.append(peewee.NodeList((job_model.is_valid, peewee.SQL('='), True)))
     if len(expressions):
         query_cmd = query_cmd.where(*expressions)
 
