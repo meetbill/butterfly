@@ -97,6 +97,9 @@ class TaskMachine(StateMachine):
                 raise exceptions.TaskWaiting(log_msg)
 
     def on_go_running(self):
+        """
+        Exe go_running event
+        """
         self.task_requires_dict = {}
         all_taskdata_key = "all_taskdata"
 
@@ -228,9 +231,15 @@ class TaskMachine(StateMachine):
         raise exceptions.TaskWaiting(log_msg)
 
     def on_go_failure(self):
+        """
+        Exe go_failure event
+        """
         pass
 
     def on_exit_waiting(self):
+        """
+        Exit waiting state
+        """
         pass
 
     def on_exit_pending(self):
@@ -246,6 +255,9 @@ class TaskMachine(StateMachine):
         self.model.save()
 
     def on_enter_started(self):
+        """
+        Enter started state
+        """
         # 发起请求
         mq_queue = Queue(self.model.task_cmd, connection=baichuan_connection)
         msg_data = json.dumps(self.task_requires_dict)
@@ -256,10 +268,12 @@ class TaskMachine(StateMachine):
 
     def on_enter_finished(self):
         """
+        Enter finished state
         """
         self.model.save()
 
     def on_enter_failed(self):
         """
+        Enter failed state
         """
         self.model.save()

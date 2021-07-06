@@ -73,7 +73,7 @@ def get_plugin_source(module=None, stacklevel=None):
     return _discover_space(name, glob)
 
 
-def get_searchpath(path, depth=float('inf'), followlinks=False):
+def get_searchpath(path, depth=None, followlinks=False):
     """This utility function returns a list directories suitable for use as the
     *searchpath* argument to :class:`PluginSource`. This will recursively add
     directories up to the specified depth.
@@ -90,6 +90,9 @@ def get_searchpath(path, depth=float('inf'), followlinks=False):
     """
     # os.walk implements a depth-first approach which results in unnecessarily
     # slow execution when *path* is a large tree and *depth* is a small number
+    if depth is None:
+        depth = float('inf')
+
     paths = [path]
     for dir_entry in os.listdir(path):
         sub_path = os.path.join(path, dir_entry)
@@ -108,8 +111,8 @@ def _discover_space(name, globals):
     except (AttributeError, IndexError):
         pass
 
-    if '__pluginbase_state__' in globals:
-        return globals['__pluginbase_state__'].source
+    if '_pluginbase_state_' in globals:
+        return globals['_pluginbase_state_'].source
 
     mod_name = globals.get('__name__')
     if mod_name is not None and \
@@ -117,7 +120,7 @@ def _discover_space(name, globals):
         end = mod_name.find('.', len(_internalspace.__name__) + 1)
         space = sys.modules.get(mod_name[:end])
         if space is not None:
-            return space.__pluginbase_state__.source
+            return space._pluginbase_state_.source
 
 
 def _shutdown_module(mod):
@@ -155,12 +158,12 @@ class _PluginSourceModule(ModuleType):
     def __init__(self, source):
         modname = '%s.%s' % (_internalspace.__name__, source.spaceid)
         ModuleType.__init__(self, modname)
-        self.__pluginbase_state__ = PluginBaseState(source)
+        self._pluginbase_state_ = PluginBaseState(source)
 
     @property
     def __path__(self):
         try:
-            ps = self.__pluginbase_state__.source
+            ps = self._pluginbase_state_.source
         except AttributeError:
             return []
         return ps.searchpath + ps.base.searchpath
@@ -332,14 +335,23 @@ class PluginSource(object):
         """
         self.__cleanup()
 
-    def __cleanup(self, _sys=sys, _shutdown_module=_shutdown_module):
+    def __cleanup(self, _sys=None, _shutdown_module=None):
+        """
         # The default parameters are necessary because this can be fired
         # from the destructor and so late when the interpreter shuts down
         # that these functions and modules might be gone.
+        """
         if self.mod is None or self.mod.__name__ is None:
             return
+
+        if _sys is None:
+            _sys = sys
+
+        if _shutdown_module is None:
+            _shutdown_module = _shutdown_module
+
         modname = self.mod.__name__
-        self.mod.__pluginbase_state__ = None
+        self.mod._pluginbase_state_ = None
         self.mod = None
         try:
             delattr(_internalspace, self.spaceid)
@@ -383,6 +395,9 @@ class PluginSource(object):
 
 
 class PluginBaseState(object):
+    """
+    PluginBaseState Class
+    """
     __slots__ = ('_source',)
 
     def __init__(self, source):
@@ -393,6 +408,9 @@ class PluginBaseState(object):
 
     @property
     def source(self):
+        """
+        source
+        """
         rv = self._source()
         if rv is None:
             raise AttributeError('Plugin source went away')
@@ -421,9 +439,13 @@ class _ImportHook(ModuleType):
 
     def plugin_import(self, name, globals=None, locals=None,
                       fromlist=None, level=None):
+        """
+        Plugin import
+        """
         if level is None:
             # set the level to the default value specific to this python version
             level = -1 if PY2 else 0
+
         import_name = name
         if self.enabled:
             ref_globals = globals
