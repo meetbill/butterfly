@@ -6,9 +6,12 @@
 Version: 1.0.1: 2021-06-22
 Version: 1.0.2: 2021-07-06
     list_jobs 添加排序参数，命名格式适配的 amis
+Version: 1.0.3: 2021-07-07
+    job_action 添加执行间隔，同一个 job 执行间隔默认为 5s
 """
 import os
 import json
+import time
 import logging
 import traceback
 from functools import partial
@@ -89,25 +92,43 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
         log.error(traceback.format_exc())
         return "ERR_JOB_CREATE_FAILED", {}, [(__info, __version)]
 
-    job_action(req, job_id)
+    # 发送消息
+    params = {}
+    params["job_id"] = job_id
+    params_json = json.dumps(params)
+    mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
+    mq_queue.enqueue(params_json, result_ttl=900)
+
     req.log_res.add("job_id={job_id}".format(job_id=job_id))
     return retstat.OK, {"job_id": job_id}, [(__info, __version)]
 
 
 @funcattr.api
-def job_action(req, job_id):
+def job_action(req, job_id, interval=5):
     """
     执行
+
+    Args:
+        job_id  : job id
+        interval: 任务间隔时间
     """
     msg_id = ""
     is_job_end, task_status_dict = taskflow.is_job_end(job_id)
     if not is_job_end:
+        # 间隔发消息
+        time.sleep(int(interval))
+
         params = {}
         params["job_id"] = job_id
+        params["interval"] = interval
         params_json = json.dumps(params)
         mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
         msg_obj = mq_queue.enqueue(params_json, result_ttl=900)
         msg_id = msg_obj.id
+
+        # 记录到 access 日志
+        req.log_res.add("new_msg_id={msg_id}".format(msg_id=msg_id))
+
     return retstat.OK, {"job_id": job_id, "msg_id": msg_id, "task_status": task_status_dict}, [(__info, __version)]
 
 
