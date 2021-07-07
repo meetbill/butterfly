@@ -8,6 +8,8 @@ Version: 1.0.2: 2021-07-06
     list_jobs 添加排序参数，命名格式适配的 amis
 Version: 1.0.3: 2021-07-07
     job_action 添加执行间隔，同一个 job 执行间隔默认为 5s
+Version: 1.0.4: 2021-07-07
+    create_job job_name 设置默认值
 """
 import os
 import json
@@ -31,7 +33,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.2"
+__version = "1.0.4"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -61,7 +63,7 @@ class Application(object):
 
 
 @funcattr.api
-def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeout=None):
+def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_timeout=None):
     """
     Args:
         req     : Request
@@ -69,6 +71,9 @@ def create_job(req, job_namespace, job_name, job_type, job_extra=None, job_timeo
         json_status, Content, headers
     """
     isinstance(req, Request)
+    if job_name is None:
+        job_name = req.reqid
+
     plugin_app = Application()
     if job_type not in plugin_app.formatters.keys():
         return "ERR_JOB_TYPE_NOT_EXISTS", {}, [(__info, __version)]
