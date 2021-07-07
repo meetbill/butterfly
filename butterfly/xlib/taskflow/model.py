@@ -35,7 +35,7 @@ class Job(xlib.db.BaseModel):
     job_id = BigAutoField(primary_key=True)
     job_namespace = CharField(max_length=64, default="", index=True)
     job_reqid = CharField(max_length=64, default="none", index=True)
-    job_name = CharField(max_length=64, index=True)
+    job_name = CharField(max_length=64, unique=True)
     job_status = CharField(max_length=64, index=True, default="started")
     # 记录 workflow class name
     job_type = CharField(max_length=64, default="", index=True)

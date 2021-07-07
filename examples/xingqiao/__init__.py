@@ -75,6 +75,10 @@ def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_
     isinstance(req, Request)
     if job_name is None:
         job_name = req.reqid
+    else:
+        job = model.Job.get_or_none(job_name=job_name)
+        if job is not None:
+            return "ERR_JOB_EXIST", {}, [(__info, __version)]
 
     plugin_app = Application()
     if job_type not in plugin_app.formatters.keys():
