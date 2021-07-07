@@ -10,6 +10,8 @@ Version: 1.0.3: 2021-07-07
     job_action 添加执行间隔，同一个 job 执行间隔默认为 5s
 Version: 1.0.4: 2021-07-07
     create_job job_name 设置默认值
+Version: 1.0.5: 2021-07-07
+    添加 delete_job
 """
 import os
 import json
@@ -33,7 +35,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.4"
+__version = "1.0.5"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -335,7 +337,7 @@ def get_tasklist_by_jobid(req, job_id):
 @funcattr.api_download
 def get_graph(req, job_id):
     """
-    带参数请求例子
+    生成状态图
 
     Args:
         req             : (Object) Request
@@ -353,3 +355,21 @@ def get_graph(req, job_id):
     shell_util.run(cmd)
 
     return retstat.OK, {"filename": graph_file, "is_download": True}, [(__info, __version)]
+
+
+@funcattr.api
+def delete_job(req, job_id):
+    """
+    删除 job
+
+    Args:
+        req             : (Object) Request
+        job_id          : jobid
+    Returns:
+    """
+    isinstance(req, Request)
+    job_model = model.Job
+    task_model = model.Task
+    task_model.delete().where(task_model.job_id == job_id).execute()
+    job_model.delete().where(job_model.job_id == job_id).execute()
+    return retstat.OK, {}, [(__info, __version)]
