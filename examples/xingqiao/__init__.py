@@ -12,6 +12,8 @@ Version: 1.0.4: 2021-07-07
     create_job job_name 设置默认值
 Version: 1.0.5: 2021-07-07
     添加 delete_job
+Version: 1.0.6: 2021-07-11
+    修改 create_job, 记录操作用户
 """
 import os
 import json
@@ -35,7 +37,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.5"
+__version = "1.0.6"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -98,7 +100,7 @@ def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_
     try:
         wflow = workflow_class()
         job_id = wflow.create(job_reqid=req.reqid, job_namespace=job_namespace, job_name=job_name, job_type=job_type,
-                              job_extra=job_extra, job_timeout=job_timeout)
+                              job_extra=job_extra, job_timeout=job_timeout, operator=req.username)
     except BaseException:
         log.error(traceback.format_exc())
         return "ERR_JOB_CREATE_FAILED", {}, [(__info, __version)]
@@ -145,7 +147,7 @@ def job_action(req, job_id, interval=5):
 
 @funcattr.api
 def list_jobs(req, job_namespace=None, job_id=None, job_reqid=None, job_name=None,
-              job_status=None, job_type=None, ret_stat=None,
+              job_status=None, job_type=None, ret_stat=None, operator=None,
               orderBy=None, orderDir=None,
               page_index=1, page_size=10):
     """
@@ -200,6 +202,7 @@ def list_jobs(req, job_namespace=None, job_id=None, job_reqid=None, job_name=Non
         job_model.job_status,
         job_model.job_type,
         job_model.ret_stat,
+        job_model.operator,
         job_model.c_time
     ]
 
@@ -226,6 +229,9 @@ def list_jobs(req, job_namespace=None, job_id=None, job_reqid=None, job_name=Non
 
     if ret_stat is not None:
         expressions.append(peewee.NodeList((job_model.ret_stat, peewee.SQL('='), ret_stat)))
+
+    if operator is not None:
+        expressions.append(peewee.NodeList((job_model.operator, peewee.SQL('='), operator)))
 
     expressions.append(peewee.NodeList((job_model.is_valid, peewee.SQL('='), True)))
     if len(expressions):

@@ -27,7 +27,7 @@ class WorkflowRunner(object):
     tasks that need to be run and their dependencies.
     """
 
-    def create(self, job_reqid, job_namespace, job_name, job_type, job_extra=None, job_timeout=None):
+    def create(self, job_reqid, job_namespace, job_name, job_type, job_extra=None, job_timeout=None, operator="-"):
         """
         Create workflow
         """
@@ -49,7 +49,8 @@ class WorkflowRunner(object):
             job_name=job_name,
             job_type=job_type,
             job_extra=job_extra_json,
-            job_timeout=job_timeout
+            job_timeout=job_timeout,
+            operator=operator
         ).execute()
 
         self._job_id = job_id

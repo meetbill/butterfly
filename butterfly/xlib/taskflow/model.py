@@ -45,6 +45,8 @@ class Job(xlib.db.BaseModel):
     job_extra = CharField(max_length=2048, default="{}")
     # job超时(s)
     job_timeout = IntegerField(default=0)
+    # operator user
+    operator = CharField(max_length=64, default="", index=True)
     # 是否有效
     is_valid = BooleanField(default=False, index=True)
     c_time = DateTimeField(column_name="c_time", default=datetime.now)
