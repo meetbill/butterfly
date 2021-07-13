@@ -206,8 +206,8 @@ def is_job_end(job_id):
             # 设置任务失败
             task.go_failure()
 
-    job_obj.u_time = datetime.now()
-    job_obj.job_cost = (job_obj.u_time - job_obj.c_time).total_seconds()
+    job_obj.e_time = datetime.now()
+    job_obj.job_cost = (job_obj.e_time - job_obj.s_time).total_seconds()
     if job_obj.job_cost > job_obj.job_timeout:
         job_obj.job_status = "failed"
         job_obj.ret_stat = "ERR_JOB_TIMEOUT"

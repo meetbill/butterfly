@@ -14,6 +14,8 @@ Version: 1.0.5: 2021-07-07
     添加 delete_job
 Version: 1.0.6: 2021-07-11
     修改 create_job, 记录操作用户
+Version: 1.0.7: 2021-07-13
+    修改 list_job, 输出开始时间和结束时间
 """
 import os
 import json
@@ -37,7 +39,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.6"
+__version = "1.0.7"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -203,7 +205,9 @@ def list_jobs(req, job_namespace=None, job_id=None, job_reqid=None, job_name=Non
         job_model.job_type,
         job_model.ret_stat,
         job_model.operator,
-        job_model.c_time
+        job_model.c_time,
+        job_model.s_time,
+        job_model.e_time,
     ]
 
     # 如下方式以分页数据返回

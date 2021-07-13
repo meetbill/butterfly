@@ -49,8 +49,12 @@ class Job(xlib.db.BaseModel):
     operator = CharField(max_length=64, default="", index=True)
     # 是否有效
     is_valid = BooleanField(default=False, index=True)
+    # create time
     c_time = DateTimeField(column_name="c_time", default=datetime.now)
-    u_time = DateTimeField(column_name="u_time", default=datetime.now)
+    # start time
+    s_time = DateTimeField(column_name="s_time", default=datetime.now)
+    # end time
+    e_time = DateTimeField(column_name="e_time", default=datetime.now)
 
     class Meta(object):
         """
@@ -66,8 +70,8 @@ class Task(xlib.db.BaseModel):
 
     task_status: waiting --> pending --> started --> finished
                     |           |           |
-                    |            \          V
-                    +--------------+----->failed
+                    |           |           V
+                    +-----------+-------->failed
     """
     # task 唯一 id, 创建时生成
     task_id = BigAutoField(primary_key=True)
