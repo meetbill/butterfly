@@ -165,6 +165,7 @@ def write_dot_graph(job_id, filename="./graph.dot"):
 
         taskInfo[tid].runState = runState
         taskInfo[tid].task_cost = task["task_cost"]
+        taskInfo[tid].ret_stat = task["ret_stat"]
         taskInfo[tid].task_id = task["task_id"]
 
     with open(filename, "w") as dotFp:
@@ -185,8 +186,10 @@ def write_dot_graph(job_id, filename="./graph.dot"):
             labelToSym[tid] = sym
             attrib1 = DotConfig.getRunstateDotAttrib(taskInfo[tid].runState)
             # add taskid and cost
-            label = "{label}\\ntaskid={taskid}\\ncost={cost}".format(label=label, taskid=taskInfo[tid].task_id,
-                                                                     cost=taskInfo[tid].task_cost)
+            label = "{label}\\ntaskid={taskid}\\nstat={stat}\\ncost={cost}".format(label=label,
+                                                                                   taskid=taskInfo[tid].task_id,
+                                                                                   stat=taskInfo[tid].ret_stat,
+                                                                                   cost=taskInfo[tid].task_cost)
             namespaceGraph[namespace] += "\t\t%s [label=\"%s\"%s];\n" % (sym, label, attrib1)
 
         for (namespace, label) in addOrder:

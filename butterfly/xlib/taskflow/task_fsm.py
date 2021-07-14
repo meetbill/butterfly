@@ -196,13 +196,18 @@ class TaskMachine(StateMachine):
         # cost
         self.model.task_cost = float(getattr(msg_obj, "cost", "-1"))
 
+        # ERR_BAD_PARAMS or ERR_SERVER_EXCEPTION
         if msg_status == "failed":
+            msg_result = json.loads(msg_obj.result)
+            self.model.ret_stat = msg_result["stat"]
             log_msg = "task_id={task_id} task_reqid={task_reqid} msg_status={msg_status} err_info={err_info}".format(
                 task_id=self.model.task_id, task_reqid=msg_id, msg_status=msg_status, err_info="msg exe failed")
             raise exceptions.TaskError(log_msg)
 
+        # OK or other ERR
         if msg_status == "finished":
             msg_result = json.loads(msg_obj.result)
+            self.model.ret_stat = msg_result["stat"]
             # 检查状态
             if msg_result["stat"] != "OK":
                 log_msg = ("task_id={task_id} task_reqid={task_reqid} msg_status={msg_status} "
