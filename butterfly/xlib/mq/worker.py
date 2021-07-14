@@ -565,11 +565,14 @@ class Worker(object):
             cost_str = "%.6f" % cost
             msg.set_cost(cost_str)
 
-            if req.log_ret_code == "OK":
-                self.log.info('%s: %s (%s)', msg.origin, 'Msg OK', msg.id)
+            # Client or server error
+            if req.log_ret_code == "ERR_BAD_PARAMS" or req.log_ret_code == "ERR_SERVER_EXCEPTION":
+                self.log.error('module=msg_exe topic={topic} status={status} msg_id={msg_id}'.format(
+                    topic=msg.origin, status=req.log_ret_code, msg_id=msg.id))
                 self.handle_msg_success(msg=msg, queue=queue, started_msg_registry=started_msg_registry)
             else:
-                self.log.error('%s: %s (%s)', msg.origin, 'Msg ERROR', msg.id)
+                self.log.info('module=msg_exe topic={topic} status={status} msg_id={msg_id}'.format(
+                    topic=msg.origin, status=req.log_ret_code, msg_id=msg.id))
                 exc_string = self._get_safe_exception_string(req.error_detail)
                 self.handle_msg_failure(msg=msg, exc_string=exc_string, started_msg_registry=started_msg_registry)
 
