@@ -87,7 +87,8 @@ class WorkflowRunner(object):
                  dependencies=None,
                  retrymax=0,
                  is_save=False,
-                 timeout=None
+                 timeout=None,
+                 extra=None
                  ):
         """
         Args:
@@ -129,6 +130,10 @@ class WorkflowRunner(object):
         if timeout is None:
             timeout = 0
 
+        if extra is None:
+            extra = {}
+        extra_str = json.dumps(extra)
+
         self._task_id = model.Task.insert(
             job_id=self._job_id,
             task_label=label,
@@ -139,7 +144,8 @@ class WorkflowRunner(object):
             task_dependencies=dependencies_str,
             task_retrymax=retrymax,
             task_is_save=is_save,
-            task_timeout=timeout
+            task_timeout=timeout,
+            task_extra=extra_str
         ).execute()
 
 

@@ -142,6 +142,13 @@ class TaskMachine(StateMachine):
             if key in task_requires_list:
                 self.task_requires_dict[key] = job_extra[key]
 
+        # 在 task_extra 中获取参数数据
+        task_extra_json = self.model.task_extra
+        task_extra = json.loads(task_extra_json)
+        for key in task_extra.keys():
+            if key in task_requires_list:
+                self.task_requires_dict[key] = task_extra[key]
+
         # 检查是否需要所有依赖的 task data
         if all_taskdata_key in task_requires_list:
             self.task_requires_dict[all_taskdata_key] = all_taskdata_list
