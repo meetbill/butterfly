@@ -16,6 +16,8 @@ Version: 1.0.6: 2021-07-11
     修改 create_job, 记录操作用户
 Version: 1.0.7: 2021-07-13
     修改 list_job, 输出开始时间和结束时间
+Version: 1.0.8: 2021-07-16
+    添加 retry_job, 可重试任务
 """
 import os
 import json
@@ -23,6 +25,7 @@ import time
 import logging
 import traceback
 from functools import partial
+from datetime import datetime
 
 from conf import config
 from xlib.httpgateway import Request
@@ -30,6 +33,7 @@ from xlib import retstat
 from xlib.middleware import funcattr
 from xlib.taskflow import taskflow
 from xlib.taskflow import gen_graph
+from xlib.taskflow import task_fsm
 from xlib.taskflow import model
 from xlib import db
 from xlib.mq import Queue
@@ -39,7 +43,7 @@ from xlib.util import shell_util
 from xlib.util import pluginbase
 
 __info = "xingqiao"
-__version = "1.0.7"
+__version = "1.0.8"
 
 baichuan_connection = db.my_caches["baichuan"]
 log = logging.getLogger("butterfly")
@@ -115,6 +119,37 @@ def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_
     mq_queue.enqueue(params_json, result_ttl=900)
 
     req.log_res.add("job_id={job_id}".format(job_id=job_id))
+    return retstat.OK, {"job_id": job_id}, [(__info, __version)]
+
+
+@funcattr.api
+def retry_job(req, job_id):
+
+    task_model = model.Task
+    job_model = model.Job
+    job_obj = job_model.get(job_model.job_id == job_id)
+    if job_obj.job_status != "failed":
+        return "ERR_JOB_STATUS_NOT_FAILED", {"job_id": job_id}, [(__info, __version)]
+
+    # 获取所有字段
+    record_list = task_model.select().where(task_model.job_id == job_id)
+    for record in record_list:
+        record_dict = shortcuts.model_to_dict(record)
+        if record_dict["task_status"] == "failed":
+            task = task_fsm.TaskMachine(model=record, state_field="task_status")
+            task.go_waiting()
+
+    job_obj.job_status = "started"
+    job_obj.s_time = datetime.now()
+    job_obj.e_time = datetime.now()
+    job_obj.save()
+
+    # 发送消息
+    params = {}
+    params["job_id"] = job_id
+    params_json = json.dumps(params)
+    mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
+    mq_queue.enqueue(params_json, result_ttl=900)
     return retstat.OK, {"job_id": job_id}, [(__info, __version)]
 
 

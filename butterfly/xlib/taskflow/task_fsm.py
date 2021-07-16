@@ -34,7 +34,7 @@ class TaskMachine(StateMachine):
     +------------+------------+---------+----------+---------+
     |   Start    |   Event    |   End   | On Enter | On Exit |
     +------------+------------+---------+----------+---------+
-    |  failed[$] |     .      |    .    |    .     |    .    |
+    |  failed[$] | go_waiting | waiting |    .     |    .    |
     |  pending   | go_failure |  failed |    .     |    .    |
     |  pending   | go_running | started |    .     |    .    |
     |  started   | go_failure |  failed |    .     |    .    |
@@ -49,10 +49,13 @@ class TaskMachine(StateMachine):
                                       检查依赖      准备参数       结果校验
                                     (go_pending)   (go_running)  (go_success)
     即 taskflow 的状态正常流程为 waiting ---> pending ---> started ---> finished
-                                    |           |           |
-                                    |           |           V
-                                    +-----------+-------> failed
-                                        (go_failure)
+                                   ^ |          |           |
+                                   | |          |           V
+                                   | +----------+-------> failed
+                                   |    (go_failure)        |
+                                   |                        |
+                                   +------------------------+
+                                         (go_waiting) retry
     """
     waiting = State(name="waiting", initial=True)
     pending = State(name="pending")
@@ -64,6 +67,7 @@ class TaskMachine(StateMachine):
     go_running = pending.to(started)
     go_success = started.to(finished)
     go_failure = waiting.to(failed) | pending.to(failed) | started.to(failed)
+    go_waiting = failed.to(waiting)
 
     def on_go_pending(self):
         """
@@ -248,6 +252,12 @@ class TaskMachine(StateMachine):
         """
         pass
 
+    def on_go_waiting(self):
+        """
+        Exe go_waiting event
+        """
+        self.model.task_reqid = ""
+
     def on_exit_waiting(self):
         """
         Exit waiting state
@@ -259,6 +269,12 @@ class TaskMachine(StateMachine):
         解析参数
         """
         pass
+
+    def on_enter_waiting(self):
+        """
+        保存数据到数据库
+        """
+        self.model.save()
 
     def on_enter_pending(self):
         """
