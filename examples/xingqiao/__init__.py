@@ -18,6 +18,8 @@ Version: 1.0.7: 2021-07-13
     修改 list_job, 输出开始时间和结束时间
 Version: 1.0.8: 2021-07-16
     添加 retry_job, 可重试任务
+Version: 1.0.9: 2021-07-18
+    修改 job_action: 添加 exe_id, 可过滤重复的 exe_id 任务，使之接口变为幂等接口
 """
 import os
 import json
@@ -114,6 +116,7 @@ def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_
     # 发送消息
     params = {}
     params["job_id"] = job_id
+    params["exe_id"] = 1
     params_json = json.dumps(params)
     mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
     mq_queue.enqueue(params_json, result_ttl=900)
@@ -147,6 +150,7 @@ def retry_job(req, job_id):
     # 发送消息
     params = {}
     params["job_id"] = job_id
+    params["exe_id"] = job_obj.exe_id + 1
     params_json = json.dumps(params)
     mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
     mq_queue.enqueue(params_json, result_ttl=900)
@@ -154,32 +158,37 @@ def retry_job(req, job_id):
 
 
 @funcattr.api
-def job_action(req, job_id, interval=5):
+def job_action(req, job_id, exe_id=0, interval=5):
     """
-    执行
+    执行 job, 若传入的 exe_id 小于或者等于 job 记录的 exe_id 值，则此次 job_action 无效
 
     Args:
         job_id  : job id
+        exe_id  ：exe_id
         interval: 任务间隔时间
     """
     msg_id = ""
-    is_job_end, task_status_dict = taskflow.is_job_end(job_id)
-    if not is_job_end:
+    result_dict = taskflow.is_job_end(req, job_id, exe_id)
+    if not result_dict["job_end"]:
         # 间隔发消息
         time.sleep(int(interval))
 
         params = {}
         params["job_id"] = job_id
         params["interval"] = interval
+        params["exe_id"] = exe_id + 1
         params_json = json.dumps(params)
+
         mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
         msg_obj = mq_queue.enqueue(params_json, result_ttl=900)
         msg_id = msg_obj.id
 
         # 记录到 access 日志
         req.log_res.add("new_msg_id={msg_id}".format(msg_id=msg_id))
+        req.log_res.add("new_exe_id={exe_id}".format(exe_id=params["exe_id"]))
 
-    return retstat.OK, {"job_id": job_id, "msg_id": msg_id, "task_status": task_status_dict}, [(__info, __version)]
+    return retstat.OK, {"job_id": job_id, "msg_id": msg_id,
+                        "task_status": result_dict["task_status"]}, [(__info, __version)]
 
 
 @funcattr.api

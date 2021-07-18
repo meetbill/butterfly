@@ -149,16 +149,40 @@ class WorkflowRunner(object):
         ).execute()
 
 
-def is_job_end(job_id):
+def is_job_end(req, job_id, new_exe_id):
     """
-    发起任务, 需要加锁
+    Args:
+        req         : request
+        job_id      : job_id
+        new_exe_id  : new exe_id
     """
-
     task_model = model.Task
     job_model = model.Job
-    job_obj = job_model.get(job_model.job_id == job_id)
-    # 获取所有字段
-    record_list = task_model.select().where(task_model.job_id == job_id)
+
+    result_dict = {}
+    result_dict["job_end"] = False
+    result_dict["task_status"] = {}
+
+    try:
+        effect_count = job_model.update(exe_id=new_exe_id).where(
+            job_model.job_id == job_id,
+            job_model.exe_id < new_exe_id).execute()
+        # effect_count 为 0 时说明此请求是无效请求
+        if effect_count == 0:
+            result_dict["job_end"] = True
+            req.log_res.add("job_action=missed")
+            return result_dict
+
+        job_obj = job_model.get(job_model.job_id == job_id)
+        # 获取所有字段
+        record_list = task_model.select().where(task_model.job_id == job_id)
+    except BaseException:
+        # 从数据库中获取数据失败, 此时再发起一次任务
+        result_dict["job_end"] = False
+        req.log_res.add("job_action=except")
+        logging.info("module=job_action err_info={err_info}".format(
+            err_info=traceback.format_exc()))
+        return result_dict
 
     task_status_dict = {}
     task_status_dict["waiting_count"] = 0
@@ -216,18 +240,28 @@ def is_job_end(job_id):
     job_obj.job_cost = (job_obj.e_time - job_obj.s_time).total_seconds()
     if job_obj.job_cost > job_obj.job_timeout:
         job_obj.job_status = "failed"
-        job_obj.ret_stat = "ERR_JOB_TIMEOUT"
+        job_obj.ret_stat = "ERR_JOB_EXE_TIMEOUT"
         job_obj.save()
-        return True, task_status_dict
+        result_dict["job_end"] = True
+        result_dict["task_status"] = task_status_dict
+        return result_dict
 
     if task_status_dict["failed_count"] > 0:
         job_obj.job_status = "failed"
+        job_obj.ret_stat = "ERR_JOB_EXE_FAILED"
         job_obj.save()
-        return True, task_status_dict
+        result_dict["job_end"] = True
+        result_dict["task_status"] = task_status_dict
+        return result_dict
 
     if task_status_dict["finished_count"] == len(record_list):
         job_obj.job_status = "finished"
+        job_obj.ret_stat = "OK"
         job_obj.save()
-        return True, task_status_dict
+        result_dict["job_end"] = True
+        result_dict["task_status"] = task_status_dict
+        return result_dict
 
-    return False, task_status_dict
+    result_dict["job_end"] = False
+    result_dict["task_status"] = task_status_dict
+    return result_dict

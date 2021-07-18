@@ -17,6 +17,7 @@ from xlib.mq.msg import Msg, MsgStatus
 from xlib.mq.utils import backend_class, import_attribute, parse_timeout, utcnow
 from xlib.mq.utils import current_timestamp
 from xlib.mq import defaults
+from xlib.util import retry
 
 
 def compact(lst):
@@ -245,7 +246,7 @@ class Queue(object):
         Creates a msg based on parameters given.
         """
         if status is None:
-            status=MsgStatus.QUEUED
+            status = MsgStatus.QUEUED
 
         timeout = parse_timeout(timeout)
 
@@ -311,16 +312,16 @@ class Queue(object):
         meta = kwargs.pop('meta', None)
 
         result_data = {
-                "data": data,
-                "timeout": timeout,
-                "description": description,
-                "result_ttl": result_ttl,
-                "ttl": ttl,
-                "failure_ttl": failure_ttl,
-                "msg_id": msg_id,
-                "at_front": at_front,
-                "meta": meta
-                }
+            "data": data,
+            "timeout": timeout,
+            "description": description,
+            "result_ttl": result_ttl,
+            "ttl": ttl,
+            "failure_ttl": failure_ttl,
+            "msg_id": msg_id,
+            "at_front": at_front,
+            "meta": meta
+        }
         return result_data
 
     def enqueue(self, data, *args, **kwargs):
@@ -335,6 +336,7 @@ class Queue(object):
             at_front=result_data["at_front"], meta=result_data["meta"]
         )
 
+    @retry.retry(interval=1, max_retries=5)
     def enqueue_msg(self, msg, at_front=False):
         """Enqueues a msg for delayed execution.
         """
