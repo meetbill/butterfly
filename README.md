@@ -287,9 +287,11 @@ butterfly 框架基础能力：
 > * 手册
 >   * [Butterfly 用户手册](https://github.com/meetbill/butterfly/wiki/usage)
 >   * [Butterfly 进阶手册](https://github.com/meetbill/butterfly/wiki)
-> * [Butterfly 示例](https://github.com/meetbill/butterfly-examples)
-> * [Butterfly 前端](https://github.com/meetbill/butterfly-fe)
-> * [Butterfly nginx 配置](https://github.com/meetbill/butterfly-nginx)
+> * 项目
+>   * [Butterfly 示例](https://github.com/meetbill/butterfly-examples)
+>   * [Butterfly-fe -- 基于 AngularJS 的前端项目](https://github.com/meetbill/butterfly-fe)
+>   * [Butterfly-admin -- 基于 AMIS 的前端项目](https://github.com/meetbill/butterfly-admin)
+>   * [Butterfly nginx 配置](https://github.com/meetbill/butterfly-nginx)
 
 ## 4.2 自带 app 介绍
 
