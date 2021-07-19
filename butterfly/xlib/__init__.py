@@ -8,4 +8,4 @@
 # Description:
 
 """
-butterfly_version = "1.1.13.24"
+butterfly_version = "1.1.13.25"

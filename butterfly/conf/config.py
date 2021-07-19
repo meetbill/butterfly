@@ -57,3 +57,10 @@ JWT_TOKEN_TTL = 28800           # default 8 hours
 
 # Scheduler
 scheduler_store = "memory"      # ("mysql"/"memory")
+
+# Adaptor
+"""
+# {"stat":"ERR", "data":{}} --> {"stat":"ERR", "success":False, "message":"ERR", "data":{}}
+STAT_ADAPTOR={"status_name":"success", "status_map":{"OK":True,"default":False}, "message_name":"message"}
+"""
+STAT_ADAPTOR = None

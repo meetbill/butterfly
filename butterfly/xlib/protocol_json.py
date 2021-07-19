@@ -34,6 +34,7 @@ import collections
 
 from xlib import httpgateway
 from xlib.util import json_util
+from conf import config
 
 
 class Protocol(object):
@@ -66,6 +67,7 @@ class Protocol(object):
         self._code_badparam = code_badparam
         self._is_parse_post = is_parse_post
         self._is_encode_response = is_encode_response
+        self._stat_adaptor = config.STAT_ADAPTOR
 
     def _mk_ret(self, req, stat, data, headers):
         """
@@ -104,6 +106,20 @@ class Protocol(object):
         """
         if stat is not None:
             data["stat"] = stat
+
+        # 进行状态字段转换
+        if self._stat_adaptor is not None and "stat" in data.keys():
+            status_name = self._stat_adaptor["status_name"]
+            status_map = self._stat_adaptor["status_map"]
+            message_name = self._stat_adaptor["message_name"]
+
+            stat_msg = data["stat"]
+            data[status_name] = status_map["default"]
+            if stat_msg in status_map.keys():
+                data[status_name] = status_map[stat_msg]
+
+            data[message_name] = stat_msg
+
         ret = json.dumps(data, default=json_util.json_default)
         if isinstance(ret, unicode):
             ret = ret.encode("utf8")
