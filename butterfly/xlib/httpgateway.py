@@ -141,7 +141,8 @@ class WSGIGateway(object):
                  acclog,
                  protocols,
                  static_path="",
-                 static_prefix=None
+                 static_prefix=None,
+                 header_username="HTTP_X_USERNAME"
                  ):
         self._protocols = protocols
         self._apiname_getter = funcname_getter
@@ -150,6 +151,7 @@ class WSGIGateway(object):
         self._uuid64 = xlib.uuid64.UUID64()
         self._static_path = static_path
         self._static_prefix = static_prefix
+        self._header_username = header_username
         self._version = xlib.butterfly_version
 
     def process(self, wsgienv):
@@ -174,7 +176,7 @@ class WSGIGateway(object):
 
             # 当使用 nginx auth_request module 进行接口认证时，可以在 nginx 中配置将认证后的用户名透传
             # 获取不到时，值为 "-", 用于日志统计
-            req.username = wsgienv.get("HTTP_X_USERNAME") or "-"
+            req.username = wsgienv.get(self._header_username) or "-"
 
             # 如果匹配到静态文件前缀，就会返回静态文件
             file_path = self._try_to_handler_static(wsgienv)

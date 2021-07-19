@@ -36,7 +36,8 @@ wsgigw = httpgateway.WSGIGateway(
     logger_conf.acclog,
     apicube,
     config.STATIC_PATH,
-    config.STATIC_PREFIX
+    config.STATIC_PREFIX,
+    config.HEADER_USERNAME
 )
 
 # ********************************************************

@@ -54,6 +54,7 @@ LOCALDATA_DIR = os.path.join(BASE_DIR, "data")
 # Auth
 SECRET_KEY = None               # If it is None, a key will be randomly generated each time butterfly is started
 JWT_TOKEN_TTL = 28800           # default 8 hours
+HEADER_USERNAME = "HTTP_X_USERNAME"
 
 # Scheduler
 scheduler_store = "memory"      # ("mysql"/"memory")
