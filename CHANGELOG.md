@@ -3,6 +3,20 @@ Changelog
 以下记录了项目中所有值得关注的变更内容，其格式基于 [Keep a Changelog]。
 
 本项目版本遵守 [Semantic Versioning] 和 [PEP-440]。
+## [1.1.14] - 2021-07-20
+### Changed
+> * 服务:【百川】
+>   * 百川 msg 添加 cost 属性，记录消息处理耗时，单位是 s [commit](https://github.com/meetbill/butterfly/commit/58ee024b96d71467819209e081eb0dfe68616387)
+>   * 百川标记 failed 策略由 `ERR_` 状态改为仅判断是否为参数错误(客户端错误)和服务端异常(消费者异常) [commit](https://github.com/meetbill/butterfly/commit/0ab7d29b9b406e92549fd85346599b73f9261885)
+>   * 百川发布消息时增加多次重试 [commit](https://github.com/meetbill/butterfly/commit/9a2220576e9783c4109e91ef99bfb1c7313fc6fd)
+
+### Added
+> * 服务:【星桥】
+>   * 增加分布式流程编排功能，有序编排 handler
+> * 配置:
+>   * 添加 STAT_ADAPTOR 配置，可扩展 API 接口中的状态字段, 以适配前端使用 [commit](https://github.com/meetbill/butterfly/commit/5b852e763b2e32ad35713d8330a66c6c67238f87)
+>   * 支持配置 user http header，传对应 header 值为用户名时，会自动记录对应用户操作 [commit](https://github.com/meetbill/butterfly/commit/e7d303756a8d65157ba9329dcdd03b78993920bb)
+
 ## [1.1.13] - 2021-06-17
 ### Changed
 > * 服务: 【五行】
