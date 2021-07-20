@@ -127,15 +127,19 @@ def create_job(req, job_namespace, job_type, job_name=None, job_extra=None, job_
 
 @funcattr.api
 def retry_job(req, job_id):
-
+    """
+    retry job
+    Args:
+        job_id: job_id
+    """
     task_model = model.Task
     job_model = model.Job
-    job_obj = job_model.get(job_model.job_id == job_id)
+    job_obj = job_model.get(job_model.job_id == int(job_id))
     if job_obj.job_status != "failed":
         return "ERR_JOB_STATUS_NOT_FAILED", {"job_id": job_id}, [(__info, __version)]
 
     # 获取所有字段
-    record_list = task_model.select().where(task_model.job_id == job_id)
+    record_list = task_model.select().where(task_model.job_id == int(job_id))
     for record in record_list:
         record_dict = shortcuts.model_to_dict(record)
         if record_dict["task_status"] == "failed":
@@ -149,7 +153,7 @@ def retry_job(req, job_id):
 
     # 发送消息
     params = {}
-    params["job_id"] = job_id
+    params["job_id"] = int(job_id)
     params["exe_id"] = job_obj.exe_id + 1
     params_json = json.dumps(params)
     mq_queue = Queue("/xingqiao/job_action", connection=baichuan_connection)
