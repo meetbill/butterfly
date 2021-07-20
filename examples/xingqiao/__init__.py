@@ -67,7 +67,8 @@ class Application(object):
                 plugin = self.source.load_plugin(plugin_name)
                 plugin.setup(self)
             except BaseException:
-                log.error("module=xingqiao plugin={plugin} err_info=load_plugin failed".format(plugin=plugin_name))
+                log.error("module=xingqiao plugin={plugin} err_info=load_plugin_failed err_detail={err_detail}".format(
+                    plugin=plugin_name, err_detail=traceback.format_exc()))
 
     def register_formatter(self, name, formatter):
         """A function a plugin can use to register a formatter."""
@@ -430,6 +431,8 @@ def delete_job(req, job_id):
     Returns:
     """
     isinstance(req, Request)
+    job_id = int(job_id)
+
     job_model = model.Job
     task_model = model.Task
     task_model.delete().where(task_model.job_id == job_id).execute()

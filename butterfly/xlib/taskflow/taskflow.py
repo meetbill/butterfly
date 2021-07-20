@@ -158,6 +158,7 @@ def is_job_end(req, job_id, new_exe_id):
     """
     task_model = model.Task
     job_model = model.Job
+    job_id = int(job_id)
 
     result_dict = {}
     result_dict["job_end"] = False
